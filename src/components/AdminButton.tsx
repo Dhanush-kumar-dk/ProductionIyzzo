@@ -37,7 +37,7 @@ const AdminButton = () => {
   if (!isAdmin) return null;
 
   return (
-    <button onClick={() => navigate("/admin-dashboard")}>
+    <button onClick={() => navigate("/admin/dashboard")}>
       Admin Dashboard
     </button>
   );
