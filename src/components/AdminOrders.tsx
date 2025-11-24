@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminDashboardSidebar from "./AdminDashboardSidebar";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -94,7 +93,7 @@ const AdminOrders = () => {
     if (isAdmin) {
       const fetchOrders = async () => {
         try {
-          const token = await auth.currentUser?.getIdToken(); // Get the current user's token
+          const token = await auth.currentUser?.getIdToken();
           if (!token) throw new Error("No token found");
 
           const response = await fetch(
@@ -140,85 +139,141 @@ const AdminOrders = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <AdminDashboardSidebar />
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-6xl py-8">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+              All Orders
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Manage and review customer orders from your store.
+            </p>
+          </div>
 
-      <div className="flex-1 p-6 md:ml-64">
-        <h1 className="text-3xl font-bold mb-6">All Orders</h1>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Orders</h2>
           <button
             onClick={handleSync}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition duration-300 ease-in-out shadow-sm hover:shadow-md"
+            className="self-start sm:self-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition duration-300 ease-in-out shadow-sm hover:shadow-md text-sm sm:text-base"
           >
             Sync Orders
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 overflow-auto">
-          <h2 className="text-xl font-semibold mb-4">Orders</h2>
+        {/* Orders card */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+              Orders
+            </h2>
+            <span className="text-xs sm:text-sm text-gray-500">
+              Total: {orders.length}
+            </span>
+          </div>
 
           {loading ? (
-            <p className="text-gray-500">Loading...</p>
+            <p className="text-gray-500 text-sm sm:text-base">Loading...</p>
           ) : error ? (
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-500 text-sm sm:text-base">{error}</p>
           ) : orders.length === 0 ? (
-            <p className="text-gray-500">No orders found.</p>
+            <p className="text-gray-500 text-sm sm:text-base">
+              No orders found.
+            </p>
           ) : (
             <>
-              <table className="w-full border-collapse border border-gray-300 text-sm">
-                <thead>
-                  <tr className="bg-gray-200 text-left">
-                    <th className="border p-2">ID</th>
-                    <th className="border p-2">Email</th>{" "}
-                    {/* Added Email Column */}
-                    <th className="border p-2">Tracking ID</th>
-                    <th className="border p-2">Item Name</th>
-                    <th className="border p-2">Category</th>
-                    <th className="border p-2">Price</th>
-                    <th className="border p-2">Fees</th>
-                    <th className="border p-2">Device Type</th>
-                    <th className="border p-2">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrders.map((order) => (
-                    <tr key={order.id} className="border-b">
-                      <td className="border p-2 text-center">{order.id}</td>
-                      <td className="border p-2">{order.email}</td>{" "}
-                      {/* Display Email */}
-                      <td className="border p-2">{order.tracking_id}</td>
-                      <td className="border p-2">{order.item_name}</td>
-                      <td className="border p-2">{order.category}</td>
-                      <td className="border p-2 text-center">
-                        ₹{order.price.toFixed(2)}
-                      </td>
-                      <td className="border p-2 text-center">
-                        ₹{order.fees.toFixed(2)}
-                      </td>
-                      <td className="border p-2">{order.device_type}</td>
-                      <td className="border p-2">{order.date}</td>
+              {/* Responsive table container */}
+              <div className="overflow-x-auto">
+                <table className="min-w-[900px] w-full border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-gray-100 text-left text-gray-700">
+                      <th className="border border-gray-200 px-3 py-2 text-center">
+                        ID
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Email
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Tracking ID
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Item Name
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Category
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-center">
+                        Price
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2 text-center">
+                        Fees
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Device Type
+                      </th>
+                      <th className="border border-gray-200 px-3 py-2">
+                        Date
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentOrders.map((order) => (
+                      <tr
+                        key={order.id}
+                        className="border-t border-gray-200 hover:bg-gray-50"
+                      >
+                        <td className="border border-gray-200 px-3 py-2 text-center">
+                          {order.id}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2">
+                          {order.email}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2">
+                          {order.tracking_id}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2">
+                          {order.item_name}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2">
+                          {order.category}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">
+                          ₹{order.price.toFixed(2)}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2 text-center whitespace-nowrap">
+                          ₹{order.fees.toFixed(2)}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2">
+                          {order.device_type}
+                        </td>
+                        <td className="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                          {order.date}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Pagination Controls */}
-              <div className="flex justify-center mt-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg mr-2 disabled:opacity-50"
+                  className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
-                <span className="text-lg mx-2">
-                  Page {currentPage} of {totalPages}
+
+                <span className="text-sm sm:text-base">
+                  Page{" "}
+                  <span className="font-semibold">{currentPage}</span> of{" "}
+                  <span className="font-semibold">{totalPages}</span>
                 </span>
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg ml-2 disabled:opacity-50"
+                  className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>

@@ -3,7 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import AdminDashboardSidebar from "./AdminDashboardSidebar";
+import { ArrowUpTrayIcon } from "@heroicons/react/16/solid";
 
 const AdminUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -14,6 +14,8 @@ const AdminUpload = () => {
 
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
+    if (!file) return;
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -36,17 +38,18 @@ const AdminUpload = () => {
         throw new Error(data.error || "Failed to upload file");
       }
 
-      setSuccess("Upload Successful");
+      setSuccess("Upload successful 🎉");
     } catch (err) {
-      setError("Error uploading file");
+      setError("Error uploading file. Please try again.");
       console.error("Upload failed:", err);
     } finally {
       setUploading(false);
     }
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    multiple: false,
     accept: {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
         ".xlsx",
@@ -100,22 +103,72 @@ const AdminUpload = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <AdminDashboardSidebar />
-      <div className="flex-1 p-6 md:ml-64">
-        <h1 className="text-3xl font-bold mb-6">Upload Orders</h1>
-        <div
-          {...getRootProps()}
-          className="border-2 border-dashed p-6 mb-6 text-center"
-        >
-          <input {...getInputProps()} />
-          <p className="text-gray-600">
-            Drag & drop an Excel (.xlsx) file here, or click to select a file
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-md sm:shadow-lg p-5 sm:p-8 mt-4 sm:mt-10">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            Upload Orders
+          </h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">
+            Upload your Amazon orders Excel file (.xlsx) to sync data into your
+            admin dashboard.
           </p>
         </div>
-        {uploading && <p>Uploading...</p>}
-        {success && <p className="text-green-600 mt-2">{success}</p>}
-        {error && <p className="text-red-600 mt-2">{error}</p>}
+
+        {/* Dropzone */}
+        <div
+          {...getRootProps()}
+          className={`
+            group relative border-2 border-dashed rounded-2xl 
+            p-6 sm:p-8 text-center cursor-pointer
+            transition-all duration-300 ease-out
+            ${
+              isDragActive
+                ? "border-blue-500 bg-blue-50 shadow-lg scale-[1.01]"
+                : "border-blue-200 bg-blue-50/40 hover:bg-blue-50 hover:border-blue-400 hover:shadow-md"
+            }
+            ${uploading ? "opacity-70 pointer-events-none" : ""}
+          `}
+        >
+          <input {...getInputProps()} />
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-full bg-white/80 p-3 shadow-sm mb-1 group-hover:shadow-md transition-shadow duration-300">
+              <ArrowUpTrayIcon className="w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
+            </div>
+            <p className="text-sm sm:text-base font-medium text-gray-800">
+              {isDragActive
+                ? "Drop the file here..."
+                : "Drag & drop an Excel (.xlsx) file here"}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              or <span className="font-semibold text-blue-600">click</span> to
+              browse from your device
+            </p>
+            <p className="text-[11px] sm:text-xs text-gray-400 mt-1">
+              Only .xlsx files are supported.
+            </p>
+          </div>
+
+          {/* Uploading overlay */}
+          {uploading && (
+            <div className="absolute inset-0 bg-white/60 rounded-2xl flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-sm text-gray-700 font-medium">Uploading...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Status messages */}
+        <div className="mt-4 min-h-[1.5rem] space-y-1">
+          {success && (
+            <p className="text-sm text-green-600 animate-fade-in">{success}</p>
+          )}
+          {error && (
+            <p className="text-sm text-red-600 animate-fade-in">{error}</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -51,58 +51,108 @@ function Carousel() {
   }, []);
 
   return (
-    <div className="w-full mt-6 px-4">
-      <h2 className="text-xl font-bold mb-4">Featured Products</h2>
+    <div className="w-full mt-6 px-3 sm:px-4 lg:px-10">
+      <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 text-gray-900">
+        Featured Products
+      </h2>
 
       {loading ? (
-        <p className="text-center text-gray-600">Loading...</p>
+        <p className="text-center text-gray-600 text-sm sm:text-base">
+          Loading...
+        </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {products.map((product, index) => (
-            <div key={index} className="product-card slide-in group relative">
-              {/* Product Image Carousel */}
-              <div className="image-container">
-                <CCarousel transition="crossfade">
-                  <CCarouselItem>
-                    <img
-                      className="object-cover rounded-md h-30 w-full"
-                      src={product.image}
-                      alt={product.name}
-                    />
-                  </CCarouselItem>
-                  <CCarouselItem>
-                    <img
-                      className="object-cover rounded-md h-30 w-full"
-                      src={product.image1}
-                      alt={product.name}
-                    />
-                  </CCarouselItem>
-                  <CCarouselItem>
-                    <img
-                      className="object-cover rounded-md h-30 w-full"
-                      src={product.image2}
-                      alt={product.name}
-                    />
-                  </CCarouselItem>
-                </CCarousel>
+        <div
+          className="
+            grid gap-4 sm:gap-5 md:gap-6
+            grid-cols-1
+            xs:grid-cols-2
+            sm:grid-cols-2
+            md:grid-cols-3
+            lg:grid-cols-4
+            xl:grid-cols-5
+          "
+        >
+          {products.map((product) => (
+            <div
+              key={product.id}
+              className="
+                product-card
+                group relative
+                bg-white rounded-2xl shadow-sm
+                border border-gray-100
+                p-3 sm:p-4
+                flex flex-col
+                h-full
+                transition-all duration-300
+                hover:shadow-lg hover:-translate-y-1
+              "
+            >
+              {/* Image Carousel */}
+              <div className="image-container w-full mb-3 sm:mb-4">
+                <div className="relative w-full overflow-hidden rounded-xl aspect-[3/4] bg-gray-50">
+                  <CCarousel
+                    transition="crossfade"
+                    controls
+                    indicators
+                    className="h-full w-full"
+                  >
+                    <CCarouselItem>
+                      <img
+                        className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-500"
+                        src={product.image}
+                        alt={product.name}
+                      />
+                    </CCarouselItem>
+                    <CCarouselItem>
+                      <img
+                        className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-500"
+                        src={product.image1}
+                        alt={product.name}
+                      />
+                    </CCarouselItem>
+                    <CCarouselItem>
+                      <img
+                        className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-500"
+                        src={product.image2}
+                        alt={product.name}
+                      />
+                    </CCarouselItem>
+                  </CCarousel>
+                </div>
               </div>
 
-              {/* Card Content */}
-              <div className="flex flex-col gap-3 mt-4">
-                <h3 className="text-gray-900 font-bold text-lg">
+              {/* Content */}
+              <div className="flex flex-col gap-1 sm:gap-2 flex-1">
+                <h3 className="text-gray-900 font-semibold text-sm sm:text-base md:text-lg line-clamp-2">
                   {product.name}
                 </h3>
-                <p className="text-gray-900 font-bold text-lg">
+                <p className="text-gray-900 font-bold text-base sm:text-lg mt-1">
                   ₹{product.price}
                 </p>
               </div>
 
-              {/* View Product Button */}
+              {/* Button */}
               <a
                 href={product.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="product-button"
+                className="
+                  mt-3 sm:mt-4
+                  inline-flex items-center justify-center
+                  w-full
+                  rounded-lg
+                  text-xs sm:text-sm
+                  font-semibold
+                  bg-blue-600 text-white
+                  py-1.5 sm:py-2
+                  hover:bg-blue-700
+                  hover:scale-[1.03] active:scale-[0.97]
+                  transition-all duration-300
+                  shadow-sm hover:shadow-md
+                  no-underline
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                "
+                style={{ textDecoration: "none" }}
               >
                 View Product
               </a>

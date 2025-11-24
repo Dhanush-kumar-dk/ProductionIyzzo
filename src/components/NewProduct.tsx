@@ -20,10 +20,10 @@ export default function ProductUploadForm({
     setIsUploading(true);
     try {
       await addDoc(collection(firestore, "products"), {
-        name: name,
-        price: price,
-        image: image,
-        url: url,
+        name,
+        price,
+        image,
+        url,
       });
     } catch {
       alert("Unable to add product!");
@@ -33,9 +33,24 @@ export default function ProductUploadForm({
   };
 
   return (
-    <div className="w-96 h-auto border p-4 rounded-md bg-white">
-      <span className="font-bold">Add Product:</span>
-      <form onSubmit={handleSubmit} className="space-y-4 flex flex-col gap-4">
+    <div
+      className="
+        w-full max-w-md 
+        mx-auto 
+        border p-4 sm:p-6 
+        rounded-md bg-white 
+        shadow-md
+      "
+    >
+      <span className="font-bold text-base sm:text-lg block mb-2">
+        Add Product
+      </span>
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
+        {/* Product Name */}
         <div>
           <label
             htmlFor="name"
@@ -49,27 +64,41 @@ export default function ProductUploadForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1 h-8 border-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            className="
+              mt-1 h-9 
+              border-2 block w-full 
+              rounded-md border-gray-300 shadow-sm 
+              focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
+              text-sm
+            "
           />
         </div>
 
+        {/* Price */}
         <div>
           <label
-            htmlFor="name"
+            htmlFor="price"
             className="block text-sm font-medium text-gray-700"
           >
-            Price{" "}
+            Price
           </label>
           <input
-            type="text"
-            id="Number"
+            type="number"
+            id="price"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             required
-            className="mt-b h-8 border-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            className="
+              mt-1 h-9 
+              border-2 block w-full 
+              rounded-md border-gray-300 shadow-sm 
+              focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
+              text-sm
+            "
           />
         </div>
 
+        {/* Image URL */}
         <div>
           <label
             htmlFor="imageUrl"
@@ -83,9 +112,17 @@ export default function ProductUploadForm({
             value={image}
             onChange={(e) => setImage(e.target.value)}
             required
-            className="mt-1 h-8 border-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            className="
+              mt-1 h-9 
+              border-2 block w-full 
+              rounded-md border-gray-300 shadow-sm 
+              focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
+              text-sm
+            "
           />
         </div>
+
+        {/* Referral URL */}
         <div>
           <label
             htmlFor="referralUrl"
@@ -99,22 +136,43 @@ export default function ProductUploadForm({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
-            className="mt-1 h-8 border-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            className="
+              mt-1 h-9 
+              border-2 block w-full 
+              rounded-md border-gray-300 shadow-sm 
+              focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
+              text-sm
+            "
           />
         </div>
 
-        <div className="flex justify-end space-x-2">
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="
+              w-full sm:w-auto
+              px-4 py-2 
+              text-sm font-medium text-gray-700 
+              bg-white border border-gray-300 rounded-md 
+              hover:bg-gray-50 
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+            "
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isUploading}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="
+              w-full sm:w-auto
+              px-4 py-2 
+              text-sm font-medium text-white 
+              bg-blue-600 border border-transparent rounded-md 
+              hover:bg-blue-700 disabled:opacity-70 
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+            "
           >
             {isUploading ? "Uploading..." : "Add Product"}
           </button>
