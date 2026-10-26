@@ -25,6 +25,7 @@ import TermsOfService from "./components/TermsOfService";
 import AboutPage from "./components/AboutPage";
 import AffiliateDisclosure from "./components/AffiliateDisclosure";
 import ContactPage from "./components/ContactPage";
+import ProductDetailPage from "./components/ProductDetailPage";
 import CookieConsent from "./components/CookieConsent";
 
 import { Analytics } from "@vercel/analytics/react";
@@ -120,6 +121,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/affiliate-disclosure" element={<AffiliateDisclosure />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/search/:searchTerm" element={<SearchResults />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
