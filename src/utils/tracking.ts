@@ -30,7 +30,7 @@ export const GOOGLE_ADS_ID =
 export const GA4_ID =
   (import.meta.env.VITE_GA4_ID as string) ||
   (import.meta.env.NEXT_PUBLIC_GA4_ID as string) ||
-  "";
+  "G-G1F7RP0MFZ";
 
 export const GADS_LEAD_LABEL =
   (import.meta.env.VITE_GADS_LEAD_LABEL as string) ||
