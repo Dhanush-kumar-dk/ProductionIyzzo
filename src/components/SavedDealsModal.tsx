@@ -111,7 +111,7 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition"
-                      title="View on Amazon"
+                      title="View on Store"
                     >
                       <ArrowTopRightOnSquareIcon className="w-4 h-4" />
                     </a>
@@ -132,7 +132,7 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
           {deals.length > 0 && (
             <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50">
               <p className="text-[11px] text-gray-400 text-center mb-3">
-                * Prices on Amazon may change based on availability and active discounts.
+                * Prices may change based on availability and active discounts.
               </p>
               <button
                 onClick={onClose}

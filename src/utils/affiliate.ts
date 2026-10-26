@@ -69,9 +69,11 @@ export function buildAffiliateUrl(rawUrl: string, customTag?: string | null): st
 }
 
 /**
- * Construct an Amazon search link with the active tracking tag
+ * Construct a marketplace search link with the active tracking tag
  */
-export function buildAmazonSearchUrl(keyword: string, customTag?: string | null): string {
+export function buildMarketplaceSearchUrl(keyword: string, customTag?: string | null): string {
   const tag = (customTag && customTag.trim().length > 0) ? customTag.trim() : getActiveTrackingId();
   return `https://www.amazon.in/s?k=${encodeURIComponent(keyword)}&tag=${encodeURIComponent(tag)}`;
 }
+
+export const buildAmazonSearchUrl = buildMarketplaceSearchUrl;

@@ -26,7 +26,7 @@ export default function DealsNewsletter() {
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Never Miss An Amazon Price Drop
+            Never Miss A Price Drop
           </h2>
 
           <p className="text-xs sm:text-sm text-blue-100 max-w-lg mx-auto">

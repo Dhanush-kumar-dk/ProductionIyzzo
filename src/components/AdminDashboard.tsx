@@ -106,7 +106,7 @@ const AdminDashboard = () => {
         <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white p-6 sm:p-8 shadow-xl overflow-hidden">
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-amber-300 border border-white/20 mb-3">
-              ⚡ Amazon Affiliate Network Engine
+              ⚡ Affiliate Network Engine
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
               Affiliate Operations & Performance
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
                   Upload Order Reports
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Import official Amazon Associates Excel (.xlsx) / CSV monthly earnings and orders sheets into the analytics engine.
+                  Import official Associates Excel (.xlsx) / CSV monthly earnings and orders sheets into the analytics engine.
                 </p>
               </div>
               <span className="inline-flex items-center text-xs font-bold text-blue-600 mt-5 group-hover:translate-x-1 transition-transform">

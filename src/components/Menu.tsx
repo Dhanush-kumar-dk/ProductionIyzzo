@@ -30,7 +30,7 @@ function Menu({ openLogIn }: { openLogIn: () => void }) {
                   href="https://amzn.to/4hem5Gx "
                   className="text-xl text-gray-900 hover:font-semibold duration-150 translate-all ease-in-out cursor-pointer no-underline m-2"
                 >
-                  Amazon
+                  Shop Deals
                 </a>
               </p>
             </div>

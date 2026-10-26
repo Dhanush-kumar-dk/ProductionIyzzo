@@ -73,7 +73,7 @@ const CURATED_FALLBACK_PRODUCTS: Product[] = [
   },
   {
     id: "B0BY8MCQ9S",
-    name: "Amazon Echo Dot (5th Gen) Smart Speaker with Alexa, Deeper Bass and Clear Voice",
+    name: "Echo Dot (5th Gen) Smart Speaker with Alexa, Deeper Bass and Clear Voice",
     price: "4449",
     category: "Smart Home",
     image: "https://m.media-amazon.com/images/I/61EXU8BuGZL._SL1000_.jpg",
@@ -230,7 +230,7 @@ export default function Carousel({
             Featured Deals & Best Sellers
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Top discounts currently active on Amazon with verified affiliate pricing.
+            Top discounts currently active with verified affiliate pricing.
           </p>
         </div>
 

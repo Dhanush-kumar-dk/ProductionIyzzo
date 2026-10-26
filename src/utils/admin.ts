@@ -3,9 +3,10 @@ import { API_BASE_URL } from "../config/api";
 
 // Known administrator emails
 export const ADMIN_EMAILS: string[] = [
+  "dhanushkumark62@gmail.com",
+  "dhanushkumar@gmail.com",
   "admin@affiliatepulse.io",
   "admin@izzyo.com",
-  "dhanushkumar@gmail.com",
   "admin@iyzzo.com",
 ];
 
@@ -56,7 +57,7 @@ export async function verifyIsAdmin(user: User | null): Promise<boolean> {
 
   // 2. Firebase token custom claims verification
   try {
-    const idTokenResult = await user.getIdTokenResult();
+    const idTokenResult = await user.getIdTokenResult(true);
     if (idTokenResult.claims && idTokenResult.claims.admin === true) {
       localStorage.setItem("isAdmin", "true");
       return true;

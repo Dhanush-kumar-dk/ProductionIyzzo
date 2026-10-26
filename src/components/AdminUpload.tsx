@@ -127,10 +127,10 @@ const AdminUpload = () => {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-            Import Amazon Orders Report
+            Import Orders Report
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Upload exported `.xlsx` or `.csv` reports from Amazon Associates Central to ingest commission fees and order data.
+            Upload exported `.xlsx` or `.csv` reports from Associates Central to ingest commission fees and order data.
           </p>
         </div>
 
@@ -167,7 +167,7 @@ const AdminUpload = () => {
               <ArrowUpTrayIcon className="w-7 h-7" />
             </div>
             <p className="text-sm font-bold text-gray-800 mb-1">
-              Drag & Drop your Amazon Orders file here
+              Drag & Drop your Orders report file here
             </p>
             <p className="text-xs text-gray-400 mb-4">
               Supports Excel (.xlsx, .xls) and CSV (.csv) exports

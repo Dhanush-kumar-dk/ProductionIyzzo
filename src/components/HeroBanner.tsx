@@ -19,7 +19,7 @@ const slides: Slide[] = [
   {
     id: 1,
     tag: "⚡ MEGA DEALS FESTIVAL",
-    title: "Handpicked Amazon Deals",
+    title: "Handpicked Top Deals",
     highlight: "Up to 70% Off",
     description: "Exclusive curated discounts on top-rated electronics, audio, smart watches, and home essentials.",
     bgGradient: "from-blue-900 via-indigo-900 to-slate-900",
@@ -41,7 +41,7 @@ const slides: Slide[] = [
     tag: "✨ PRIME EXCLUSIVE",
     title: "Premium Sound & Gadgets",
     highlight: "Massive Price Cuts",
-    description: "Experience high-fidelity wireless audio and premium accessories with guaranteed Amazon checkout protection.",
+    description: "Experience high-fidelity wireless audio and premium accessories with guaranteed checkout protection.",
     bgGradient: "from-purple-950 via-slate-900 to-gray-950",
     image: Image3,
     ctaText: "Grab Deal Now",
@@ -114,7 +114,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-300 bg-black/30 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-white/10">
                     <ShieldCheckIcon className="w-5 h-5 text-emerald-400" />
-                    <span>Official Amazon Associate Portal</span>
+                    <span>Official Verified Partner Portal</span>
                   </div>
                 </div>
               </div>

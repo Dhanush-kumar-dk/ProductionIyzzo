@@ -33,7 +33,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Iyzzo is your premier Amazon Deals Discovery platform. We handpick and verify top-rated products with the steepest price drops across electronics, fashion, and home lifestyle.
+              Iyzzo is your premier Deals Discovery platform. We handpick and verify top-rated products with the steepest price drops across electronics, fashion, and home lifestyle.
             </p>
             <div className="text-xs text-gray-400">
               <span className="text-white font-semibold">Support:</span> support@iyzzo.com
@@ -81,13 +81,13 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-xs text-gray-400">
               <li>
-                <span className="text-gray-300 font-medium">Genuine Amazon Links:</span> All product purchases are completed safely directly on Amazon's official platform.
+                <span className="text-gray-300 font-medium">Genuine Store Links:</span> All product purchases are completed safely directly on official partner stores.
               </li>
               <li>
-                <span className="text-gray-300 font-medium">Customer Support:</span> Amazon handles all fulfillment, delivery, customer care, and returns.
+                <span className="text-gray-300 font-medium">Customer Support:</span> Verified retailers handle all fulfillment, delivery, customer care, and returns.
               </li>
               <li>
-                <span className="text-gray-300 font-medium">Price Accuracy:</span> Deals and prices are updated regularly based on Amazon marketplace catalog.
+                <span className="text-gray-300 font-medium">Price Accuracy:</span> Deals and prices are updated regularly based on verified merchant catalog.
               </li>
             </ul>
           </div>
@@ -95,11 +95,11 @@ export default function Footer() {
           {/* Column 4: Affiliate Disclosure */}
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
-              Amazon Disclosure
+              Affiliate Disclosure
             </h3>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-[11px] text-gray-400 leading-relaxed">
               <p>
-                <strong className="text-amber-300">Affiliate Disclaimer:</strong> Iyzzo is a participant in the Amazon Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.in / Amazon.com.
+                <strong className="text-amber-300">Affiliate Disclaimer:</strong> Iyzzo participates in affiliate advertising programs designed to provide a means for sites to earn referral fees by linking to verified partner stores.
               </p>
               <p className="mt-2 text-[10px] text-gray-500">
                 Product prices and availability are accurate as of the date/time indicated and are subject to change.
@@ -110,7 +110,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} Iyzzo. All rights reserved. Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates.</p>
+          <p>© {new Date().getFullYear()} Iyzzo. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span className="hover:text-gray-300 cursor-pointer">Privacy Policy</span>
             <span>•</span>

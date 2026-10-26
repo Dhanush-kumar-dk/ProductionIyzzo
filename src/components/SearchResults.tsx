@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import SavedDealsModal from "../components/SavedDealsModal";
 import ProductCard, { Product } from "./ProductCard";
 import { API_BASE_URL } from "../config/api";
-import { getActiveTrackingId, buildAffiliateUrl, buildAmazonSearchUrl } from "../utils/affiliate";
+import { getActiveTrackingId, buildAffiliateUrl, buildMarketplaceSearchUrl } from "../utils/affiliate";
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/solid";
 
 interface SearchResult {
@@ -104,7 +104,7 @@ export default function SearchResults() {
                 Results for <span className="text-blue-600">"{searchTerm}"</span>
               </h1>
               <p className="text-xs text-gray-500 mt-1">
-                Found {searchResults.length} verified Amazon product match{searchResults.length === 1 ? "" : "es"}.
+                Found {searchResults.length} verified product match{searchResults.length === 1 ? "" : "es"}.
               </p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function SearchResults() {
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-gray-500 text-sm font-medium">
-                Searching Amazon catalog for best deals...
+                Searching catalog for best deals...
               </p>
             </div>
           ) : error ? (
@@ -131,19 +131,19 @@ export default function SearchResults() {
             <div className="bg-white rounded-2xl p-8 sm:p-12 text-center border border-gray-100 shadow-sm max-w-lg mx-auto">
               <div className="text-4xl mb-3">🔍</div>
               <h2 className="text-lg font-bold text-gray-800 mb-1">
-                Looking for "{searchTerm}" on Amazon?
+                Looking for "{searchTerm}"?
               </h2>
               <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                Click below to search the full live Amazon catalog with verified deals, Prime delivery, and the best available prices.
+                Click below to browse live catalog deals with fast delivery and the best available prices.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
-                  href={buildAmazonSearchUrl(searchTerm)}
+                  href={buildMarketplaceSearchUrl(searchTerm)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-900 font-semibold text-sm rounded-xl shadow-sm transition border border-[#FCD200] no-underline"
                 >
-                  <span>Search directly on Amazon</span>
+                  <span>Search live catalog</span>
                   <ArrowTopRightOnSquareIcon className="w-4 h-4" />
                 </a>
                 <button

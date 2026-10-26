@@ -29,7 +29,7 @@ export default function NotFound() {
             onClick={() => navigate("/")}
             className="w-full bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 py-2.5 px-4 rounded-xl font-bold transition shadow-sm hover:shadow"
           >
-            Explore Active Amazon Deals
+            Explore Active Deals
           </button>
         </div>
       </main>

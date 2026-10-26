@@ -10,12 +10,12 @@ export default function TrustFeatures() {
     {
       icon: <ShieldCheckIcon className="w-6 h-6 text-blue-600" />,
       title: "100% Verified Deals",
-      desc: "Curated directly from Amazon's official verified product listings.",
+      desc: "Curated directly from verified top product listings.",
     },
     {
       icon: <TruckIcon className="w-6 h-6 text-amber-500" />,
-      title: "Prime Delivery Eligible",
-      desc: "Enjoy Amazon Prime free 1-day or 2-day delivery on eligible items.",
+      title: "Express Delivery Eligible",
+      desc: "Enjoy free 1-day or 2-day delivery on eligible items.",
     },
     {
       icon: <TagIcon className="w-6 h-6 text-emerald-600" />,
@@ -25,7 +25,7 @@ export default function TrustFeatures() {
     {
       icon: <ArrowPathIcon className="w-6 h-6 text-purple-600" />,
       title: "Hassle-Free Returns",
-      desc: "Standard 7-30 days replacement & refund handled directly by Amazon.",
+      desc: "Standard 7-30 days replacement & refund handled directly by verified stores.",
     },
   ];
 

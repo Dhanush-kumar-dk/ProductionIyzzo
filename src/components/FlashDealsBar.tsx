@@ -41,11 +41,11 @@ export default function FlashDealsBar() {
               </span>
               <span className="text-xs text-white/90 hidden sm:inline-flex items-center gap-1">
                 <SparklesIcon className="w-3.5 h-3.5 text-yellow-200" />
-                Amazon Prime Verified Discounts
+                Verified Prime & Member Discounts
               </span>
             </div>
             <h3 className="text-lg sm:text-xl font-bold tracking-tight mt-0.5">
-              Today's Best Amazon Price Drops
+              Today's Best Featured Price Drops
             </h3>
           </div>
         </div>

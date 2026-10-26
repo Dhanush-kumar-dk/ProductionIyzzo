@@ -141,13 +141,13 @@ export default function TopBar({
       <div className="w-full bg-[#131921] text-gray-300 text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 lg:px-12 border-b border-gray-800 flex items-center justify-between font-poppins">
         <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="bg-amber-400 text-gray-950 font-bold px-2 py-0.5 rounded text-[10px] tracking-wide uppercase">
-            Amazon Partner
+            Verified Partner
           </span>
           <span className="text-gray-300 hidden xs:inline">
-            ⚡ Up to 70% Off Verified Amazon Drops • Free Prime Shipping on Eligible Items
+            ⚡ Up to 70% Off Verified Drops • Free Express Shipping on Eligible Items
           </span>
           <span className="text-gray-300 xs:hidden">
-            ⚡ Up to 70% Off Today's Amazon Deals
+            ⚡ Up to 70% Off Today's Top Deals
           </span>
         </div>
 
@@ -361,7 +361,7 @@ export default function TopBar({
             className="flex items-center gap-1 text-white hover:text-amber-400 font-bold whitespace-nowrap"
           >
             <SparklesIcon className="w-4 h-4 text-amber-400" />
-            All Amazon Deals
+            All Featured Deals
           </button>
           <button
             onClick={() => handleQuickCategoryClick("Electronics")}
@@ -520,7 +520,7 @@ export default function TopBar({
             className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-white/20 animate-bounce hover:animate-none"
           >
             <span>🎁</span>
-            <span>Get Exclusive Amazon Drop Alerts</span>
+            <span>Get Exclusive Drop Alerts</span>
           </button>
         </div>
       )}
@@ -542,7 +542,7 @@ export default function TopBar({
             </div>
 
             <h3 className="text-lg font-bold text-gray-900 text-center mb-1">
-              Unlock Exclusive Amazon Price Alerts
+              Unlock Exclusive Price Alerts
             </h3>
             <p className="text-xs text-gray-500 text-center mb-5 leading-relaxed">
               Create a free account to track price drops on your favorite electronics, save custom deals, and get notified on flash sales.
