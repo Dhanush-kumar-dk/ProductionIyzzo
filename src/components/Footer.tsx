@@ -254,12 +254,12 @@ export default function Footer() {
         </div>
 
         {/* Mandatory Amazon Associates Operating Agreement Statement */}
-        <p className="text-[11px] text-[#7A7A7A] max-w-3xl mx-auto leading-relaxed">
+        <p className="text-[11px] text-[#CCCCCC] max-w-3xl mx-auto leading-relaxed">
           As an Amazon Associate I earn from qualifying purchases. Yearnit is an independent review platform and is not affiliated with, endorsed by, or sponsored by Amazon.com, Inc. or Amazon Seller Services Pvt. Ltd.
         </p>
 
         {/* Copyright */}
-        <p className="text-[11px] text-[#666666]">
+        <p className="text-[11px] text-[#B0B8C1]">
           © {new Date().getFullYear()}, Yearnit.in, Inc. or its affiliates
         </p>
       </div>

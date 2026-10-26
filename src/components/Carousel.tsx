@@ -99,6 +99,9 @@ export default function Carousel({
 
           {/* Sort Dropdown */}
           <select
+            id="sort-products"
+            name="sort-products"
+            aria-label="Sort product catalog"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-400 shadow-sm cursor-pointer"

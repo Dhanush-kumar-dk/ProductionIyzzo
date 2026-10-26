@@ -261,10 +261,13 @@ export default function AdLandingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    <label htmlFor="deal-preference" className="block text-xs font-semibold text-gray-300 mb-1">
                       Primary Deals of Interest
                     </label>
                     <select
+                      id="deal-preference"
+                      name="preference"
+                      aria-label="Primary Deals of Interest"
                       value={formData.preference}
                       onChange={(e) => setFormData({ ...formData, preference: e.target.value })}
                       className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"

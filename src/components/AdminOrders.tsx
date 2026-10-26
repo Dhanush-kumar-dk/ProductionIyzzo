@@ -394,8 +394,11 @@ const AdminOrders = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-semibold text-gray-500">Device:</span>
+            <label htmlFor="device-filter" className="text-xs font-semibold text-gray-500">Device:</label>
             <select
+              id="device-filter"
+              name="device-filter"
+              aria-label="Filter orders by device"
               value={deviceFilter}
               onChange={(e) => {
                 setDeviceFilter(e.target.value);

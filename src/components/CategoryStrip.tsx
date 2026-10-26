@@ -58,8 +58,8 @@ export default function CategoryStrip({
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
                     isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-red-100 text-red-600"
+                      ? "bg-white text-blue-900 shadow-2xs"
+                      : "bg-red-50 text-red-800 border border-red-200"
                   }`}
                 >
                   {cat.badge}
