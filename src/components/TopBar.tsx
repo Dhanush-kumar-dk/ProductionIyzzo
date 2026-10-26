@@ -5,6 +5,8 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import AdminButton from "./AdminButton";
 import { API_BASE_URL } from "../config/api";
 import { getActiveTrackingId } from "../utils/affiliate";
+import { verifyIsAdmin, isEmailAdmin } from "../utils/admin";
+import { ShieldCheckIcon } from "@heroicons/react/24/solid";
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
@@ -36,10 +38,21 @@ export default function TopBar({
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Track auth state
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem("isAdmin") === "true" || isEmailAdmin(localStorage.getItem("email"));
+  });
+
+  // Track auth state & admin verification
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        localStorage.setItem("email", currentUser.email || "");
+        const verified = await verifyIsAdmin(currentUser);
+        setIsAdmin(verified);
+      } else {
+        setIsAdmin(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -288,20 +301,20 @@ export default function TopBar({
                       </p>
                     </div>
 
-                    <div className="py-1">
-                      <a
-                        href="/affiliate-disclosure"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        <span>Affiliate Disclosure</span>
-                      </a>
-                      <a
-                        href="/about"
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        <span>About Yearnit</span>
-                      </a>
-                    </div>
+                    {(isAdmin || isEmailAdmin(user?.email || localStorage.getItem("email"))) && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            navigate("/admin/dashboard");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-purple-700 hover:bg-purple-50 font-bold transition text-left"
+                        >
+                          <ShieldCheckIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                          <span>Admin Dashboard</span>
+                        </button>
+                      </div>
+                    )}
 
                     <div className="border-t border-gray-100 pt-1">
                       <button
