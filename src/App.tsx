@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { useState } from "react";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
 import Carousel from "./components/Carousel";
@@ -20,8 +20,31 @@ import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
+import AdLandingPage from "./components/AdLandingPage";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsOfService from "./components/TermsOfService";
+import ContactPage from "./components/ContactPage";
+import CookieConsent from "./components/CookieConsent";
+
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { initAllTrackers, trackPageView } from "./utils/tracking";
+import { captureAttribution } from "./utils/attribution";
+
+/**
+ * Route Tracker Component: handles SPA route transitions and attribution captures
+ */
+function RouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    initAllTrackers();
+    captureAttribution();
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  return null;
+}
 
 function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
@@ -94,8 +117,13 @@ function App() {
   return (
     <>
       <Router>
+        <RouteTracker />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/lp" element={<AdLandingPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/search/:searchTerm" element={<SearchResults />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
@@ -103,6 +131,7 @@ function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <CookieConsent />
       </Router>
       <Analytics />
       <SpeedInsights />

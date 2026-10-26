@@ -112,11 +112,11 @@ export default function Footer() {
         <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>© {new Date().getFullYear()} Iyzzo. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span className="hover:text-gray-300 cursor-pointer">Privacy Policy</span>
+            <a href="/privacy" className="hover:text-gray-300 transition">Privacy Policy</a>
             <span>•</span>
-            <span className="hover:text-gray-300 cursor-pointer">Terms of Service</span>
+            <a href="/terms" className="hover:text-gray-300 transition">Terms of Service</a>
             <span>•</span>
-            <span className="hover:text-gray-300 cursor-pointer">Affiliate Transparency</span>
+            <a href="/contact" className="hover:text-gray-300 transition">Contact & Grievance</a>
           </div>
         </div>
       </div>
