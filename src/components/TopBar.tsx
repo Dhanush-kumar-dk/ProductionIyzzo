@@ -244,20 +244,6 @@ export default function TopBar({
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-            {/* Quick Links */}
-            <a
-              href="/about"
-              className="hidden md:inline-flex text-xs font-semibold text-gray-300 hover:text-white transition px-2 py-1 rounded"
-            >
-              About
-            </a>
-            <a
-              href="/affiliate-disclosure"
-              className="hidden md:inline-flex text-xs font-semibold text-gray-300 hover:text-white transition px-2 py-1 rounded"
-            >
-              Disclosure
-            </a>
-
             {/* Admin Badge/Button */}
             <div className="hidden lg:block">
               <AdminButton />
