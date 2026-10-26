@@ -1,32 +1,48 @@
 export default function Footer() {
   return (
-    <footer className="w-full font-poppins text-gray-300">
-      {/* 2. Main Multi-Column Links Section (Amazon #232F3E) */}
-      <div className="bg-[#232F3E] text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-12 border-b border-[#3a4553]">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-xs sm:text-[13px]">
+    <footer className="w-full font-sans text-gray-300 antialiased selection:bg-amber-400 selection:text-gray-950">
+      {/* Main Multi-Column Links Section (Amazon Classic #232F3E) */}
+      <div className="bg-[#232F3E] text-white pt-10 sm:pt-12 pb-8 px-4 sm:px-6 lg:px-12 border-b border-[#3a4553]">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 text-[13px]">
           {/* Column 1: Get to Know Us */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+          <div className="space-y-3">
+            <h4 className="font-bold text-white text-[14px] sm:text-[15px] tracking-tight">
               Get to Know Us
             </h4>
-            <ul className="space-y-2 text-[#DDD]">
+            <ul className="space-y-2.5">
               <li>
-                <a href="/about" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/about"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   About Yearnit
                 </a>
               </li>
               <li>
-                <a href="/about#methodology" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/about#methodology"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Editorial Standards
                 </a>
               </li>
               <li>
-                <a href="/about#methodology" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/about#methodology"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Review Methodology
                 </a>
               </li>
               <li>
-                <a href="/contact" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/contact"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Contact Us
                 </a>
               </li>
@@ -34,28 +50,44 @@ export default function Footer() {
           </div>
 
           {/* Column 2: Product Guides */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+          <div className="space-y-3">
+            <h4 className="font-bold text-white text-[14px] sm:text-[15px] tracking-tight">
               Product Guides
             </h4>
-            <ul className="space-y-2 text-[#DDD]">
+            <ul className="space-y-2.5">
               <li>
-                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                <a
+                  href="#featured-catalog"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Consumer Electronics
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                <a
+                  href="#featured-catalog"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Audio & Wearables
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
-                  Mobiles & Laptops
+                <a
+                  href="#featured-catalog"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
+                  Mobiles & Tech
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                <a
+                  href="#featured-catalog"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Home & Kitchen Gear
                 </a>
               </li>
@@ -63,28 +95,44 @@ export default function Footer() {
           </div>
 
           {/* Column 3: Affiliate Information */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+          <div className="space-y-3">
+            <h4 className="font-bold text-white text-[14px] sm:text-[15px] tracking-tight">
               Affiliate Programs
             </h4>
-            <ul className="space-y-2 text-[#DDD]">
+            <ul className="space-y-2.5">
               <li>
-                <a href="/affiliate-disclosure" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/affiliate-disclosure"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Affiliate Disclosure
                 </a>
               </li>
               <li>
-                <a href="/affiliate-disclosure#referral-mechanics" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/affiliate-disclosure#referral-mechanics"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   How Referral Links Work
                 </a>
               </li>
               <li>
-                <a href="/affiliate-disclosure#operating-statement" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/affiliate-disclosure#operating-statement"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Associates Statement
                 </a>
               </li>
               <li>
-                <a href="/affiliate-disclosure#non-affiliation-trademarks" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/affiliate-disclosure#non-affiliation-trademarks"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Non-Affiliation Notice
                 </a>
               </li>
@@ -92,28 +140,44 @@ export default function Footer() {
           </div>
 
           {/* Column 4: Help & Policies */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+          <div className="space-y-3">
+            <h4 className="font-bold text-white text-[14px] sm:text-[15px] tracking-tight">
               Help & Policies
             </h4>
-            <ul className="space-y-2 text-[#DDD]">
+            <ul className="space-y-2.5">
               <li>
-                <a href="/privacy-policy" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/privacy-policy"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Privacy Notice
                 </a>
               </li>
               <li>
-                <a href="/terms" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/terms"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Conditions of Use
                 </a>
               </li>
               <li>
-                <a href="/about#pricing-disclaimer" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/about#pricing-disclaimer"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Pricing & Availability
                 </a>
               </li>
               <li>
-                <a href="/contact" className="hover:underline hover:text-white transition block">
+                <a
+                  href="/contact"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
                   Customer Support
                 </a>
               </li>
@@ -121,10 +185,14 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Amazon-style Sub-divider with Logo & Country badge */}
+        {/* Amazon-style Divider with Brand & Regional Selectors */}
         <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-[#3a4553] flex flex-wrap items-center justify-center gap-6 text-xs text-[#CCC]">
-          <a href="/" className="flex items-center gap-2 group no-underline">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-sm">
+          <a
+            href="/"
+            style={{ color: "#FFF", textDecoration: "none" }}
+            className="flex items-center gap-2 group hover:opacity-90 transition"
+          >
+            <div className="w-7 h-7 rounded bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-sm">
               Y
             </div>
             <span className="text-lg font-bold text-white tracking-wide">
@@ -144,34 +212,54 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* 3. Amazon-style Dark Bottom Strip (#131A22) */}
-      <div className="bg-[#131A22] text-[#999] py-8 px-4 text-center text-xs space-y-3">
+      {/* Amazon-style Dark Bottom Legal Strip (#131A22) */}
+      <div className="legal-strip bg-[#131A22] text-[#9E9E9E] py-8 px-4 text-center text-xs space-y-3">
         {/* Legal Link Row */}
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          <a href="/terms" className="hover:underline hover:text-white transition">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px]">
+          <a
+            href="/terms"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
             Conditions of Use & Sale
           </a>
-          <a href="/privacy-policy" className="hover:underline hover:text-white transition">
+          <a
+            href="/privacy-policy"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
             Privacy Notice
           </a>
-          <a href="/affiliate-disclosure" className="hover:underline hover:text-white transition">
+          <a
+            href="/affiliate-disclosure"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
             Affiliate Disclosure
           </a>
-          <a href="/about" className="hover:underline hover:text-white transition">
+          <a
+            href="/about"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
             About Yearnit
           </a>
-          <a href="/contact" className="hover:underline hover:text-white transition">
+          <a
+            href="/contact"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
             Support & Grievances
           </a>
         </div>
 
         {/* Mandatory Amazon Associates Operating Agreement Statement */}
-        <p className="text-[11px] text-[#888] max-w-3xl mx-auto leading-relaxed">
+        <p className="text-[11px] text-[#7A7A7A] max-w-3xl mx-auto leading-relaxed">
           As an Amazon Associate I earn from qualifying purchases. Yearnit is an independent review platform and is not affiliated with, endorsed by, or sponsored by Amazon.com, Inc. or Amazon Seller Services Pvt. Ltd.
         </p>
 
         {/* Copyright */}
-        <p className="text-[11px] text-[#777]">
+        <p className="text-[11px] text-[#666666]">
           © {new Date().getFullYear()}, Yearnit.in, Inc. or its affiliates
         </p>
       </div>
