@@ -48,7 +48,7 @@ export default function ContactPage() {
                 <EnvelopeIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold block text-gray-800">Email Support</span>
-                  <span>support@yearnit.in / support@iyzzo.com</span>
+                  <span>support@yearnit.in</span>
                 </div>
               </div>
 
@@ -142,7 +142,7 @@ export default function ContactPage() {
       </main>
 
       <footer className="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-400">
-        <p>© {new Date().getFullYear()} Yearnit / Iyzzo. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Yearnit (yearnit.in). All rights reserved.</p>
       </footer>
     </div>
   );

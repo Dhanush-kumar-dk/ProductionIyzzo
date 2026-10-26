@@ -34,7 +34,7 @@ const INITIAL_USERS: PlatformUser[] = [
     role: "Super Administrator",
   },
   {
-    email: "creator@iyzzo.com",
+    email: "creator@yearnit.in",
     trackingid: DEFAULT_PARTNER_TAG,
     orders: 6,
     revenue: 41299.0,

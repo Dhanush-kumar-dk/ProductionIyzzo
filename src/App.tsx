@@ -19,10 +19,11 @@ import FlashDealsBar from "./components/FlashDealsBar";
 import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
-import SavedDealsModal from "./components/SavedDealsModal";
 import AdLandingPage from "./components/AdLandingPage";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import TermsOfService from "./components/TermsOfService";
+import AboutPage from "./components/AboutPage";
+import AffiliateDisclosure from "./components/AffiliateDisclosure";
 import ContactPage from "./components/ContactPage";
 import CookieConsent from "./components/CookieConsent";
 
@@ -48,7 +49,6 @@ function RouteTracker() {
 
 function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
-  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const scrollToCatalog = () => {
@@ -67,16 +67,9 @@ function HomePage() {
         </div>
       )}
 
-      {/* Saved Deals Drawer */}
-      <SavedDealsModal
-        isOpen={isWishlistOpen}
-        onClose={() => setIsWishlistOpen(false)}
-      />
-
-      {/* Main E-commerce Header */}
+      {/* Main Header */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
-        onOpenWishlist={() => setIsWishlistOpen(true)}
         onCategorySelect={setSelectedCategory}
       />
 
@@ -91,7 +84,7 @@ function HomePage() {
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* Live Flash Deals Ticker */}
+        {/* Editorial Spotlight Banner */}
         <FlashDealsBar />
 
         {/* Products Grid with Filter Toolbar */}
@@ -100,14 +93,14 @@ function HomePage() {
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* E-Commerce Value & Trust Propositions */}
+        {/* Consumer Value & Trust Propositions */}
         <TrustFeatures />
 
-        {/* Email Price Drop Alerts */}
+        {/* Editorial Product Digest */}
         <DealsNewsletter />
       </main>
 
-      {/* Comprehensive E-Commerce Footer */}
+      {/* Comprehensive Footer */}
       <Footer />
     </div>
   );
@@ -122,7 +115,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/lp" element={<AdLandingPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/affiliate-disclosure" element={<AffiliateDisclosure />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/search/:searchTerm" element={<SearchResults />} />

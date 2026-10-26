@@ -80,7 +80,7 @@ const AdminDashboard = () => {
                 <ShieldCheckIcon className="w-4 h-4" />
               </span>
               <h1 className="text-sm sm:text-base font-bold text-gray-900">
-                Iyzzo Admin Control Center
+                Yearnit Admin Control Center
               </h1>
             </div>
           </div>

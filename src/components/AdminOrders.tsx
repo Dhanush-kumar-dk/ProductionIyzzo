@@ -53,7 +53,7 @@ const SAMPLE_ORDERS: Order[] = [
   },
   {
     id: 2,
-    email: "creator@iyzzo.com",
+    email: "creator@yearnit.in",
     tracking_id: DEFAULT_PARTNER_TAG,
     item_name: "Borosil Hydra Coffeemate 300 ml Stainless Steel Travel Mug",
     category: "Kitchen & Dining",
@@ -87,7 +87,7 @@ const SAMPLE_ORDERS: Order[] = [
   },
   {
     id: 4,
-    email: "member@iyzzo.com",
+    email: "member@yearnit.in",
     tracking_id: DEFAULT_PARTNER_TAG,
     item_name: "The 5 Types of Wealth: Transformative Guide to True Freedom",
     category: "Books",
@@ -104,7 +104,7 @@ const SAMPLE_ORDERS: Order[] = [
   },
   {
     id: 5,
-    email: "member@iyzzo.com",
+    email: "member@yearnit.in",
     tracking_id: DEFAULT_PARTNER_TAG,
     item_name: "Sony WH-1000XM5 Wireless Active Noise Cancelling Headphones",
     category: "Electronics",

@@ -1,31 +1,31 @@
 import {
   ShieldCheckIcon,
-  TruckIcon,
+  ShoppingBagIcon,
+  ClipboardDocumentCheckIcon,
   ArrowPathIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
 
 export default function TrustFeatures() {
   const features = [
     {
-      icon: <ShieldCheckIcon className="w-6 h-6 text-blue-600" />,
-      title: "100% Verified Deals",
-      desc: "Curated directly from verified top product listings.",
+      icon: <ClipboardDocumentCheckIcon className="w-6 h-6 text-blue-600" />,
+      title: "Independent Research",
+      desc: "Our editorial team evaluates real-world specifications, build quality, and honest user tradeoffs.",
     },
     {
-      icon: <TruckIcon className="w-6 h-6 text-amber-500" />,
-      title: "Express Delivery Eligible",
-      desc: "Enjoy free 1-day or 2-day delivery on eligible items.",
+      icon: <ShoppingBagIcon className="w-6 h-6 text-amber-500" />,
+      title: "Direct Store Links",
+      desc: "Every recommendation links directly to official Amazon product pages with complete tracking transparency.",
     },
     {
-      icon: <TagIcon className="w-6 h-6 text-emerald-600" />,
-      title: "Real Price Drops",
-      desc: "Instant tracking of price drops, coupons, and lightning sales.",
+      icon: <ShieldCheckIcon className="w-6 h-6 text-emerald-600" />,
+      title: "Unbiased Pros & Cons",
+      desc: "We present balanced strengths, limitations, and specific target audience recommendations for each item.",
     },
     {
       icon: <ArrowPathIcon className="w-6 h-6 text-purple-600" />,
-      title: "Hassle-Free Returns",
-      desc: "Standard 7-30 days replacement & refund handled directly by verified stores.",
+      title: "Storefront Protection",
+      desc: "Official retailers handle order fulfillment, fast shipping, and customer support directly.",
     },
   ];
 

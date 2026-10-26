@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Image1 from "../assets/image1.jpg";
 import Image2 from "../assets/image2.jpg";
 import Image3 from "../assets/image3.jpg";
-import { ChevronLeftIcon, ChevronRightIcon, FireIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
+import { ChevronLeftIcon, ChevronRightIcon, SparklesIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
 
 interface Slide {
   id: number;
@@ -18,33 +18,33 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: 1,
-    tag: "⚡ MEGA DEALS FESTIVAL",
-    title: "Handpicked Top Deals",
-    highlight: "Up to 70% Off",
-    description: "Exclusive curated discounts on top-rated electronics, audio, smart watches, and home essentials.",
+    tag: "INDEPENDENT EDITORIAL SELECTION",
+    title: "Honest Product Evaluations",
+    highlight: "Tested & Researched",
+    description: "In-depth buyer guides evaluating performance, durability, and practical utility across top electronics and everyday lifestyle essentials.",
     bgGradient: "from-blue-900 via-indigo-900 to-slate-900",
     image: Image1,
-    ctaText: "Explore Top Deals",
+    ctaText: "Explore Buyer Guides",
   },
   {
     id: 2,
-    tag: "🔥 BEST VALUE FINDS",
-    title: "Trending Tech & Lifestyle",
-    highlight: "Special Member Pricing",
-    description: "Verified affiliate price drops updated hourly. Prime eligible with fast delivery right to your door.",
-    bgGradient: "from-emerald-950 via-teal-900 to-slate-900",
+    tag: "UNBIASED BUYER BREAKDOWNS",
+    title: "Clear Pros & Tradeoffs",
+    highlight: "Transparent Insights",
+    description: "We research real-world user feedback and manufacturer specs to highlight honest strengths and limitations before you purchase.",
+    bgGradient: "from-slate-900 via-teal-950 to-slate-900",
     image: Image2,
-    ctaText: "Shop Daily Drops",
+    ctaText: "Browse Top Recommendations",
   },
   {
     id: 3,
-    tag: "✨ PRIME EXCLUSIVE",
-    title: "Premium Sound & Gadgets",
-    highlight: "Massive Price Cuts",
-    description: "Experience high-fidelity wireless audio and premium accessories with guaranteed checkout protection.",
-    bgGradient: "from-purple-950 via-slate-900 to-gray-950",
+    tag: "COMMUNITY TRUST & VALUE",
+    title: "Quality Gear That Delivers",
+    highlight: "Curated Recommendations",
+    description: "Straightforward recommendations with verified specifications and direct links to official retailer product pages.",
+    bgGradient: "from-slate-950 via-zinc-900 to-gray-950",
     image: Image3,
-    ctaText: "Grab Deal Now",
+    ctaText: "View Featured Guides",
   },
 ];
 
@@ -68,7 +68,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
   return (
     <div className="w-full px-3 sm:px-6 lg:px-12 pt-4">
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[360px] sm:min-h-[420px] md:min-h-[460px] flex items-center">
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[340px] sm:min-h-[400px] md:min-h-[440px] flex items-center">
         {slides.map((slide, idx) => (
           <div
             key={slide.id}
@@ -77,7 +77,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             }`}
           >
             {/* Background image overlay with blend */}
-            <div className="absolute inset-0 opacity-25 mix-blend-overlay">
+            <div className="absolute inset-0 opacity-20 mix-blend-overlay">
               <img
                 src={slide.image}
                 alt={slide.title}
@@ -87,9 +87,9 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
             {/* Content Container */}
             <div className="relative z-20 max-w-7xl mx-auto px-6 sm:px-12 md:px-16 py-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center w-full">
-              <div className="md:col-span-7 space-y-4 text-white">
+              <div className="md:col-span-8 space-y-4 text-white">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs sm:text-sm font-semibold tracking-wider text-amber-300">
-                  <FireIcon className="w-4 h-4 text-amber-400" />
+                  <SparklesIcon className="w-4 h-4 text-amber-400" />
                   {slide.tag}
                 </div>
 
@@ -100,66 +100,55 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
                   </span>
                 </h1>
 
-                <p className="text-sm sm:text-base text-gray-200 max-w-lg leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-300 max-w-xl font-normal leading-relaxed">
                   {slide.description}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-4 pt-2">
+                <div className="pt-2 flex flex-wrap items-center gap-4">
                   <button
                     onClick={onExploreClick}
-                    className="px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 font-bold text-sm sm:text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
+                    className="px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 font-bold text-sm rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95"
                   >
-                    {slide.ctaText} →
+                    {slide.ctaText}
                   </button>
 
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-300 bg-black/30 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-white/10">
-                    <ShieldCheckIcon className="w-5 h-5 text-emerald-400" />
-                    <span>Official Verified Partner Portal</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-300 font-medium">
+                    <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
+                    <span>Independent Research & Direct Store Links</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Right featured banner image */}
-              <div className="hidden md:flex md:col-span-5 justify-center">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-blue-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-75 transition duration-1000"></div>
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    className="relative w-72 sm:w-80 md:w-96 aspect-[4/3] object-cover rounded-2xl shadow-2xl border border-white/10"
-                  />
                 </div>
               </div>
             </div>
           </div>
         ))}
 
-        {/* Carousel Arrow Controls */}
+        {/* Carousel Navigation Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 z-30 p-2.5 rounded-full bg-black/30 hover:bg-black/60 text-white backdrop-blur-md transition border border-white/10"
-          aria-label="Previous slide"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
+          aria-label="Previous Slide"
         >
           <ChevronLeftIcon className="w-5 h-5" />
         </button>
+
         <button
           onClick={nextSlide}
-          className="absolute right-4 z-30 p-2.5 rounded-full bg-black/30 hover:bg-black/60 text-white backdrop-blur-md transition border border-white/10"
-          aria-label="Next slide"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
+          aria-label="Next Slide"
         >
           <ChevronRightIcon className="w-5 h-5" />
         </button>
 
-        {/* Indicator dots */}
-        <div className="absolute bottom-4 inset-x-0 z-30 flex justify-center gap-2">
-          {slides.map((_, i) => (
+        {/* Dots indicator */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+          {slides.map((_, idx) => (
             <button
-              key={i}
-              onClick={() => setCurrent(i)}
+              key={idx}
+              onClick={() => setCurrent(idx)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                current === i ? "bg-amber-400 w-8" : "bg-white/40 w-2 hover:bg-white/70"
+                idx === current ? "w-8 bg-amber-400" : "w-2 bg-white/40"
               }`}
-              aria-label={`Go to slide ${i + 1}`}
+              aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
         </div>

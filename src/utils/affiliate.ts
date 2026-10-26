@@ -1,10 +1,11 @@
 /**
  * Amazon Affiliate & PA-API / Creators API Utilities
  * Manages tracking tags, ASIN parsing, and safe affiliate URL generation.
+ * Adheres strictly to Amazon Associates Program Operating Agreement.
  */
 
 export const DEFAULT_PARTNER_TAG =
-  (import.meta.env.VITE_DEFAULT_PARTNER_TAG as string) || "dk29112306-21.izzyo_app";
+  (import.meta.env.VITE_DEFAULT_PARTNER_TAG as string) || "dk29112306-21";
 
 export const BASE_PARTNER_TAG =
   (import.meta.env.VITE_BASE_PARTNER_TAG as string) || "dk29112306-21";
@@ -32,7 +33,7 @@ export function extractAsin(input: string): string | null {
 
 /**
  * Construct or update an Amazon Affiliate URL with the proper tracking tag.
- * Handles existing query params, missing tags, and malformed URLs gracefully.
+ * Direct amazon.in URL with no cloaking or redirection.
  */
 export function buildAffiliateUrl(rawUrl: string, customTag?: string | null): string {
   const tag = (customTag && customTag.trim().length > 0) ? customTag.trim() : getActiveTrackingId();
@@ -54,7 +55,7 @@ export function buildAffiliateUrl(rawUrl: string, customTag?: string | null): st
     // Set or overwrite the affiliate tag
     parsed.searchParams.set("tag", tag);
     
-    // Ensure clean affiliate link without tracking noise
+    // Ensure direct Amazon domain
     return parsed.toString();
   } catch {
     // If URL parsing fails, attempt regex extraction of ASIN

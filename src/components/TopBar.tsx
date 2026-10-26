@@ -4,11 +4,9 @@ import { auth } from "../firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import AdminButton from "./AdminButton";
 import { API_BASE_URL } from "../config/api";
-import { getSavedDeals } from "../utils/wishlist";
 import { getActiveTrackingId } from "../utils/affiliate";
 import {
   MagnifyingGlassIcon,
-  HeartIcon,
   UserCircleIcon,
   MapPinIcon,
   Bars3Icon,
@@ -16,7 +14,6 @@ import {
   SparklesIcon,
   ChevronDownIcon,
   ArrowRightOnRectangleIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
 
 interface TopBarProps {
@@ -27,17 +24,14 @@ interface TopBarProps {
 
 export default function TopBar({
   openLogIn,
-  onOpenWishlist,
   onCategorySelect,
 }: TopBarProps) {
   const [user, setUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSearching, setIsSearching] = useState(false);
-  const [wishlistCount, setWishlistCount] = useState(0);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -48,14 +42,6 @@ export default function TopBar({
       setUser(currentUser);
     });
     return () => unsubscribe();
-  }, []);
-
-  // Track wishlist count
-  useEffect(() => {
-    const updateCount = () => setWishlistCount(getSavedDeals().length);
-    updateCount();
-    window.addEventListener("wishlistUpdated", updateCount);
-    return () => window.removeEventListener("wishlistUpdated", updateCount);
   }, []);
 
   // Close user dropdown on outside click
@@ -111,7 +97,6 @@ export default function TopBar({
       });
     } catch (error) {
       console.warn("Backend search fallback:", error);
-      // Seamlessly navigate to search page; it handles offline / local matches & direct Amazon query
       navigate(`/search/${encodeURIComponent(trimmedSearch)}`);
     } finally {
       setIsSearching(false);
@@ -141,18 +126,18 @@ export default function TopBar({
       <div className="w-full bg-[#131921] text-gray-300 text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 lg:px-12 border-b border-gray-800 flex items-center justify-between font-poppins">
         <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="bg-amber-400 text-gray-950 font-bold px-2 py-0.5 rounded text-[10px] tracking-wide uppercase">
-            Verified Partner
+            Independent Curation
           </span>
           <span className="text-gray-300 hidden xs:inline">
-            ⚡ Up to 70% Off Verified Drops • Free Express Shipping on Eligible Items
+            Yearnit — Independent Product Reviews & In-Depth Buyer Comparisons
           </span>
           <span className="text-gray-300 xs:hidden">
-            ⚡ Up to 70% Off Today's Top Deals
+            Yearnit — Product Reviews & Guides
           </span>
         </div>
 
         <div className="flex items-center gap-4 text-gray-400 text-[11px] flex-shrink-0">
-          <span className="hidden md:inline">24/7 Verified Price Tracking</span>
+          <span className="hidden md:inline">Direct Partner Storefront Links</span>
           <span className="text-gray-600 hidden md:inline">|</span>
           <span className="flex items-center gap-1 text-gray-300">
             <span>India</span>
@@ -173,6 +158,21 @@ export default function TopBar({
             >
               <Bars3Icon className="w-6 h-6" />
             </button>
+
+            {/* Consistent Brand Logo & Name */}
+            <a href="/" className="flex items-center gap-2 group no-underline">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-xl shadow-md">
+                Y
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-black text-white tracking-wide group-hover:text-amber-400 transition">
+                  Yearnit
+                </span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-widest -mt-1 hidden sm:block">
+                  Buyer Guides
+                </span>
+              </div>
+            </a>
           </div>
 
           {/* Location Pill (Desktop) */}
@@ -199,7 +199,7 @@ export default function TopBar({
                   <option value="Electronics">Electronics</option>
                   <option value="Clothing">Fashion</option>
                   <option value="Home">Home & Living</option>
-                  <option value="Category 3">Gadgets</option>
+                  <option value="Gadgets">Gadgets</option>
                 </select>
                 <ChevronDownIcon className="w-3.5 h-3.5 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -208,7 +208,7 @@ export default function TopBar({
               <div className="relative flex-1 flex items-center">
                 <input
                   type="text"
-                  placeholder="Search deals, brands, electronics, fashion..."
+                  placeholder="Search product guides, comparisons, categories..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
@@ -244,21 +244,19 @@ export default function TopBar({
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-            {/* Wishlist Button */}
-            <button
-              onClick={onOpenWishlist}
-              className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition flex items-center gap-1.5"
-              title="View saved wishlist deals"
-              aria-label="Saved wishlist deals"
+            {/* Quick Links */}
+            <a
+              href="/about"
+              className="hidden md:inline-flex text-xs font-semibold text-gray-300 hover:text-white transition px-2 py-1 rounded"
             >
-              <HeartIcon className="w-6 h-6 text-red-400" />
-              <span className="hidden md:inline text-xs font-semibold">Wishlist</span>
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-amber-400 text-gray-950 text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
-                  {wishlistCount}
-                </span>
-              )}
-            </button>
+              About
+            </a>
+            <a
+              href="/affiliate-disclosure"
+              className="hidden md:inline-flex text-xs font-semibold text-gray-300 hover:text-white transition px-2 py-1 rounded"
+            >
+              Disclosure
+            </a>
 
             {/* Admin Badge/Button */}
             <div className="hidden lg:block">
@@ -298,45 +296,34 @@ export default function TopBar({
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 text-gray-800 animate-fade-in font-poppins">
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/70">
-                      <p className="text-xs font-bold text-gray-900 truncate">
-                        {user?.displayName || "Signed In Member"}
-                      </p>
-                      <p className="text-[11px] text-gray-500 truncate">
+                      <p className="text-xs text-gray-500">Signed in as</p>
+                      <p className="text-xs font-bold text-gray-900 truncate mt-0.5">
                         {user?.email || localStorage.getItem("email")}
                       </p>
                     </div>
 
                     <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          if (onOpenWishlist) onOpenWishlist();
-                        }}
-                        className="w-full px-4 py-2 text-xs font-medium text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition"
+                      <a
+                        href="/affiliate-disclosure"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition"
                       >
-                        <HeartIcon className="w-4 h-4 text-red-500" />
-                        My Saved Deals ({wishlistCount})
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          navigate("/admin/dashboard");
-                        }}
-                        className="w-full px-4 py-2 text-xs font-medium text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition"
+                        <span>Affiliate Disclosure</span>
+                      </a>
+                      <a
+                        href="/about"
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition"
                       >
-                        <TagIcon className="w-4 h-4 text-purple-600" />
-                        Admin Dashboard
-                      </button>
+                        <span>About Yearnit</span>
+                      </a>
                     </div>
 
                     <div className="border-t border-gray-100 pt-1">
                       <button
                         onClick={handleLogout}
-                        className="w-full px-4 py-2 text-xs font-semibold text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 font-semibold transition"
                       >
                         <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                        Log Out
+                        <span>Sign Out</span>
                       </button>
                     </div>
                   </div>
@@ -345,9 +332,9 @@ export default function TopBar({
             ) : (
               <button
                 onClick={openLogIn}
-                className="bg-[#FEB800] hover:bg-[#F3A847] active:bg-[#E59737] text-gray-950 font-bold text-xs sm:text-sm px-3.5 sm:px-5 py-2 rounded-xl transition shadow-sm transform hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                className="flex items-center gap-1.5 bg-[#FEB800] hover:bg-[#F3A847] active:bg-[#E59737] text-gray-950 px-3.5 py-1.5 sm:py-2 rounded-xl font-bold text-xs shadow-sm transition"
               >
-                <UserCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900" />
+                <UserCircleIcon className="w-4 h-4 stroke-2" />
                 <span>Sign In</span>
               </button>
             )}
@@ -361,7 +348,7 @@ export default function TopBar({
             className="flex items-center gap-1 text-white hover:text-amber-400 font-bold whitespace-nowrap"
           >
             <SparklesIcon className="w-4 h-4 text-amber-400" />
-            All Featured Deals
+            All Guides
           </button>
           <button
             onClick={() => handleQuickCategoryClick("Electronics")}
@@ -376,7 +363,7 @@ export default function TopBar({
             Fashion & Apparel
           </button>
           <button
-            onClick={() => handleQuickCategoryClick("Gadgets")}
+            onClick={() => handleQuickCategoryClick("Audio")}
             className="hover:text-amber-400 whitespace-nowrap transition"
           >
             Audio & Wearables
@@ -388,13 +375,13 @@ export default function TopBar({
             Home & Kitchen
           </button>
           <button
-            onClick={() => handleQuickCategoryClick("Under ₹999")}
-            className="hover:text-amber-400 whitespace-nowrap transition text-yellow-300 font-semibold"
+            onClick={() => handleQuickCategoryClick("All")}
+            className="hover:text-amber-400 whitespace-nowrap transition text-amber-300 font-semibold"
           >
-            🏷️ Budget Drops
+            Editorial Recommendations
           </button>
-          <span className="text-gray-500 ml-auto hidden md:inline text-[11px]">
-            🔥 Real-Time Affiliate Tracking
+          <span className="text-gray-400 ml-auto hidden md:inline text-[11px]">
+            Independent Product Research
           </span>
         </div>
       </header>
@@ -412,7 +399,7 @@ export default function TopBar({
               <div className="flex items-center gap-2">
                 <UserCircleIcon className="w-7 h-7 text-amber-400" />
                 <span className="font-bold text-sm">
-                  {user ? `Hello, ${user.displayName || "Member"}` : "Hello, Sign In"}
+                  {user ? `Hello, ${user.displayName || "Member"}` : "Hello, Welcome"}
                 </span>
               </div>
               <button
@@ -428,10 +415,10 @@ export default function TopBar({
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  Shop Deals by Department
+                  Browse by Department
                 </h4>
                 <div className="space-y-1">
-                  {["All", "Electronics", "Clothing", "Gadgets", "Home"].map((cat) => (
+                  {["All", "Electronics", "Clothing", "Audio", "Home"].map((cat) => (
                     <button
                       key={cat}
                       onClick={() => {
@@ -440,7 +427,7 @@ export default function TopBar({
                       }}
                       className="w-full text-left py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
                     >
-                      {cat} Deals
+                      {cat} Guides
                     </button>
                   ))}
                 </div>
@@ -450,20 +437,40 @@ export default function TopBar({
 
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  My Shopping
+                  About & Policies
                 </h4>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    if (onOpenWishlist) onOpenWishlist();
-                  }}
-                  className="w-full text-left py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center justify-between"
-                >
-                  <span>Saved Deals</span>
-                  <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-bold">
-                    {wishlistCount}
-                  </span>
-                </button>
+                <div className="space-y-1">
+                  <a
+                    href="/about"
+                    className="block py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                  >
+                    About Yearnit
+                  </a>
+                  <a
+                    href="/affiliate-disclosure"
+                    className="block py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                  >
+                    Affiliate Disclosure
+                  </a>
+                  <a
+                    href="/privacy-policy"
+                    className="block py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a
+                    href="/terms"
+                    className="block py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                  >
+                    Terms of Service
+                  </a>
+                  <a
+                    href="/contact"
+                    className="block py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                  >
+                    Contact Us
+                  </a>
+                </div>
               </div>
 
               {user && (
@@ -507,63 +514,6 @@ export default function TopBar({
                   Sign In / Register
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Discount Pill for unregistered guests on mobile */}
-      {!user && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 sm:hidden">
-          <button
-            onClick={() => setShowRegisterModal(true)}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-white/20 animate-bounce hover:animate-none"
-          >
-            <span>🎁</span>
-            <span>Get Exclusive Drop Alerts</span>
-          </button>
-        </div>
-      )}
-
-      {/* Guest Offer Modal */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative font-poppins animate-fade-in">
-            <button
-              onClick={() => setShowRegisterModal(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 p-1"
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
-
-            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4 mx-auto text-2xl">
-              🎁
-            </div>
-
-            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">
-              Unlock Exclusive Price Alerts
-            </h3>
-            <p className="text-xs text-gray-500 text-center mb-5 leading-relaxed">
-              Create a free account to track price drops on your favorite electronics, save custom deals, and get notified on flash sales.
-            </p>
-
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setShowRegisterModal(false);
-                  openLogIn();
-                }}
-                className="w-full py-2.5 bg-[#FEB800] hover:bg-[#F3A847] text-gray-950 rounded-xl text-xs font-bold shadow-md transition"
-              >
-                Sign In / Register Now
-              </button>
-              <button
-                onClick={() => setShowRegisterModal(false)}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
-              >
-                Maybe Later
-              </button>
             </div>
           </div>
         </div>

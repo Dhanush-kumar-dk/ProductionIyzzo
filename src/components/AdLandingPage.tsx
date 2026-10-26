@@ -26,7 +26,7 @@ export default function AdLandingPage() {
 
   useEffect(() => {
     // Set landing page meta title and description
-    document.title = "Exclusive Deal Drops & Verified Price Alerts | Yearnit / Iyzzo";
+    document.title = "Verified Buyer Guides & Product Recommendations | Yearnit";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute(
@@ -437,38 +437,52 @@ export default function AdLandingPage() {
         </div>
       </section>
 
-      {/* Compliance Footer (Required for Meta and Google Ads Approval) */}
-      <footer className="border-t border-white/10 bg-slate-950 py-10 px-4 sm:px-8 text-xs text-gray-500">
+      {/* Compliance Footer (Required for Meta and Google Ads Approval & Amazon Associates) */}
+      <footer className="border-t border-white/10 bg-slate-950 py-10 px-4 sm:px-8 text-xs text-gray-500 font-poppins">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white text-sm">Yearnit / Iyzzo</span>
+              <span className="font-bold text-white text-sm">Yearnit</span>
               <span>•</span>
-              <span>Deals Discovery & Price Tracking</span>
+              <span>Independent Consumer Guidance</span>
             </div>
 
             {/* Mandatory Compliance Links */}
-            <div className="flex items-center gap-4 text-xs">
-              <a href="/privacy" className="hover:text-gray-300 transition underline">
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <a href="/privacy-policy" className="hover:text-gray-300 transition underline">
                 Privacy Policy
               </a>
               <span>•</span>
               <a href="/terms" className="hover:text-gray-300 transition underline">
-                Terms of Service
+                Terms
+              </a>
+              <span>•</span>
+              <a href="/about" className="hover:text-gray-300 transition underline">
+                About
+              </a>
+              <span>•</span>
+              <a href="/affiliate-disclosure" className="hover:text-gray-300 transition underline">
+                Affiliate Disclosure
               </a>
               <span>•</span>
               <a href="/contact" className="hover:text-gray-300 transition underline">
-                Contact & Grievance
+                Contact
               </a>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/5 text-[11px] text-gray-500 leading-relaxed text-center sm:text-left space-y-2">
-            <p>
-              <strong>Advertising Disclosure:</strong> Yearnit operates an independent shopping recommendation and price monitoring service. We may receive referral commissions when purchases are made through our curated links at zero additional cost to the consumer.
+          <div className="pt-4 border-t border-white/5 text-[11px] text-gray-400 leading-relaxed text-center sm:text-left space-y-2">
+            <p className="font-semibold text-amber-300">
+              As an Amazon Associate I earn from qualifying purchases.
             </p>
             <p>
-              © {new Date().getFullYear()} Yearnit (yearnit.in) / Iyzzo. All rights reserved. Registered in India.
+              <strong>Non-Affiliation Notice:</strong> Yearnit is an independent review platform. Yearnit is not affiliated with, endorsed by, or sponsored by Amazon.com, Inc. or Amazon Seller Services Pvt. Ltd.
+            </p>
+            <p>
+              Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product. Yearnit is strictly not directed at children under 13 years of age.
+            </p>
+            <p className="text-gray-500">
+              © {new Date().getFullYear()} Yearnit (yearnit.in). All rights reserved. Registered in India.
             </p>
           </div>
         </div>

@@ -16,7 +16,7 @@ export default function TermsOfService() {
             <ArrowLeftIcon className="w-4 h-4" />
             <span>Back to Home</span>
           </button>
-          <span className="text-sm font-bold tracking-tight">Terms of Service</span>
+          <span className="text-sm font-bold tracking-tight">Yearnit Terms of Service</span>
         </div>
       </header>
 
@@ -28,68 +28,81 @@ export default function TermsOfService() {
               Terms of Service
             </h1>
             <p className="text-xs text-gray-400">
-              Last Updated: October 27, 2026
+              Last Updated: October 27, 2026 • Effective for yearnit.in
             </p>
           </div>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
-              1. Acceptance of Terms
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
+              1. Acceptance of Terms & Eligibility
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              By accessing Yearnit / Iyzzo, subscribing to deal updates, or submitting your contact information, you agree to comply with and be bound by these Terms of Service. If you disagree with any portion of these terms, please discontinue use of this site immediately.
+              By accessing Yearnit (https://yearnit.in), reviewing our buying guides, or subscribing to our newsletters, you agree to comply with and be bound by these Terms of Service.
+            </p>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              <strong>Age Restriction:</strong> You must be at least 18 years of age to access or use this site. <strong>Yearnit is strictly not directed at children under 13 years of age.</strong>
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
-              2. Nature of Service & Affiliate Disclosure
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
+              2. Nature of Service & Amazon Associates Disclosure
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              We operate an e-commerce deals curation and price alert platform. We curate verified discounts, coupons, and promotional opportunities. When you click on product links on our site and make purchases, we may earn an affiliate commission at no extra cost to you. All transactions, order fulfillments, deliveries, and returns are handled directly by the respective merchant platform.
+              Yearnit is an independent product research and review publication. We participate in the Amazon Associates Program.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-semibold italic">
+              "As an Amazon Associate I earn from qualifying purchases."
+            </div>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              When you click on outbound merchant links and make purchases, we may receive an affiliate referral fee from Amazon at no extra cost to you. All product purchases, order transactions, shipping, warranties, and returns are executed directly between you and the respective retailer.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
               3. Pricing & Availability Disclaimer
             </h2>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 leading-relaxed italic">
+              "Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product."
+            </div>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Product prices, stock levels, and promotional discounts fluctuate frequently and are subject to change without notice. While we strive to display accurate, up-to-the-minute data, the price displayed on the merchant checkout screen at the time of purchase is the final binding price.
+              Yearnit does not sell, warehouse, ship, or warranty any physical goods directly. Prices, discounts, and item availability change frequently on merchant websites. Always confirm the final price and terms on Amazon prior to making any purchase.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
-              4. SMS & WhatsApp Communication Consent
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
+              4. Non-Affiliation & Intellectual Property
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              By voluntarily submitting your phone number or email on our landing page, you grant us permission to send you deal updates, price alerts, and member specials. You can opt out of communications at any time by replying "STOP" or contacting our support team.
+              <strong>Yearnit is not affiliated with Amazon.</strong> Yearnit is an independent platform. Amazon, the Amazon logo, and other related trademarks are the property of Amazon.com, Inc. or its affiliates. All original editorial reviews, summaries, pros and cons, and site designs are the intellectual property of Yearnit.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
               5. Limitation of Liability
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Yearnit / Iyzzo shall not be liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the site, product defects, or third-party merchant service disruptions.
+              To the maximum extent permitted by applicable Indian law, Yearnit, its owners, and its operators shall not be liable for any direct, indirect, incidental, or consequential damages resulting from product purchases made on external partner sites, price fluctuations, out-of-stock items, or merchant delivery delays.
             </p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
-              6. Governing Law
+            <h2 className="text-base font-bold text-gray-900 border-l-4 border-amber-500 pl-3">
+              6. Contact Information
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              These terms shall be governed by and construed in accordance with the laws of India, with exclusive jurisdiction in the courts of Chennai, Tamil Nadu.
+              For any questions regarding these Terms, contact our compliance team at <a href="mailto:support@yearnit.in" className="text-blue-600 font-semibold underline">support@yearnit.in</a>.
             </p>
           </section>
         </div>
       </main>
 
+      {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-400">
-        <p>© {new Date().getFullYear()} Yearnit / Iyzzo. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Yearnit (yearnit.in). All rights reserved.</p>
       </footer>
     </div>
   );
