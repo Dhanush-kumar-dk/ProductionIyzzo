@@ -1,26 +1,33 @@
 import { useEffect, useState } from "react";
 import { auth } from "../firebase";
-import { User } from "firebase/auth";
+import { User, onAuthStateChanged } from "firebase/auth";
+
 function Googlecard() {
-  const [Currentuser, SetCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        SetCurrentUser(user);
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
     });
+    return () => unsubscribe();
   }, []);
 
   return (
-    <div className="flex items-center ml-1 cursor-pointer gap-3 relative ">
-      <img
-        src={Currentuser?.photoURL || ""}
-        className="w-12  h-12 min-w-[44px] object-contain rounded-full shadow-lg"
-        alt=""
-        referrerPolicy="no-referrer"
-      />
+    <div className="flex items-center ml-1 cursor-pointer gap-3 relative">
+      {currentUser?.photoURL ? (
+        <img
+          src={currentUser.photoURL}
+          className="w-10 h-10 min-w-[40px] object-cover rounded-full shadow-md"
+          alt={currentUser.displayName || "User avatar"}
+          referrerPolicy="no-referrer"
+        />
+      ) : (
+        <div className="w-10 h-10 min-w-[40px] bg-blue-100 text-blue-600 font-bold rounded-full flex items-center justify-center text-sm shadow-sm">
+          {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : "U"}
+        </div>
+      )}
     </div>
   );
 }
+
 export default Googlecard;

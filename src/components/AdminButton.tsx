@@ -1,65 +1,59 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { verifyIsAdmin } from "../utils/admin";
+import { ShieldCheckIcon } from "@heroicons/react/24/solid";
 
 const AdminButton = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-
-  const checkAdminStatus = async () => {
-    try {
-      const res = await axios.get(
-        "https://affiliate-server-8irx.onrender.com/check-admin",
-        { withCredentials: true }
-      );
-      setIsAdmin(!!res.data.isAdmin);
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      setIsAdmin(false);
-    } finally {
-      setIsChecking(false);
-    }
-  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsChecking(true);
-        checkAdminStatus();
-      } else {
-        setIsAdmin(false);
-        setIsChecking(false);
+    let isMounted = true;
+
+    const checkStatus = async (user: User | null) => {
+      const adminVerified = await verifyIsAdmin(user);
+      if (isMounted) {
+        setIsAdmin(adminVerified);
       }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      checkStatus(user);
     });
 
-    return () => unsubscribe();
+    // Also check initial cached state
+    checkStatus(auth.currentUser);
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
-  if (isChecking || !isAdmin) return null;
+  if (!isAdmin) return null;
 
   return (
     <button
       onClick={() => navigate("/admin/dashboard")}
       className="
-        px-4 sm:px-6
-        py-2 sm:py-2.5
-        text-sm sm:text-base
-        font-semibold
+        inline-flex items-center gap-1.5
+        px-3.5 py-1.5
+        text-xs font-bold
         text-white
         rounded-xl
-        
-        bg-gradient-to-r from-[#1E90FF] to-[#1C86EE]
-        hover:from-[#1C86EE] hover:to-[#1E90FF]
-
-        shadow-md hover:shadow-xl
+        bg-gradient-to-r from-purple-600 to-indigo-600
+        hover:from-purple-700 hover:to-indigo-700
+        shadow-sm hover:shadow-md
+        border border-purple-400/30
         transform hover:scale-105 active:scale-95
-        transition-all duration-300 ease-in-out
+        transition-all duration-200
       "
+      title="Open Admin Management Console"
     >
-      Admin Dashboard
+      <ShieldCheckIcon className="w-4 h-4 text-amber-300" />
+      <span>Admin Console</span>
     </button>
   );
 };

@@ -1,17 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import Logo from "../assets/Tile-Logo.png";
 import AdminButton from "./AdminButton";
+import { API_BASE_URL } from "../config/api";
+import { getSavedDeals } from "../utils/wishlist";
+import { getActiveTrackingId } from "../utils/affiliate";
+import {
+  MagnifyingGlassIcon,
+  HeartIcon,
+  UserCircleIcon,
+  MapPinIcon,
+  Bars3Icon,
+  XMarkIcon,
+  SparklesIcon,
+  ChevronDownIcon,
+  ArrowRightOnRectangleIcon,
+  TagIcon,
+} from "@heroicons/react/24/outline";
 
-export default function TopBar({ openLogIn }: { openLogIn: () => void }) {
-  const [user, setUser] = useState<any>(null);
+interface TopBarProps {
+  openLogIn: () => void;
+  onOpenWishlist?: () => void;
+  onCategorySelect?: (category: string) => void;
+}
+
+export default function TopBar({
+  openLogIn,
+  onOpenWishlist,
+  onCategorySelect,
+}: TopBarProps) {
+  const [user, setUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [isSearching, setIsSearching] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
+  const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   // Track auth state
@@ -22,60 +51,71 @@ export default function TopBar({ openLogIn }: { openLogIn: () => void }) {
     return () => unsubscribe();
   }, []);
 
-  // Track screen width (< 800px = mobile)
+  // Track wishlist count
   useEffect(() => {
-    const checkMobile = () => {
-      if (typeof window !== "undefined") {
-        setIsMobile(window.innerWidth < 800);
+    const updateCount = () => setWishlistCount(getSavedDeals().length);
+    updateCount();
+    window.addEventListener("wishlistUpdated", updateCount);
+    return () => window.removeEventListener("wishlistUpdated", updateCount);
+  }, []);
+
+  // Close user dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    localStorage.clear();
-    await fetch("https://affiliate-server-8irx.onrender.com/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    window.location.reload();
+    try {
+      await signOut(auth);
+      localStorage.clear();
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      window.location.reload();
+    }
   };
 
   const handleSearch = async () => {
     const trimmedSearch = searchTerm.trim();
     if (!trimmedSearch) {
-      alert("Please enter a search term");
-      return;
-    }
-    if (!selectedCategory) {
-      alert("Please select a category first");
       return;
     }
 
+    setIsSearching(true);
     try {
-      const partnerTag = localStorage.getItem("trackingId");
-      const response = await fetch(
-        "https://affiliate-server-8irx.onrender.com/search",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            keyword: trimmedSearch,
-            searchIndex: selectedCategory,
-            partnerTag,
-          }),
-        }
-      );
+      const partnerTag = getActiveTrackingId();
+      const searchCat = selectedCategory === "All" ? "All" : selectedCategory;
+      const response = await fetch(`${API_BASE_URL}/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keyword: trimmedSearch,
+          searchIndex: searchCat,
+          partnerTag,
+        }),
+      });
 
-      if (!response.ok) throw new Error("Failed to fetch results");
+      if (!response.ok) throw new Error("Search request did not return 200");
       const data = await response.json();
-      navigate(`/search/${trimmedSearch}`, { state: { results: data } });
+      navigate(`/search/${encodeURIComponent(trimmedSearch)}`, {
+        state: { results: data },
+      });
     } catch (error) {
-      console.error("Error fetching search results:", error);
-      alert("Error fetching results");
+      console.warn("Backend search fallback:", error);
+      // Seamlessly navigate to search page; it handles offline / local matches & direct Amazon query
+      navigate(`/search/${encodeURIComponent(trimmedSearch)}`);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -86,179 +126,463 @@ export default function TopBar({ openLogIn }: { openLogIn: () => void }) {
     }
   };
 
-  const openRegisterModal = () => {
-    setShowRegisterModal(true);
-  };
-
-  const closeRegisterModal = () => {
-    setShowRegisterModal(false);
+  const handleQuickCategoryClick = (categoryName: string) => {
+    if (onCategorySelect) {
+      onCategorySelect(categoryName === "All" ? "" : categoryName);
+    }
+    const catalogEl = document.getElementById("featured-catalog");
+    if (catalogEl) {
+      catalogEl.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
     <>
-      <header className="font-poppins w-full bg-white shadow-md px-3 sm:px-6 lg:px-12 py-3 sticky top-0 z-30">
-        <div className="flex items-center w-full gap-3 sm:gap-5 lg:gap-6 flex-wrap">
-          {/* Logo (responsive) */}
-          <div className="flex-shrink-0">
-            <img
-              className="h-6 sm:h-8 md:h-10 w-auto"
-              src={Logo}
-              alt="Logo"
-            />
-          </div>
+      {/* 1. Top Announcement & Compliance Bar */}
+      <div className="w-full bg-[#131921] text-gray-300 text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 lg:px-12 border-b border-gray-800 flex items-center justify-between font-poppins">
+        <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
+          <span className="bg-amber-400 text-gray-950 font-bold px-2 py-0.5 rounded text-[10px] tracking-wide uppercase">
+            Amazon Partner
+          </span>
+          <span className="text-gray-300 hidden xs:inline">
+            ⚡ Up to 70% Off Verified Amazon Drops • Free Prime Shipping on Eligible Items
+          </span>
+          <span className="text-gray-300 xs:hidden">
+            ⚡ Up to 70% Off Today's Amazon Deals
+          </span>
+        </div>
 
-          {/* Centered Search Bar */}
-          <div className="flex-grow flex justify-center">
-            <div className="flex items-center bg-[#2790C3] text-white rounded-full px-4 py-2 w-full max-w-3xl min-w-[220px]">
-              {/* Search button with icon */}
-              <button
-                type="button"
-                onClick={handleSearch}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition"
-                aria-label="Search"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"
-                  />
-                </svg>
-              </button>
+        <div className="flex items-center gap-4 text-gray-400 text-[11px] flex-shrink-0">
+          <span className="hidden md:inline">24/7 Verified Price Tracking</span>
+          <span className="text-gray-600 hidden md:inline">|</span>
+          <span className="flex items-center gap-1 text-gray-300">
+            <span>India</span>
+            <span>🇮🇳</span>
+          </span>
+        </div>
+      </div>
 
-              {/* Search input */}
-              <input
-                type="text"
-                placeholder="Search for amazing deals..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className="flex-grow bg-transparent text-white px-3 text-sm sm:text-base outline-none placeholder-white/80"
+      {/* 2. Main E-Commerce Header */}
+      <header className="font-poppins w-full bg-[#1A222D] text-white shadow-lg sticky top-0 z-40 border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-6">
+          {/* Left: Mobile Toggle & Brand Logo */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition"
+              aria-label="Open mobile menu"
+            >
+              <Bars3Icon className="w-6 h-6" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 focus:outline-none group text-left"
+              aria-label="Iyzzo Deals Homepage"
+            >
+              <img
+                className="h-7 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+                src={Logo}
+                alt="Iyzzo Logo"
               />
-
-              {/* Dropdown (no border) */}
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="
-                    appearance-none
-                    bg-white text-[#2790C3]
-                    pl-3 pr-8 py-1.5
-                    rounded-full 
-                    text-xs sm:text-sm cursor-pointer
-                    outline-none focus:outline-none focus:ring-0
-                  "
-                >
-                  <option value="">📂 Choose</option>
-                  <option value="All">🛒 All</option>
-                  <option value="Electronics">🔌 Electronics</option>
-                  <option value="Clothing">👕 Clothing</option>
-                  <option value="Category 3">✨ Category 3</option>
-                </select>
-
-                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#2790C3] text-xs">
-                  ▼
+              <div className="hidden sm:block">
+                <span className="text-lg font-black tracking-tight text-white block leading-none">
+                  Iyzzo<span className="text-amber-400">.</span>
+                </span>
+                <span className="text-[10px] font-medium text-gray-400 tracking-wider uppercase block">
+                  Amazon Deals
                 </span>
               </div>
+            </button>
+          </div>
+
+          {/* Location Pill (Desktop) */}
+          <div className="hidden xl:flex items-center gap-1.5 text-xs text-gray-300 hover:text-white cursor-pointer px-2 py-1 rounded hover:border hover:border-white/30 border border-transparent transition">
+            <MapPinIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="leading-tight">
+              <span className="text-[10px] text-gray-400 block">Deliver to</span>
+              <span className="font-bold text-white block">India</span>
             </div>
           </div>
 
-          {/* Right side buttons */}
-          <div className="flex-shrink-0 flex items-center gap-3 ml-0 sm:ml-3 mt-2 sm:mt-0">
-            {user && <AdminButton />}
+          {/* Center: Advanced E-commerce Omnibar Search */}
+          <div className="flex-1 max-w-2xl mx-1 sm:mx-2">
+            <div className="flex items-center bg-white rounded-xl shadow-inner focus-within:ring-2 focus-within:ring-amber-400 overflow-hidden text-gray-900 border border-gray-200">
+              {/* Category Dropdown */}
+              <div className="relative border-r border-gray-200 hidden sm:block">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  aria-label="Filter search category"
+                  className="appearance-none bg-gray-50 hover:bg-gray-100 text-gray-800 text-xs font-semibold py-2.5 pl-3 pr-7 cursor-pointer outline-none transition"
+                >
+                  <option value="All">All Categories</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Clothing">Fashion</option>
+                  <option value="Home">Home & Living</option>
+                  <option value="Category 3">Gadgets</option>
+                </select>
+                <ChevronDownIcon className="w-3.5 h-3.5 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
 
-            {/* Desktop / tablet: show Register in top bar when not logged in */}
-            {!isMobile && !user && (
+              {/* Text Input */}
+              <div className="relative flex-1 flex items-center">
+                <input
+                  type="text"
+                  placeholder="Search deals, brands, electronics, fashion..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="w-full py-2 sm:py-2.5 px-3 text-xs sm:text-sm text-gray-900 outline-none placeholder-gray-400"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="p-1 text-gray-400 hover:text-gray-600 mr-1"
+                    aria-label="Clear search text"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Submit Button */}
               <button
-                className="bg-[#2790C3] text-white px-4 py-2 rounded-md text-sm hover:bg-[#1f7aa6] transition"
+                type="button"
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="bg-[#FEB800] hover:bg-[#F3A847] active:bg-[#E59737] text-gray-950 px-4 py-2.5 transition flex items-center justify-center disabled:opacity-50"
+                aria-label="Execute search"
+              >
+                {isSearching ? (
+                  <div className="w-4 h-4 border-2 border-gray-950 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <MagnifyingGlassIcon className="w-5 h-5 stroke-[2.5]" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+            {/* Wishlist Button */}
+            <button
+              onClick={onOpenWishlist}
+              className="relative p-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition flex items-center gap-1.5"
+              title="View saved wishlist deals"
+              aria-label="Saved wishlist deals"
+            >
+              <HeartIcon className="w-6 h-6 text-red-400" />
+              <span className="hidden md:inline text-xs font-semibold">Wishlist</span>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-400 text-gray-950 text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
+
+            {/* Admin Badge/Button */}
+            <div className="hidden lg:block">
+              <AdminButton />
+            </div>
+
+            {/* User Account / Auth Dropdown */}
+            {(user || localStorage.getItem("email")) ? (
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/10 transition text-left"
+                  aria-label="User Account Menu"
+                >
+                  {user?.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || "User"}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-amber-400"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-gray-950 font-bold flex items-center justify-center text-xs">
+                      {(user?.email || localStorage.getItem("email") || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="hidden md:block leading-tight">
+                    <span className="text-[10px] text-gray-400 block">
+                      Hello, {user?.displayName ? user.displayName.split(" ")[0] : (localStorage.getItem("email") ? localStorage.getItem("email")!.split("@")[0] : "Member")}
+                    </span>
+                    <span className="text-xs font-bold text-white block flex items-center gap-1">
+                      Account <ChevronDownIcon className="w-3 h-3 text-gray-400" />
+                    </span>
+                  </div>
+                </button>
+
+                {/* Account Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 text-gray-800 animate-fade-in font-poppins">
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/70">
+                      <p className="text-xs font-bold text-gray-900 truncate">
+                        {user?.displayName || "Signed In Member"}
+                      </p>
+                      <p className="text-[11px] text-gray-500 truncate">
+                        {user?.email || localStorage.getItem("email")}
+                      </p>
+                    </div>
+
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          if (onOpenWishlist) onOpenWishlist();
+                        }}
+                        className="w-full px-4 py-2 text-xs font-medium text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition"
+                      >
+                        <HeartIcon className="w-4 h-4 text-red-500" />
+                        My Saved Deals ({wishlistCount})
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          navigate("/admin/dashboard");
+                        }}
+                        className="w-full px-4 py-2 text-xs font-medium text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition"
+                      >
+                        <TagIcon className="w-4 h-4 text-purple-600" />
+                        Admin Dashboard
+                      </button>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-xs font-semibold text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition"
+                      >
+                        <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                        Log Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
                 onClick={openLogIn}
+                className="bg-[#FEB800] hover:bg-[#F3A847] active:bg-[#E59737] text-gray-950 font-bold text-xs sm:text-sm px-3.5 sm:px-5 py-2 rounded-xl transition shadow-sm transform hover:scale-105 active:scale-95 flex items-center gap-1.5"
               >
-                Register
-              </button>
-            )}
-
-            {/* Desktop / tablet logout */}
-            {!isMobile && user && (
-              <button
-                className="bg-[#2790C3] text-white px-4 py-2 rounded-md text-sm hover:bg-[#1f7aa6] transition"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            )}
-
-            {/* Mobile logout (keep logout visible on mobile if logged in) */}
-            {isMobile && user && (
-              <button
-                className="bg-[#2790C3] text-white px-4 py-2 rounded-md text-sm hover:bg-[#1f7aa6] transition"
-                onClick={handleLogout}
-              >
-                Logout
+                <UserCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900" />
+                <span>Sign In</span>
               </button>
             )}
           </div>
         </div>
+
+        {/* 3. Secondary Sub-Nav Bar (Category Shortcuts) */}
+        <div className="bg-[#232F3E] text-xs text-gray-300 px-3 sm:px-6 lg:px-12 py-2 border-t border-gray-700/60 flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-none font-medium">
+          <button
+            onClick={() => handleQuickCategoryClick("All")}
+            className="flex items-center gap-1 text-white hover:text-amber-400 font-bold whitespace-nowrap"
+          >
+            <SparklesIcon className="w-4 h-4 text-amber-400" />
+            All Amazon Deals
+          </button>
+          <button
+            onClick={() => handleQuickCategoryClick("Electronics")}
+            className="hover:text-amber-400 whitespace-nowrap transition"
+          >
+            Electronics
+          </button>
+          <button
+            onClick={() => handleQuickCategoryClick("Clothing")}
+            className="hover:text-amber-400 whitespace-nowrap transition"
+          >
+            Fashion & Apparel
+          </button>
+          <button
+            onClick={() => handleQuickCategoryClick("Gadgets")}
+            className="hover:text-amber-400 whitespace-nowrap transition"
+          >
+            Audio & Wearables
+          </button>
+          <button
+            onClick={() => handleQuickCategoryClick("Home")}
+            className="hover:text-amber-400 whitespace-nowrap transition"
+          >
+            Home & Kitchen
+          </button>
+          <button
+            onClick={() => handleQuickCategoryClick("Under ₹999")}
+            className="hover:text-amber-400 whitespace-nowrap transition text-yellow-300 font-semibold"
+          >
+            🏷️ Budget Drops
+          </button>
+          <span className="text-gray-500 ml-auto hidden md:inline text-[11px]">
+            🔥 Real-Time Affiliate Tracking
+          </span>
+        </div>
       </header>
 
-      {/* Floating small popup button for mobile (when NOT logged in) */}
-      {isMobile && !user && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40">
+      {/* 4. Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 w-3/4 max-w-xs bg-white text-gray-900 shadow-2xl flex flex-col font-poppins z-50">
+            {/* Drawer Header */}
+            <div className="p-4 bg-[#131921] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserCircleIcon className="w-7 h-7 text-amber-400" />
+                <span className="font-bold text-sm">
+                  {user ? `Hello, ${user.displayName || "Member"}` : "Hello, Sign In"}
+                </span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-gray-400 hover:text-white p-1"
+                aria-label="Close menu"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Drawer Links */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Shop Deals by Department
+                </h4>
+                <div className="space-y-1">
+                  {["All", "Electronics", "Clothing", "Gadgets", "Home"].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        handleQuickCategoryClick(cat);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                    >
+                      {cat} Deals
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <hr />
+
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  My Shopping
+                </h4>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (onOpenWishlist) onOpenWishlist();
+                  }}
+                  className="w-full text-left py-2 px-3 rounded-lg text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center justify-between"
+                >
+                  <span>Saved Deals</span>
+                  <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                    {wishlistCount}
+                  </span>
+                </button>
+              </div>
+
+              {user && (
+                <>
+                  <hr />
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      Admin Portal
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/admin/dashboard");
+                      }}
+                      className="w-full text-left py-2 px-3 rounded-lg text-sm text-purple-700 hover:bg-purple-50 font-medium"
+                    >
+                      Go to Admin Dashboard →
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50">
+              {(user || localStorage.getItem("email")) ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow"
+                >
+                  Log Out
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openLogIn();
+                  }}
+                  className="w-full py-2.5 bg-[#FEB800] hover:bg-[#F3A847] text-gray-950 rounded-xl text-xs font-bold shadow"
+                >
+                  Sign In / Register
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Discount Pill for unregistered guests on mobile */}
+      {!user && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 sm:hidden">
           <button
-            onClick={openRegisterModal}
-            className="
-              bg-[#2790C3] text-white shadow-xl 
-              px-4 py-3 rounded-full text-sm font-semibold
-              animate-bounce hover:animate-none
-            "
+            onClick={() => setShowRegisterModal(true)}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-white/20 animate-bounce hover:animate-none"
           >
-            🎁 Get Exclusive Discounts — Register
+            <span>🎁</span>
+            <span>Get Exclusive Amazon Drop Alerts</span>
           </button>
         </div>
       )}
 
-      {/* Centered Register Modal */}
+      {/* Guest Offer Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-sm p-5 relative font-poppins">
-            {/* Close button top-right */}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative font-poppins animate-fade-in">
             <button
-              onClick={closeRegisterModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              aria-label="Close"
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 p-1"
+              aria-label="Close modal"
             >
               ✕
             </button>
 
-            <h2 className="text-lg font-semibold text-gray-900 mb-3 text-center">
-              Get Exclusive discouunts on register
-            </h2>
+            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4 mx-auto text-2xl">
+              🎁
+            </div>
 
-            <p className="text-sm text-gray-600 mb-5 text-center">
-              Sign up now to unlock special offers, personalized deals, and
-              more!
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">
+              Unlock Exclusive Amazon Price Alerts
+            </h3>
+            <p className="text-xs text-gray-500 text-center mb-5 leading-relaxed">
+              Create a free account to track price drops on your favorite electronics, save custom deals, and get notified on flash sales.
             </p>
 
-            <div className="flex flex-col gap-3">
+            <div className="space-y-2">
               <button
                 onClick={() => {
-                  closeRegisterModal();
+                  setShowRegisterModal(false);
                   openLogIn();
                 }}
-                className="w-full bg-[#2790C3] text-white py-2 rounded-md text-sm font-semibold hover:bg-[#1f7aa6] transition"
+                className="w-full py-2.5 bg-[#FEB800] hover:bg-[#F3A847] text-gray-950 rounded-xl text-xs font-bold shadow-md transition"
               >
-                Register Now
+                Sign In / Register Now
               </button>
               <button
-                onClick={closeRegisterModal}
-                className="w-full border border-gray-300 text-gray-700 py-2 rounded-md text-sm hover:bg-gray-50 transition"
+                onClick={() => setShowRegisterModal(false)}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
               >
                 Maybe Later
               </button>

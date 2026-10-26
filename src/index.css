@@ -2,96 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Slide-in Animation */
-@keyframes slideIn {
-    0% {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 1;
-    }
+@layer base {
+  body {
+    @apply bg-[#F7F9FA] text-[#1A1A1A] font-poppins antialiased;
+    overflow-x: hidden;
+  }
 }
 
-/* Apply the slide-in animation to the card container */
-.slide-in {
-    animation: slideIn 1s ease-out forwards;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Product Card Styling */
-.product-card {
-    background: white;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 16px;
-    padding: 24px;
-    overflow: hidden;
-    transition: all 0.5s ease-in-out;
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
-/* Image Hover Effect */
-.product-card .image-container {
-    height: 240px;
-    overflow: hidden;
-    border-radius: 12px;
-    transition: all 0.5s ease-in-out;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
-.product-card:hover .image-container {
-    height: 288px;
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.product-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease-in-out;
-}
-
-.product-card:hover img {
-    transform: scale(1.1);
-}
-
-/* View Product Button (Black Inside) */
-.product-button {
-    position: absolute;
-    bottom: 24px;
-    right: 24px;
+/* Custom Animations */
+@keyframes fadeIn {
+  from {
     opacity: 0;
-    transform: scale(0.75);
-    background: black;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: bold;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    transition: all 0.5s ease-in-out;
-    border: 3px solid black;
-}
-
-.product-card:hover .product-button {
+    transform: translateY(6px);
+  }
+  to {
     opacity: 1;
-    transform: scale(1);
-    right: 16px;
+    transform: translateY(0);
+  }
 }
 
-/* Color Variants Fade-in */
-.color-variants {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
-.product-card:hover .color-variants {
+@keyframes pulseSubtle {
+  0%, 100% {
     opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
-/* Color Dots */
-.color-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
+.animate-pulse-subtle {
+  animation: pulseSubtle 2.5s infinite;
+}
+
+/* Line clamp utilities fallback */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
