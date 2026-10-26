@@ -1,131 +1,192 @@
-import { ArrowUpIcon } from "@heroicons/react/24/solid";
-
 export default function Footer() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <footer className="w-full bg-[#131921] text-gray-300 font-poppins pt-8 border-t border-gray-800">
-      {/* Back to top button */}
+    <footer className="w-full font-poppins text-gray-300">
+      {/* 1. Amazon-style Back to Top Button */}
       <button
         onClick={scrollToTop}
-        className="w-full py-3.5 bg-[#232F3E] hover:bg-[#2b3a4c] text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 border-b border-gray-700/50"
+        className="w-full py-4 bg-[#37475A] hover:bg-[#485769] text-white text-xs sm:text-sm font-medium transition text-center block"
+        aria-label="Back to top"
       >
-        <ArrowUpIcon className="w-4 h-4" />
-        <span>Back to top</span>
+        Back to top
       </button>
 
-      {/* Main footer content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {/* Column 1: Brand & Editorial Mission */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-lg">
-                Y
-              </div>
-              <span className="text-xl font-bold text-white tracking-wide">
-                Yearnit
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Yearnit is an independent consumer guidance and product recommendation platform. We evaluate specifications, test build quality, and provide unbiased pros and cons across top electronics, audio, and home lifestyle products.
-            </p>
-            <div className="text-xs text-gray-400">
-              <span className="text-white font-semibold">Contact:</span> support@yearnit.in
-            </div>
-            <p className="text-[11px] text-gray-400">
-              Yearnit is strictly not directed at children under 13 years of age.
-            </p>
+      {/* 2. Main Multi-Column Links Section (Amazon #232F3E) */}
+      <div className="bg-[#232F3E] text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-12 border-b border-[#3a4553]">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-xs sm:text-[13px]">
+          {/* Column 1: Get to Know Us */}
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+              Get to Know Us
+            </h4>
+            <ul className="space-y-2 text-[#DDD]">
+              <li>
+                <a href="/about" className="hover:underline hover:text-white transition block">
+                  About Yearnit
+                </a>
+              </li>
+              <li>
+                <a href="/about#methodology" className="hover:underline hover:text-white transition block">
+                  Editorial Standards
+                </a>
+              </li>
+              <li>
+                <a href="/about#methodology" className="hover:underline hover:text-white transition block">
+                  Review Methodology
+                </a>
+              </li>
+              <li>
+                <a href="/contact" className="hover:underline hover:text-white transition block">
+                  Contact Us
+                </a>
+              </li>
+            </ul>
           </div>
 
-          {/* Column 2: Popular Categories & Guides */}
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
+          {/* Column 2: Product Guides */}
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
               Product Guides
-            </h3>
-            <ul className="space-y-2 text-xs text-gray-400">
+            </h4>
+            <ul className="space-y-2 text-[#DDD]">
               <li>
-                <a href="#featured-catalog" className="hover:text-amber-400 transition">
-                  Consumer Electronics & Audio
+                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                  Consumer Electronics
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:text-amber-400 transition">
-                  Mobiles, Smartwatches & Tech
+                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                  Audio & Wearables
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:text-amber-400 transition">
-                  Home Essentials & Kitchen
+                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                  Mobiles & Laptops
                 </a>
               </li>
               <li>
-                <a href="#featured-catalog" className="hover:text-amber-400 transition">
-                  Laptops & Remote Work Gear
-                </a>
-              </li>
-              <li>
-                <a href="/about" className="hover:text-amber-400 transition">
-                  Editorial Review Standards
+                <a href="#featured-catalog" className="hover:underline hover:text-white transition block">
+                  Home & Kitchen Gear
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Trust & Merchant Terms */}
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
-              Consumer Transparency
-            </h3>
-            <ul className="space-y-2 text-xs text-gray-400">
+          {/* Column 3: Affiliate Information */}
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+              Affiliate Programs
+            </h4>
+            <ul className="space-y-2 text-[#DDD]">
               <li>
-                <span className="text-gray-300 font-medium">Direct Store Links:</span> All product purchases are completed safely directly on official partner stores.
+                <a href="/affiliate-disclosure" className="hover:underline hover:text-white transition block">
+                  Affiliate Disclosure
+                </a>
               </li>
               <li>
-                <span className="text-gray-300 font-medium">Order Fulfillment:</span> Verified retailers handle shipping, deliveries, warranties, and returns.
+                <a href="/affiliate-disclosure#referral-mechanics" className="hover:underline hover:text-white transition block">
+                  How Referral Links Work
+                </a>
               </li>
               <li>
-                <span className="text-gray-300 font-medium">Price Disclaimer:</span> Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability displayed on Amazon at the time of purchase will apply.
+                <a href="/affiliate-disclosure#operating-statement" className="hover:underline hover:text-white transition block">
+                  Associates Statement
+                </a>
+              </li>
+              <li>
+                <a href="/affiliate-disclosure#non-affiliation-trademarks" className="hover:underline hover:text-white transition block">
+                  Non-Affiliation Notice
+                </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Amazon Associates Statutory Disclosure */}
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-amber-400 pl-2">
-              Affiliate Disclosure
-            </h3>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-[11px] text-gray-300 leading-relaxed space-y-2">
-              <p className="font-semibold text-amber-300">
-                As an Amazon Associate I earn from qualifying purchases.
-              </p>
-              <p className="text-[10px] text-gray-400 leading-normal">
-                Yearnit participates in the Amazon Associates Program, an affiliate advertising initiative designed to provide a means for websites to earn advertising fees by linking to Amazon.in and affiliated sites.
-              </p>
-              <p className="text-[10px] text-gray-400 leading-normal">
-                <strong>Non-Affiliation Notice:</strong> Yearnit is not affiliated with, endorsed by, or sponsored by Amazon.com, Inc. or Amazon Seller Services Pvt. Ltd. Amazon, the Amazon logo, and related marks are trademarks of Amazon.com, Inc. or its affiliates.
-              </p>
+          {/* Column 4: Help & Policies */}
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-sm sm:text-base mb-3">
+              Help & Policies
+            </h4>
+            <ul className="space-y-2 text-[#DDD]">
+              <li>
+                <a href="/privacy-policy" className="hover:underline hover:text-white transition block">
+                  Privacy Notice
+                </a>
+              </li>
+              <li>
+                <a href="/terms" className="hover:underline hover:text-white transition block">
+                  Conditions of Use
+                </a>
+              </li>
+              <li>
+                <a href="/about#pricing-disclaimer" className="hover:underline hover:text-white transition block">
+                  Pricing & Availability
+                </a>
+              </li>
+              <li>
+                <a href="/contact" className="hover:underline hover:text-white transition block">
+                  Customer Support
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Amazon-style Sub-divider with Logo & Country badge */}
+        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-[#3a4553] flex flex-wrap items-center justify-center gap-6 text-xs text-[#CCC]">
+          <a href="/" className="flex items-center gap-2 group no-underline">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-sm">
+              Y
             </div>
+            <span className="text-lg font-bold text-white tracking-wide">
+              Yearnit
+            </span>
+          </a>
+
+          <div className="flex items-center gap-3">
+            <span className="border border-[#848688] rounded px-3 py-1 text-xs text-gray-300">
+              English
+            </span>
+            <span className="border border-[#848688] rounded px-3 py-1 text-xs text-gray-300 flex items-center gap-1.5">
+              <span>🇮🇳</span>
+              <span>India</span>
+            </span>
           </div>
+        </div>
+      </div>
+
+      {/* 3. Amazon-style Dark Bottom Strip (#131A22) */}
+      <div className="bg-[#131A22] text-[#999] py-8 px-4 text-center text-xs space-y-3">
+        {/* Legal Link Row */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <a href="/terms" className="hover:underline hover:text-white transition">
+            Conditions of Use & Sale
+          </a>
+          <a href="/privacy-policy" className="hover:underline hover:text-white transition">
+            Privacy Notice
+          </a>
+          <a href="/affiliate-disclosure" className="hover:underline hover:text-white transition">
+            Affiliate Disclosure
+          </a>
+          <a href="/about" className="hover:underline hover:text-white transition">
+            About Yearnit
+          </a>
+          <a href="/contact" className="hover:underline hover:text-white transition">
+            Support & Grievances
+          </a>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} Yearnit (yearnit.in). All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <a href="/privacy-policy" className="hover:text-gray-300 transition">Privacy Policy</a>
-            <span>•</span>
-            <a href="/terms" className="hover:text-gray-300 transition">Terms of Service</a>
-            <span>•</span>
-            <a href="/about" className="hover:text-gray-300 transition">About Us</a>
-            <span>•</span>
-            <a href="/affiliate-disclosure" className="hover:text-gray-300 transition">Affiliate Disclosure</a>
-            <span>•</span>
-            <a href="/contact" className="hover:text-gray-300 transition">Contact Us</a>
-          </div>
-        </div>
+        {/* Mandatory Amazon Associates Operating Agreement Statement */}
+        <p className="text-[11px] text-[#888] max-w-3xl mx-auto leading-relaxed">
+          As an Amazon Associate I earn from qualifying purchases. Yearnit is an independent review platform and is not affiliated with, endorsed by, or sponsored by Amazon.com, Inc. or Amazon Seller Services Pvt. Ltd.
+        </p>
+
+        {/* Copyright */}
+        <p className="text-[11px] text-[#777]">
+          © {new Date().getFullYear()}, Yearnit.in, Inc. or its affiliates
+        </p>
       </div>
     </footer>
   );
