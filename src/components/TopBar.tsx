@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import Logo from "../assets/Tile-Logo.png";
 import AdminButton from "./AdminButton";
 import { API_BASE_URL } from "../config/api";
 import { getSavedDeals } from "../utils/wishlist";
@@ -173,27 +172,6 @@ export default function TopBar({
               aria-label="Open mobile menu"
             >
               <Bars3Icon className="w-6 h-6" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 focus:outline-none group text-left"
-              aria-label="Iyzzo Deals Homepage"
-            >
-              <img
-                className="h-7 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                src={Logo}
-                alt="Iyzzo Logo"
-              />
-              <div className="hidden sm:block">
-                <span className="text-lg font-black tracking-tight text-white block leading-none">
-                  Iyzzo<span className="text-amber-400">.</span>
-                </span>
-                <span className="text-[10px] font-medium text-gray-400 tracking-wider uppercase block">
-                  Amazon Deals
-                </span>
-              </div>
             </button>
           </div>
 

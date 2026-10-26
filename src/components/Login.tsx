@@ -8,7 +8,6 @@ import { auth } from "../firebase";
 import SignIn from "./GoogleSignUp";
 import { API_BASE_URL, DEFAULT_PARTNER_TAG } from "../config/api";
 import { isEmailAdmin } from "../utils/admin";
-import { ShieldCheckIcon, UserIcon } from "@heroicons/react/24/solid";
 
 export default function LogIn({ onClose }: { onClose: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -136,31 +135,6 @@ export default function LogIn({ onClose }: { onClose: () => void }) {
     } finally {
       setIsLoggingIn(false);
     }
-  };
-
-  // Instant 1-Click Demo Login for testing and admin access
-  const handleDemoLogin = (role: "admin" | "affiliate") => {
-    setIsLoggingIn(true);
-    const demoEmail = role === "admin" ? "admin@affiliatepulse.io" : "affiliate@iyzzo.com";
-    const demoTrackingId = role === "admin" ? "z8pqz_l1jv-21" : DEFAULT_PARTNER_TAG;
-
-    localStorage.setItem("email", demoEmail);
-    localStorage.setItem("trackingId", demoTrackingId);
-    if (role === "admin") {
-      localStorage.setItem("isAdmin", "true");
-    } else {
-      localStorage.removeItem("isAdmin");
-    }
-
-    setTimeout(() => {
-      setIsLoggingIn(false);
-      onClose();
-      if (role === "admin") {
-        window.location.href = "/admin/dashboard";
-      } else {
-        window.location.reload();
-      }
-    }, 400);
   };
 
   return (
@@ -349,33 +323,8 @@ export default function LogIn({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Google Sign In */}
-      <div className="mb-4">
+      <div className="mb-2">
         <SignIn onClose={onClose} />
-      </div>
-
-      {/* Quick Demo Access Bar */}
-      <div className="pt-2 border-t border-gray-100">
-        <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center mb-2">
-          ⚡ 1-Click Instant Demo Login
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => handleDemoLogin("admin")}
-            className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-[11px] font-semibold border border-purple-200 transition"
-          >
-            <ShieldCheckIcon className="w-3.5 h-3.5 text-purple-600" />
-            <span>Admin Demo</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDemoLogin("affiliate")}
-            className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-semibold border border-emerald-200 transition"
-          >
-            <UserIcon className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Member Demo</span>
-          </button>
-        </div>
       </div>
     </div>
   );
