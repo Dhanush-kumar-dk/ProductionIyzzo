@@ -20,6 +20,8 @@ import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
@@ -90,17 +92,21 @@ function HomePage() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/search/:searchTerm" element={<SearchResults />} />
-        <Route path="/admin/upload" element={<AdminUpload />} />
-        <Route path="/admin/orders" element={<AdminOrders />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/search/:searchTerm" element={<SearchResults />} />
+          <Route path="/admin/upload" element={<AdminUpload />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+      <Analytics />
+      <SpeedInsights />
+    </>
   );
 }
 
