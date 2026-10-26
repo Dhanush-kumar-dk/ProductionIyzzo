@@ -1,19 +1,6 @@
 export default function Footer() {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <footer className="w-full font-poppins text-gray-300">
-      {/* 1. Amazon-style Back to Top Button */}
-      <button
-        onClick={scrollToTop}
-        className="w-full py-4 bg-[#37475A] hover:bg-[#485769] text-white text-xs sm:text-sm font-medium transition text-center block"
-        aria-label="Back to top"
-      >
-        Back to top
-      </button>
-
       {/* 2. Main Multi-Column Links Section (Amazon #232F3E) */}
       <div className="bg-[#232F3E] text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-12 border-b border-[#3a4553]">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-xs sm:text-[13px]">
