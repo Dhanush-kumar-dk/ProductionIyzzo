@@ -7,7 +7,7 @@ import {
   TagIcon,
 } from "@heroicons/react/24/outline";
 
-import { CURATED_PRODUCTS } from "../data/products";
+import { getAllCatalogProducts } from "../data/products";
 
 interface CarouselProps {
   selectedCategory?: string;
@@ -23,15 +23,22 @@ export default function Carousel({
   const [sortBy, setSortBy] = useState<string>("featured");
   const [localSearch, setLocalSearch] = useState<string>("");
 
-  useEffect(() => {
-    // Populate with verified catalog tagged with Associate tracking ID
+  const loadProducts = () => {
+    const all = getAllCatalogProducts();
     setProducts(
-      CURATED_PRODUCTS.map((p) => ({
+      all.map((p) => ({
         ...p,
         url: buildAffiliateUrl(p.url),
       }))
     );
     setLoading(false);
+  };
+
+  useEffect(() => {
+    loadProducts();
+    const handleUpdate = () => loadProducts();
+    window.addEventListener("catalogUpdated", handleUpdate);
+    return () => window.removeEventListener("catalogUpdated", handleUpdate);
   }, []);
 
   // Filter & Sort Logic

@@ -488,12 +488,60 @@ export const CURATED_PRODUCTS: Product[] = [
   },
 ];
 
+export function getCustomProducts(): Product[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem("yearnit_custom_products");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.warn("Failed to read custom products from localStorage:", err);
+  }
+  return [];
+}
+
+export function saveCustomProduct(product: Product): void {
+  if (typeof window === "undefined") return;
+  const existing = getCustomProducts();
+  const cleanId = product.id.trim();
+  const filtered = existing.filter((p) => p.id.toUpperCase() !== cleanId.toUpperCase());
+  const updated = [{ ...product, id: cleanId }, ...filtered];
+  try {
+    localStorage.setItem("yearnit_custom_products", JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Failed to save custom product to localStorage:", err);
+  }
+  window.dispatchEvent(new Event("catalogUpdated"));
+}
+
+export function removeCustomProduct(productId: string): void {
+  if (typeof window === "undefined" || !productId) return;
+  const existing = getCustomProducts();
+  const cleanId = productId.trim().toUpperCase();
+  const updated = existing.filter((p) => p.id.toUpperCase() !== cleanId);
+  try {
+    localStorage.setItem("yearnit_custom_products", JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Failed to remove custom product from localStorage:", err);
+  }
+  window.dispatchEvent(new Event("catalogUpdated"));
+}
+
+export function getAllCatalogProducts(): Product[] {
+  const custom = getCustomProducts();
+  const customIds = new Set(custom.map((p) => p.id.toUpperCase()));
+  const defaults = CURATED_PRODUCTS.filter((p) => !customIds.has(p.id.toUpperCase()));
+  return [...custom, ...defaults];
+}
+
 export function getProductById(id: string): Product | undefined {
   if (!id) return undefined;
   const cleanId = id.trim().toUpperCase();
-  return CURATED_PRODUCTS.find((p) => p.id.toUpperCase() === cleanId);
+  return getAllCatalogProducts().find((p) => p.id.toUpperCase() === cleanId);
 }
 
 export function getRelatedProducts(productId: string, category?: string, limit: number = 4): Product[] {
-  return CURATED_PRODUCTS.filter((p) => p.id !== productId && (!category || p.category === category)).slice(0, limit);
+  return getAllCatalogProducts().filter((p) => p.id !== productId && (!category || p.category === category)).slice(0, limit);
 }

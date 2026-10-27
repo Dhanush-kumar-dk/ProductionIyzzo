@@ -8,6 +8,7 @@ import SearchResults from "./components/SearchResults";
 import AdminUpload from "./components/AdminUpload";
 import AdminOrders from "./components/AdminOrders";
 import AdminUsers from "./components/AdminUsers";
+import AdminProducts from "./components/AdminProducts";
 import NotFound from "./components/NotFound";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -132,6 +133,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/search/:searchTerm" element={<SearchResults />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
           <Route path="/admin/orders" element={<AdminOrders />} />

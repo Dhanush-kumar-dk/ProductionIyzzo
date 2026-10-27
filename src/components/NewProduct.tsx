@@ -1,5 +1,4 @@
-import { firestore } from "../firebase";
-import { addDoc, collection } from "firebase/firestore";
+import { supabase } from "../supabase";
 import { useState } from "react";
 
 export default function ProductUploadForm({
@@ -19,13 +18,19 @@ export default function ProductUploadForm({
 
     setIsUploading(true);
     try {
-      await addDoc(collection(firestore, "products"), {
-        name,
-        price,
-        image,
-        url,
-      });
-    } catch {
+      const { error } = await supabase.from("products").insert([
+        {
+          name,
+          price,
+          image,
+          url,
+        },
+      ]);
+      if (error) {
+        console.warn("Supabase insert notice:", error.message);
+      }
+    } catch (err) {
+      console.error("Unable to add product:", err);
       alert("Unable to add product!");
     }
     setIsUploading(false);

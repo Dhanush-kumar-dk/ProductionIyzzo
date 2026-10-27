@@ -13,6 +13,7 @@ import {
   BanknotesIcon,
   CubeIcon,
   ChartBarIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/solid";
 
 const AdminDashboard = () => {
@@ -171,11 +172,32 @@ const AdminDashboard = () => {
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
             Management & Tools
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 1. Upload Orders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {/* 1. Manual Product Manager */}
+            <div
+              onClick={() => navigate("/admin/products")}
+              className="group bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <PlusCircleIcon className="w-6 h-6" />
+                </div>
+                <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">
+                  Add & Manage Products
+                </h4>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Manually add products to your catalog with Amazon affiliate URLs, images, prices, specs, and pros/cons.
+                </p>
+              </div>
+              <span className="inline-flex items-center text-xs font-bold text-amber-600 mt-5 group-hover:translate-x-1 transition-transform">
+                Open Product Manager →
+              </span>
+            </div>
+
+            {/* 2. Upload Orders */}
             <div
               onClick={() => navigate("/admin/upload")}
-              className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="group bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -193,10 +215,10 @@ const AdminDashboard = () => {
               </span>
             </div>
 
-            {/* 2. View Orders */}
+            {/* 3. View Orders */}
             <div
               onClick={() => navigate("/admin/orders")}
-              className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="group bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -214,10 +236,10 @@ const AdminDashboard = () => {
               </span>
             </div>
 
-            {/* 3. Manage Users */}
+            {/* 4. Manage Users */}
             <div
               onClick={() => navigate("/admin/users")}
-              className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="group bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

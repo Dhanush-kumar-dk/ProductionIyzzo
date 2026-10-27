@@ -6,7 +6,7 @@ import AdminButton from "./AdminButton";
 import { API_BASE_URL } from "../config/api";
 import { getActiveTrackingId } from "../utils/affiliate";
 import { verifyIsAdmin, isEmailAdmin } from "../utils/admin";
-import { ShieldCheckIcon } from "@heroicons/react/24/solid";
+import { ShieldCheckIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
@@ -327,9 +327,19 @@ export default function TopBar({
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);
+                            navigate("/admin/products");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-amber-700 hover:bg-amber-50 font-bold transition text-left"
+                        >
+                          <PlusCircleIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <span>+ Add & Manage Products</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
                             navigate("/admin/dashboard");
                           }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-purple-700 hover:bg-purple-50 font-bold transition text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-purple-700 hover:bg-purple-50 font-bold transition text-left"
                         >
                           <ShieldCheckIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
                           <span>Admin Dashboard</span>
@@ -510,6 +520,15 @@ export default function TopBar({
                     <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2">
                       Admin Portal
                     </h4>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/admin/products");
+                      }}
+                      className="w-full text-left py-2.5 px-3 rounded-xl text-sm text-amber-700 hover:bg-amber-50 font-bold active:bg-amber-100 transition mb-1"
+                    >
+                      + Add & Manage Products →
+                    </button>
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
