@@ -42,8 +42,8 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
         onClick={onClose}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col font-poppins">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+        <div className="w-full sm:w-screen sm:max-w-md bg-white shadow-2xl flex flex-col font-poppins">
           {/* Header */}
           <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
             <div className="flex items-center gap-2">

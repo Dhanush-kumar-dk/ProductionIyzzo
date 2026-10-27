@@ -75,12 +75,12 @@ const AdminDashboard = () => {
               <span>Back to Store</span>
             </button>
             <div className="h-5 w-px bg-gray-200 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg">
-                <ShieldCheckIcon className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="p-1 sm:p-1.5 bg-purple-100 text-purple-700 rounded-lg flex-shrink-0">
+                <ShieldCheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </span>
-              <h1 className="text-sm sm:text-base font-bold text-gray-900">
-                Yearnit Admin Control Center
+              <h1 className="text-xs sm:text-base font-bold text-gray-900 truncate">
+                Admin Center
               </h1>
             </div>
           </div>

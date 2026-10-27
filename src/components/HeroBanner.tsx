@@ -67,8 +67,8 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   };
 
   return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 pt-4">
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[340px] sm:min-h-[400px] md:min-h-[440px] flex items-center">
+    <div className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4 font-poppins">
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl min-h-[320px] sm:min-h-[400px] md:min-h-[440px] flex items-center">
         {slides.map((slide, idx) => (
           <div
             key={slide.id}
@@ -86,34 +86,34 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             </div>
 
             {/* Content Container */}
-            <div className="relative z-20 max-w-7xl mx-auto px-6 sm:px-12 md:px-16 py-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center w-full">
-              <div className="md:col-span-8 space-y-4 text-white">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs sm:text-sm font-semibold tracking-wider text-amber-300">
-                  <SparklesIcon className="w-4 h-4 text-amber-400" />
-                  {slide.tag}
+            <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-12 md:px-16 py-6 sm:py-10 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 items-center w-full">
+              <div className="md:col-span-8 space-y-2.5 sm:space-y-4 text-white">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[10px] sm:text-xs font-semibold tracking-wider text-amber-300">
+                  <SparklesIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="truncate">{slide.tag}</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+                <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
                   {slide.title}
-                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-200 mt-1">
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-200 mt-0.5 sm:mt-1">
                     {slide.highlight}
                   </span>
                 </h1>
 
-                <p className="text-sm sm:text-base text-gray-300 max-w-xl font-normal leading-relaxed">
+                <p className="text-xs sm:text-base text-gray-300 max-w-xl font-normal leading-relaxed line-clamp-3 sm:line-clamp-none">
                   {slide.description}
                 </p>
 
-                <div className="pt-2 flex flex-wrap items-center gap-4">
+                <div className="pt-1 sm:pt-2 flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 sm:gap-4">
                   <button
                     onClick={onExploreClick}
-                    className="px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 font-bold text-sm rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95"
+                    className="w-full xs:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg transition transform active:scale-95 text-center"
                   >
                     {slide.ctaText}
                   </button>
 
-                  <div className="flex items-center gap-2 text-xs text-gray-300 font-medium">
-                    <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-300 font-medium">
+                    <ShieldCheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" />
                     <span>Independent Research & Direct Store Links</span>
                   </div>
                 </div>
@@ -122,10 +122,10 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           </div>
         ))}
 
-        {/* Carousel Navigation Arrows */}
+        {/* Carousel Navigation Arrows (Desktop / Tablet only to prevent mobile text overlap) */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
+          className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition items-center justify-center"
           aria-label="Previous Slide"
         >
           <ChevronLeftIcon className="w-5 h-5" />
@@ -133,20 +133,20 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
+          className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition items-center justify-center"
           aria-label="Next Slide"
         >
           <ChevronRightIcon className="w-5 h-5" />
         </button>
 
         {/* Dots indicator */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2">
           {slides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === current ? "w-8 bg-amber-400" : "w-2 bg-white/40"
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                idx === current ? "w-6 sm:w-8 bg-amber-400" : "w-1.5 sm:w-2 bg-white/40"
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />

@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
       <TopBar openLogIn={() => setOpenLogIn(true)} />
       {openLogIn && <LogIn onClose={() => setOpenLogIn(false)} />}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 sm:pb-8">
         {/* Breadcrumb & Navigation */}
         <div className="flex items-center justify-between text-xs text-gray-600 mb-4 pb-2 border-b border-gray-300">
           <nav className="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
@@ -485,7 +485,7 @@ export default function ProductDetailPage() {
                 View all catalog →
               </Link>
             </div>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
               {relatedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -493,6 +493,32 @@ export default function ProductDetailPage() {
           </div>
         )}
       </main>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md px-4 py-2.5 border-t border-gray-200 z-40 shadow-2xl flex items-center justify-between gap-3 pb-safe">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-gray-500 font-medium">Amazon Price</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-base font-black text-gray-950">
+              {product.price ? `₹${product.price}` : "Check Price"}
+            </span>
+            {product.mrp && (
+              <span className="text-[10px] text-gray-400 line-through">
+                ₹{product.mrp}
+              </span>
+            )}
+          </div>
+        </div>
+        <a
+          href={affiliateUrl}
+          target="_blank"
+          rel="sponsored nofollow noopener"
+          className="flex-1 max-w-[190px] inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs rounded-xl shadow-xs no-underline border border-[#FCD200]"
+        >
+          <ShoppingBagIcon className="w-4 h-4 stroke-2" />
+          <span>Buy on Amazon</span>
+        </a>
+      </div>
 
       <Footer />
     </div>

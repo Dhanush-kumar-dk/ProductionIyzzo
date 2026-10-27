@@ -9,10 +9,10 @@ import { API_BASE_URL } from "../config/api";
 
 declare global {
   interface Window {
-    dataLayer: any[];
-    gtag: (...args: any[]) => void;
-    fbq: any;
-    _fbq: any;
+    dataLayer: unknown[];
+    gtag: (...args: unknown[]) => void;
+    fbq: unknown;
+    _fbq: unknown;
   }
 }
 
@@ -30,33 +30,37 @@ export const GOOGLE_ADS_ID =
 export const GA4_ID =
   (import.meta.env.VITE_GA4_ID as string) ||
   (import.meta.env.NEXT_PUBLIC_GA4_ID as string) ||
-  "G-G1F7RP0MFZ";
-
-export const GADS_LEAD_LABEL =
-  (import.meta.env.VITE_GADS_LEAD_LABEL as string) ||
-  (import.meta.env.NEXT_PUBLIC_GADS_LEAD_LABEL as string) ||
   "";
 
-export const GTM_ID =
-  (import.meta.env.VITE_GTM_ID as string) ||
-  (import.meta.env.NEXT_PUBLIC_GTM_ID as string) ||
-  "GTM-53M6FK9L";
+export const GADS_LEAD_LABEL =
+  (import.meta.env.VITE_GADS_LEAD_CONVERSION_LABEL as string) ||
+  (import.meta.env.NEXT_PUBLIC_GADS_LEAD_CONVERSION_LABEL as string) ||
+  "";
 
-const CONSENT_STORAGE_KEY = "_consent_mode_v2";
+export const GADS_PURCHASE_LABEL =
+  (import.meta.env.VITE_GADS_PURCHASE_CONVERSION_LABEL as string) ||
+  (import.meta.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_LABEL as string) ||
+  "";
 
-/**
- * Generate unique UUID for CAPI + Browser Pixel deduplication
- */
-export function generateEventId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "evt_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+export const CONSENT_STORAGE_KEY = "yearnit_cookie_consent";
+
+export interface UserTrackingData {
+  email?: string;
+  phone?: string;
+  name?: string;
 }
 
 /**
- * Initialize Google Consent Mode v2
- * Defaults to 'denied' until the user provides consent.
+ * Generates unique event_id for deduplication between client-side Pixels and server-side CAPI.
+ */
+export function generateEventId(): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 10);
+  return `evt_${timestamp}_${random}`;
+}
+
+/**
+ * Initializes Google Consent Mode v2 with default denied or stored user consent.
  */
 export function initConsentMode(): void {
   if (typeof window === "undefined") return;
@@ -64,8 +68,8 @@ export function initConsentMode(): void {
   window.dataLayer = window.dataLayer || [];
   window.gtag =
     window.gtag ||
-    function () {
-      window.dataLayer.push(arguments);
+    function (...args: unknown[]) {
+      window.dataLayer.push(args);
     };
 
   const storedConsent = localStorage.getItem(CONSENT_STORAGE_KEY);
@@ -78,78 +82,77 @@ export function initConsentMode(): void {
     analytics_storage: isGranted ? "granted" : "denied",
     wait_for_update: 500,
   });
-
-  window.gtag("set", "ads_data_redaction", !isGranted);
 }
 
 /**
- * Update consent after user acceptance
+ * Updates Google Consent Mode state when user accepts or denies.
  */
 export function updateConsent(granted: boolean): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !window.gtag) return;
 
   const status = granted ? "granted" : "denied";
   localStorage.setItem(CONSENT_STORAGE_KEY, status);
 
-  if (window.gtag) {
-    window.gtag("consent", "update", {
-      ad_storage: status,
-      ad_user_data: status,
-      ad_personalization: status,
-      analytics_storage: status,
-    });
-    window.gtag("set", "ads_data_redaction", !granted);
-  }
-
-  // Trigger pageview on grant if not already recorded
-  if (granted) {
-    trackPageView(window.location.pathname);
-  }
-}
-
-export function hasUserConsented(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(CONSENT_STORAGE_KEY) === "granted";
+  window.gtag("consent", "update", {
+    ad_storage: status,
+    ad_user_data: status,
+    ad_personalization: status,
+    analytics_storage: status,
+  });
 }
 
 /**
- * Initialize Meta Pixel script
+ * Initializes Meta Pixel in the browser.
  */
 export function initMetaPixel(): void {
   if (typeof window === "undefined" || !META_PIXEL_ID) return;
   if (window.fbq) return;
 
-  /* eslint-disable */
-  (function (f: any, b: any, e: any, v: any, n?: any, t?: any, s?: any) {
-    if (f.fbq) return;
-    n = f.fbq = function () {
-      n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-    };
-    if (!f._fbq) f._fbq = n;
-    n.push = n;
-    n.loaded = !0;
-    n.version = "2.0";
-    n.queue = [];
-    t = b.createElement(e);
-    t.async = !0;
-    t.src = v;
-    s = b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t, s);
-  })(
-    window,
-    document,
-    "script",
-    "https://connect.facebook.net/en_US/fbevents.js"
-  );
-  /* eslint-enable */
+  type FbqFunction = {
+    (...args: unknown[]): void;
+    callMethod?: (...args: unknown[]) => void;
+    queue?: unknown[];
+    loaded?: boolean;
+    version?: string;
+    push?: (...args: unknown[]) => void;
+  };
 
-  window.fbq("init", META_PIXEL_ID);
+  const n: FbqFunction = function (...args: unknown[]) {
+    if (n.callMethod) {
+      n.callMethod(...args);
+    } else if (n.queue) {
+      n.queue.push(args);
+    }
+  };
+
+  if (!window._fbq) window._fbq = n;
+  n.push = n;
+  n.loaded = true;
+  n.version = "2.0";
+  n.queue = [];
+  window.fbq = n;
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = "https://connect.facebook.net/en_US/fbevents.js";
+  document.head.appendChild(script);
+
+  const attribution = getAttribution();
+  const initParams: Record<string, unknown> = {};
+  if (attribution.fbp) initParams.fbp = attribution.fbp;
+  if (attribution.fbc) initParams.fbc = attribution.fbc;
+
+  (window.fbq as (action: string, id: string, params?: unknown) => void)(
+    "init",
+    META_PIXEL_ID,
+    initParams
+  );
 }
 
 /**
- * Initialize Google Tag (gtag.js) for Google Ads and GA4
+ * Initializes Google Tag (gtag.js) for GA4 and Google Ads.
  */
-export function initGoogleTag(): void {
+export function initGoogleTags(): void {
   if (typeof window === "undefined") return;
   const tagId = GOOGLE_ADS_ID || GA4_ID;
   if (!tagId) return;
@@ -165,8 +168,8 @@ export function initGoogleTag(): void {
     window.dataLayer = window.dataLayer || [];
     window.gtag =
       window.gtag ||
-      function () {
-        window.dataLayer.push(arguments);
+      function (...args: unknown[]) {
+        window.dataLayer.push(args);
       };
 
     window.gtag("js", new Date());
@@ -181,57 +184,78 @@ export function initGoogleTag(): void {
 }
 
 /**
- * Initialize all marketing pixels safely
+ * Master initialization for all advertising trackers.
  */
 export function initAllTrackers(): void {
   initConsentMode();
   initMetaPixel();
-  initGoogleTag();
+  initGoogleTags();
 }
 
 /**
- * Fire PageView for SPA route transitions
+ * Tracks standard PageView across all platforms with deduplication ID.
  */
-export function trackPageView(url: string = window.location.pathname): void {
+export function trackPageView(pagePath?: string): void {
   if (typeof window === "undefined") return;
 
-  // Meta Pixel PageView
+  const eventId = generateEventId();
+  const attribution = getAttribution();
+  const path = pagePath || window.location.pathname;
+
+  // 1. Meta Pixel PageView
   if (window.fbq) {
-    window.fbq("track", "PageView");
+    (window.fbq as (action: string, event: string, params?: unknown, options?: unknown) => void)(
+      "track",
+      "PageView",
+      {},
+      { eventID: eventId }
+    );
   }
 
-  // Google Ads / GA4 PageView
+  // 2. Google Ads & GA4 PageView
   if (window.gtag) {
     if (GA4_ID) {
       window.gtag("event", "page_view", {
-        page_path: url,
-        page_location: window.location.href,
+        page_path: path,
         page_title: document.title,
+        page_location: window.location.href,
+        event_id: eventId,
+        ...attribution,
       });
     }
     if (GOOGLE_ADS_ID) {
       window.gtag("event", "page_view", {
         send_to: GOOGLE_ADS_ID,
-        page_path: url,
+        event_id: eventId,
+        page_path: path,
       });
     }
   }
-}
 
-export interface UserTrackingData {
-  email?: string;
-  phone?: string;
-  name?: string;
-  city?: string;
+  // 3. Dispatch Server-Side PageView (CAPI)
+  try {
+    fetch(`${API_BASE_URL}/api/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventName: "PageView",
+        eventId,
+        eventSourceUrl: window.location.href,
+        attribution,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Non-blocking
+  }
 }
 
 /**
- * Core Universal Tracking Dispatcher
  * Sends events to Meta Pixel, Google Ads, GA4, and Meta Conversions API (CAPI).
  */
 export async function trackEvent(
   eventName: "ViewContent" | "Lead" | "Contact" | "InitiateCheckout" | "Purchase" | string,
-  params: Record<string, any> = {},
+  params: Record<string, unknown> = {},
   eventId?: string,
   userData?: UserTrackingData
 ): Promise<void> {
@@ -242,7 +266,12 @@ export async function trackEvent(
 
   // 1. Meta Pixel (Browser)
   if (window.fbq) {
-    window.fbq("track", eventName, params, { eventID: finalEventId });
+    (window.fbq as (action: string, event: string, params?: unknown, options?: unknown) => void)(
+      "track",
+      eventName,
+      params,
+      { eventID: finalEventId }
+    );
   }
 
   // 2. Google Ads & GA4
@@ -290,7 +319,7 @@ export async function trackEvent(
     }).catch((err) => {
       console.warn("CAPI dispatch failed silently:", err.message);
     });
-  } catch (err) {
+  } catch {
     // Non-blocking
   }
 }

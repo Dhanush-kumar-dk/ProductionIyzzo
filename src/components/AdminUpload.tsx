@@ -179,21 +179,21 @@ const AdminUpload = () => {
 
           {/* Selected File Preview */}
           {selectedFile && (
-            <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-2xl">
-              <div className="flex items-center gap-3">
-                <DocumentIcon className="w-8 h-8 text-blue-600" />
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-gray-800">
+            <div className="flex items-center justify-between p-3.5 sm:p-4 bg-gray-50 border border-gray-200 rounded-2xl gap-2">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <DocumentIcon className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-bold text-gray-800 truncate max-w-[180px] xs:max-w-xs sm:max-w-md">
                     {selectedFile.name}
                   </p>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[10px] sm:text-[11px] text-gray-500">
                     {(selectedFile.size / 1024).toFixed(1)} KB • Ready to process
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedFile(null)}
-                className="text-xs text-red-500 hover:underline font-semibold"
+                className="text-xs text-red-500 hover:underline font-semibold flex-shrink-0"
               >
                 Remove
               </button>

@@ -68,7 +68,7 @@ export function captureAttribution(): AttributionData {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY) || getCookie(STORAGE_KEY);
     if (raw) existingData = JSON.parse(raw);
-  } catch (e) {
+  } catch {
     // ignore parse error
   }
 

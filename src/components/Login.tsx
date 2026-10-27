@@ -141,7 +141,7 @@ export default function LogIn({ onClose }: { onClose: () => void }) {
     <div
       className={`
         relative w-full max-w-sm mx-auto rounded-3xl bg-white shadow-2xl border border-gray-100 
-        p-6 sm:p-7 font-poppins
+        p-5 sm:p-7 font-poppins max-h-[92vh] overflow-y-auto touch-scroll
         transform transition-all duration-300
         ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
       `}

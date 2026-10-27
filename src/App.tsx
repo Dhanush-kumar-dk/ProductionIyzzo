@@ -26,6 +26,7 @@ import AboutPage from "./components/AboutPage";
 import AffiliateDisclosure from "./components/AffiliateDisclosure";
 import ContactPage from "./components/ContactPage";
 import ProductDetailPage from "./components/ProductDetailPage";
+import SavedDealsModal from "./components/SavedDealsModal";
 import CookieConsent from "./components/CookieConsent";
 
 import { Analytics } from "@vercel/analytics/react";
@@ -50,6 +51,7 @@ function RouteTracker() {
 
 function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const scrollToCatalog = () => {
@@ -63,14 +65,21 @@ function HomePage() {
     <div className="min-h-screen w-full bg-[#F7F9FA] flex flex-col font-poppins text-gray-900">
       {/* Login Modal */}
       {openLogIn && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
           <LogIn onClose={() => setOpenLogIn(false)} />
         </div>
       )}
 
+      {/* Saved Deals Drawer */}
+      <SavedDealsModal
+        isOpen={isWishlistOpen}
+        onClose={() => setIsWishlistOpen(false)}
+      />
+
       {/* Main Header */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
+        onOpenWishlist={() => setIsWishlistOpen(true)}
         onCategorySelect={setSelectedCategory}
       />
 

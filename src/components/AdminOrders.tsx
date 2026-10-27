@@ -414,8 +414,46 @@ const AdminOrders = () => {
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Mobile Orders Card View (Visible only on mobile screens < sm) */}
+        <div className="sm:hidden space-y-3">
+          {loading ? (
+            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 font-medium border border-gray-100">
+              Loading orders data...
+            </div>
+          ) : currentOrders.length === 0 ? (
+            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 font-medium border border-gray-100">
+              No orders match your search filters.
+            </div>
+          ) : (
+            currentOrders.map((order) => (
+              <div key={order.id} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-2xs space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs text-gray-900 line-clamp-2">{order.item_name}</p>
+                    <span className="text-[10px] text-gray-400 font-mono">ASIN: {order.asin}</span>
+                  </div>
+                  <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-mono text-[10px] font-semibold border border-purple-100 flex-shrink-0">
+                    {order.tracking_id}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-gray-100">
+                  <span className="truncate">{order.category}</span>
+                  <span className="flex-shrink-0">{order.date} • {order.device_type}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100">
+                  <span className="text-gray-500">Shipped: <strong className="text-gray-900">{order.items_shipped}</strong></span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-gray-900">₹{Number(order.revenue).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                    <span className="font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">₹{Number(order.fees).toLocaleString("en-IN", { minimumFractionDigits: 2 })} fee</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Orders Table (Visible on tablet & desktop sm and up) */}
+        <div className="hidden sm:block bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-gray-50/80 border-b border-gray-100 text-gray-500 font-bold uppercase tracking-wider">

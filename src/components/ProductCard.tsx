@@ -51,16 +51,16 @@ export default function ProductCard({ product }: ProductCardProps) {
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative bg-white rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-2xl hover:border-amber-300 transition-all duration-300 flex flex-col h-full overflow-hidden font-poppins cursor-pointer transform hover:-translate-y-1"
+        className="group relative bg-white rounded-xl sm:rounded-2xl border border-gray-200/90 shadow-2xs hover:shadow-xl hover:border-amber-300 transition-all duration-300 flex flex-col h-full overflow-hidden font-poppins cursor-pointer transform hover:-translate-y-0.5 active:scale-[0.99]"
       >
         {/* Top Badges & Info button */}
-        <div className="absolute top-2.5 inset-x-2.5 z-20 flex items-center justify-between pointer-events-none">
+        <div className="absolute top-2 inset-x-2 z-20 flex items-center justify-between pointer-events-none">
           {product.category ? (
-            <span className="bg-gray-950/85 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full shadow-sm tracking-wide">
+            <span className="bg-gray-950/85 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full shadow-sm tracking-wide truncate max-w-[110px] sm:max-w-none">
               {product.category}
             </span>
           ) : product.editorBadge ? (
-            <span className="bg-amber-400 text-gray-950 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+            <span className="bg-amber-400 text-gray-950 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm truncate max-w-[110px] sm:max-w-none">
               {product.editorBadge}
             </span>
           ) : (
@@ -75,11 +75,11 @@ export default function ProductCard({ product }: ProductCardProps) {
               e.stopPropagation();
               setShowDisclosureModal(true);
             }}
-            className="pointer-events-auto p-1.5 rounded-full bg-white/95 hover:bg-white text-gray-400 hover:text-amber-500 shadow-md backdrop-blur-sm transition transform hover:scale-110 active:scale-95"
+            className="pointer-events-auto p-1 sm:p-1.5 rounded-full bg-white/95 hover:bg-white text-gray-400 hover:text-amber-500 shadow-md backdrop-blur-sm transition transform hover:scale-110 active:scale-95"
             title="Affiliate Disclosure"
             aria-label="Affiliate disclosure info"
           >
-            <InformationCircleIcon className="w-4 h-4 text-gray-500 hover:text-amber-600" />
+            <InformationCircleIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 hover:text-amber-600" />
           </button>
         </div>
 
@@ -93,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               {images.map((imgUrl, idx) => (
                 <div
                   key={idx}
-                  className="w-full h-full flex-shrink-0 flex items-center justify-center p-4"
+                  className="w-full h-full flex-shrink-0 flex items-center justify-center p-2.5 sm:p-4"
                 >
                   <img
                     src={imgUrl}
@@ -108,14 +108,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             <img
               src={product.image}
               alt={product.name}
-              className="h-full w-full object-contain p-4 mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+              className="h-full w-full object-contain p-2.5 sm:p-4 mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
             />
           )}
 
           {/* Carousel Slide Indicators (Dots) */}
           {images.length > 1 && (
-            <div className="absolute bottom-2.5 inset-x-0 flex justify-center items-center gap-1.5 z-10 pointer-events-auto">
+            <div className="absolute bottom-2 inset-x-0 flex justify-center items-center gap-1.5 z-10 pointer-events-auto">
               {images.map((_, idx) => (
                 <button
                   key={idx}
@@ -125,10 +125,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                     e.stopPropagation();
                     setActiveImageIndex(idx);
                   }}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                  className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
                     activeImageIndex === idx
-                      ? "bg-amber-500 w-4 shadow-sm"
-                      : "bg-gray-300/80 hover:bg-gray-400 w-1.5"
+                      ? "bg-amber-500 w-3.5 sm:w-4 shadow-sm"
+                      : "bg-gray-300/80 hover:bg-gray-400 w-1 sm:w-1.5"
                   }`}
                   aria-label={`Switch to image ${idx + 1}`}
                 />
@@ -138,20 +138,20 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Card Content */}
-        <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between bg-white">
+        <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between bg-white">
           <div>
             {/* Title */}
-            <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug mb-1.5">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug mb-1 min-h-[2rem] sm:min-h-[2.5rem]">
               {product.name}
             </h3>
 
             {/* Star Rating Display */}
-            <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="flex items-center gap-1 mb-1.5 flex-wrap">
               <div className="flex items-center text-[#FFA41C]">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
-                    className={`w-3.5 h-3.5 ${
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${
                       i < Math.floor(currentRating)
                         ? "fill-[#FFA41C] text-[#FFA41C]"
                         : i < currentRating
@@ -164,16 +164,16 @@ export default function ProductCard({ product }: ProductCardProps) {
                   </svg>
                 ))}
               </div>
-              <span className="font-bold text-gray-900 text-xs">
+              <span className="font-bold text-gray-900 text-[11px] sm:text-xs">
                 {currentRating.toFixed(1)}
               </span>
-              <span className="text-[11px] text-gray-500">
-                ({reviewCount.toLocaleString()})
+              <span className="text-[10px] sm:text-[11px] text-gray-400">
+                ({reviewCount > 999 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount})
               </span>
             </div>
 
-            {/* Product Short Detail */}
-            <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed mb-3">
+            {/* Product Short Detail (visible on larger screens / tablets) */}
+            <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed mb-2.5 hidden xs:block">
               {product.shortDetail || product.summary || "Verified product specifications, authentic reviews, and official warranty."}
             </p>
           </div>
@@ -181,17 +181,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div>
             {/* Price Display */}
             {product.price && (
-              <div className="flex items-baseline gap-2 mb-2.5">
-                <span className="text-base sm:text-lg font-black text-gray-950 tracking-tight">
+              <div className="flex items-baseline gap-1.5 mb-2 flex-wrap">
+                <span className="text-sm sm:text-lg font-black text-gray-950 tracking-tight">
                   ₹{product.price}
                 </span>
                 {product.mrp && (
-                  <span className="text-xs text-gray-400 line-through">
+                  <span className="text-[10px] sm:text-xs text-gray-400 line-through">
                     ₹{product.mrp}
                   </span>
                 )}
-                <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
-                  Prime Eligible
+                <span className="text-[9px] sm:text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1 sm:px-1.5 py-0.5 rounded">
+                  Prime
                 </span>
               </div>
             )}
@@ -205,10 +205,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                 // Allow direct Buy Now on Amazon without bubbling to card navigation
                 e.stopPropagation();
               }}
-              className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow-md transition transform active:scale-95 no-underline border border-[#FCD200]"
+              className="w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 px-2.5 sm:px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs hover:shadow-md transition transform active:scale-95 no-underline border border-[#FCD200]"
               title="Buy Now on Amazon"
             >
-              <ShoppingBagIcon className="w-4 h-4 text-gray-950 stroke-2" />
+              <ShoppingBagIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-950 stroke-2 flex-shrink-0" />
               <span>Buy Now</span>
             </a>
           </div>
@@ -218,7 +218,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Pop-up Affiliate Disclosure Modal triggered on (i) click */}
       {showDisclosureModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -226,12 +226,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           }}
         >
           <div
-            className="relative w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl border border-gray-200 text-gray-800"
+            className="relative w-full max-w-sm bg-white rounded-2xl p-4 sm:p-5 shadow-2xl border border-gray-200 text-gray-800"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
-                <InformationCircleIcon className="w-5 h-5" />
+              <div className="flex items-center gap-2 text-amber-600 font-bold text-xs sm:text-sm">
+                <InformationCircleIcon className="w-5 h-5 flex-shrink-0" />
                 <span>Affiliate Disclosure</span>
               </div>
               <button

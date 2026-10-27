@@ -170,8 +170,69 @@ const AdminUsers = () => {
           </p>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Mobile Users Card View (Visible only on mobile screens < sm) */}
+        <div className="sm:hidden space-y-3">
+          {loading ? (
+            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 font-medium border border-gray-100">
+              Loading users list...
+            </div>
+          ) : (
+            users.map((u, i) => {
+              const tag = u.trackingid || u.trackingId || DEFAULT_PARTNER_TAG;
+              return (
+                <div key={i} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-2xs space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        <UserCircleIcon className="w-5 h-5" />
+                      </div>
+                      <span className="font-semibold text-xs text-gray-900 truncate">{u.email}</span>
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 flex-shrink-0">
+                      {u.role || "Affiliate Partner"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-100 text-xs">
+                    <span className="text-gray-500 text-[11px]">Partner Tag:</span>
+                    <div className="inline-flex items-center gap-1.5 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">
+                      <span className="font-mono text-purple-700 font-bold text-xs">{tag}</span>
+                      <button
+                        onClick={() => handleCopyTag(tag)}
+                        className="text-purple-400 hover:text-purple-700 p-0.5"
+                        title="Copy partner tag"
+                      >
+                        {copiedId === tag ? (
+                          <CheckIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <ClipboardDocumentIcon className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-gray-100 text-center">
+                    <div>
+                      <span className="text-[10px] text-gray-400 block">Orders</span>
+                      <span className="font-bold text-xs text-gray-900">{u.orders ?? 4}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 block">Gross Sales</span>
+                      <span className="font-extrabold text-xs text-gray-900">₹{(u.revenue ?? 24500).toLocaleString("en-IN")}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 block">Commission</span>
+                      <span className="font-extrabold text-xs text-emerald-600">₹{(u.fees ?? 1715).toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Users Table (Desktop & Tablet) */}
+        <div className="hidden sm:block bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-gray-50/80 border-b border-gray-100 text-gray-500 font-bold uppercase tracking-wider">

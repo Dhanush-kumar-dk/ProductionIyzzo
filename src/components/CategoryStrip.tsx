@@ -26,17 +26,20 @@ export default function CategoryStrip({
   onSelectCategory,
 }: CategoryStripProps) {
   return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 py-6 font-poppins">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+    <div className="w-full px-3 sm:px-6 lg:px-12 py-4 sm:py-6 font-poppins">
+      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+        <h2 className="text-sm sm:text-lg font-bold text-gray-900 flex items-center gap-2">
           <span>Shop by Category</span>
         </h2>
-        <span className="text-xs text-blue-600 hover:underline cursor-pointer font-medium">
+        <span
+          onClick={() => onSelectCategory("")}
+          className="text-xs text-blue-600 hover:underline cursor-pointer font-medium"
+        >
           View All Categories →
         </span>
       </div>
 
-      <div className="flex items-center gap-2.5 sm:gap-4 overflow-x-auto pb-2 scrollbar-none scroll-smooth">
+      <div className="flex items-center gap-2 sm:gap-3.5 overflow-x-auto pb-2 scrollbar-none touch-scroll pr-4">
         {categories.map((cat) => {
           const isSelected =
             selectedCategory.toLowerCase() === cat.id.toLowerCase() ||
@@ -46,17 +49,17 @@ export default function CategoryStrip({
             <button
               key={cat.id}
               onClick={() => onSelectCategory(cat.id === "all" ? "" : cat.name)}
-              className={`flex-shrink-0 relative flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border transition-all duration-200 text-xs sm:text-sm font-semibold shadow-sm ${
+              className={`flex-shrink-0 relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-200 text-xs sm:text-sm font-semibold shadow-sm active:scale-95 ${
                 isSelected
-                  ? "bg-blue-600 border-blue-600 text-white shadow-md transform scale-[1.02]"
+                  ? "bg-blue-600 border-blue-600 text-white shadow-md"
                   : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
               }`}
             >
-              <span className="text-base sm:text-lg">{cat.icon}</span>
+              <span className="text-sm sm:text-base">{cat.icon}</span>
               <span>{cat.name}</span>
               {cat.badge && (
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                  className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
                     isSelected
                       ? "bg-white text-blue-900 shadow-2xs"
                       : "bg-red-50 text-red-800 border border-red-200"
