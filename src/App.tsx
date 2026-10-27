@@ -34,6 +34,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { initAllTrackers, trackPageView } from "./utils/tracking";
 import { captureAttribution } from "./utils/attribution";
+import { updateSEO } from "./utils/seo";
 
 /**
  * Route Tracker Component: handles SPA route transitions and attribution captures
@@ -54,6 +55,55 @@ function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+
+  useEffect(() => {
+    updateSEO({
+      title: "Yearnit - Independent Product Reviews & Curated Buyer Guides",
+      description:
+        "Yearnit provides independent product reviews, in-depth buyer guides, and curated recommendations across electronics, audio, home essentials, and lifestyle.",
+      image: "https://yearnit.in/og-image.jpg",
+      url: "https://yearnit.in/",
+      type: "website",
+      keywords: [
+        "Product Reviews India",
+        "Electronics Buyer Guides",
+        "Best Earbuds India",
+        "Best Smartphones 2026",
+        "Amazon Affiliate Reviews",
+        "Unbiased Tech Comparisons",
+        "Yearnit",
+      ],
+      jsonLd: [
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Yearnit",
+          "url": "https://yearnit.in/",
+          "description": "Independent product reviews and curated buyer guides in India.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://yearnit.in/search/{search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Yearnit",
+          "url": "https://yearnit.in/",
+          "logo": "https://yearnit.in/logo.png",
+          "description": "Independent product evaluation and review publication.",
+          "foundingDate": "2024",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Support",
+            "url": "https://yearnit.in/contact",
+            "availableLanguage": ["English", "Hindi"],
+          },
+        },
+      ],
+    });
+  }, []);
 
   const scrollToCatalog = () => {
     const el = document.getElementById("featured-catalog");

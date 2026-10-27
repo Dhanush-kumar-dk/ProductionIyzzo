@@ -1,12 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopBar from "./TopBar";
 import Footer from "./Footer";
 import LogIn from "./Login";
+import { updateSEO } from "../utils/seo";
 import { ChevronRightIcon, PrinterIcon, HandThumbUpIcon, HandThumbDownIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 export default function AboutPage() {
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   const [openLogIn, setOpenLogIn] = useState(false);
+
+  useEffect(() => {
+    updateSEO({
+      title: "About Yearnit - Editorial Standards, Methodology & Mission",
+      description:
+        "Learn about Yearnit's independent product review process, hands-on evaluation methodology, transparent Amazon Associates disclosure, and consumer advocacy mission.",
+      url: "https://yearnit.in/about",
+      type: "article",
+      keywords: [
+        "About Yearnit",
+        "Editorial Standards",
+        "Review Methodology",
+        "Independent Testing",
+        "Amazon Affiliate India",
+      ],
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        "name": "About Yearnit",
+        "url": "https://yearnit.in/about",
+        "description": "Editorial standards, research methodology, and mission of Yearnit.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Yearnit",
+          "logo": "https://yearnit.in/logo.png",
+        },
+      },
+    });
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -125,6 +155,28 @@ export default function AboutPage() {
               </a>
               <a href="/contact" className="text-[#007185] hover:underline block">
                 • Customer Support
+              </a>
+            </div>
+
+            <div className="pt-3 border-t border-[#E7E7E7] text-xs space-y-2">
+              <span className="font-bold text-[#0F1111] block">Featured Product Guides:</span>
+              <a href="/product/B09N3ZNHTY" className="text-[#007185] hover:underline block">
+                • boAt Airdopes 141 Review
+              </a>
+              <a href="/product/B0CHX1W1XY" className="text-[#007185] hover:underline block">
+                • Apple iPhone 15 Breakdown
+              </a>
+              <a href="/product/B09G9FPHP6" className="text-[#007185] hover:underline block">
+                • Sony WH-1000XM5 ANC Review
+              </a>
+              <a href="/product/B0C7771Z11" className="text-[#007185] hover:underline block">
+                • OnePlus Nord CE 3 Lite Guide
+              </a>
+              <a href="/product/B0C9J7SML8" className="text-[#007185] hover:underline block">
+                • Lenovo IdeaPad Slim 3 Specs
+              </a>
+              <a href="/#featured-catalog" className="text-[#007185] hover:underline font-semibold block pt-1">
+                Explore Full Store Catalog →
               </a>
             </div>
           </aside>

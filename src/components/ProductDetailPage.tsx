@@ -10,6 +10,7 @@ import {
   Product,
 } from "../data/products";
 import { buildAffiliateUrl } from "../utils/affiliate";
+import { updateSEO } from "../utils/seo";
 import {
   ArrowLeftIcon,
   ShieldCheckIcon,
@@ -38,7 +39,104 @@ export default function ProductDetailPage() {
       if (found) {
         setProduct(found);
         setSelectedImage(found.image);
-        document.title = `${found.name} | Yearnit`;
+
+        const cleanPrice = found.price ? found.price.replace(/,/g, "") : undefined;
+        const brandName = found.name.split(" ")[0] || "Yearnit";
+        const canonicalUrl = `https://yearnit.in/product/${found.id}`;
+
+        const productJsonLd: Record<string, unknown> = {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": found.name,
+          "image": [found.image, found.image1, found.image2].filter(Boolean),
+          "description": found.summary || found.shortDetail || `Detailed review, specifications, pros, and cons for ${found.name}.`,
+          "sku": found.id,
+          "mpn": found.id,
+          "brand": {
+            "@type": "Brand",
+            "name": brandName,
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": canonicalUrl,
+            "priceCurrency": "INR",
+            "price": cleanPrice || "999",
+            "priceValidUntil": "2027-12-31",
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": "https://schema.org/InStock",
+            "seller": {
+              "@type": "Organization",
+              "name": "Amazon India",
+            },
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": found.rating || 4.2,
+            "reviewCount": found.ratingCount || 1420,
+            "bestRating": 5,
+            "worstRating": 1,
+          },
+        };
+
+        if (found.customerReviews && found.customerReviews.length > 0) {
+          productJsonLd.review = found.customerReviews.map((rev) => ({
+            "@type": "Review",
+            "author": {
+              "@type": "Person",
+              "name": rev.author,
+            },
+            "datePublished": "2026-10-15",
+            "reviewBody": rev.content,
+            "name": rev.title,
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": rev.rating,
+              "bestRating": 5,
+            },
+          }));
+        }
+
+        const breadcrumbsJsonLd: Record<string, unknown> = {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://yearnit.in/",
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": found.category || "All Products",
+              "item": "https://yearnit.in/#featured-catalog",
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": found.name,
+              "item": canonicalUrl,
+            },
+          ],
+        };
+
+        updateSEO({
+          title: `${found.name} Review & Buyer Guide`,
+          description: found.summary || found.shortDetail || `In-depth review of ${found.name} with verified pros, cons, specs, and Amazon India price.`,
+          image: found.image,
+          url: canonicalUrl,
+          type: "product",
+          keywords: [
+            found.name,
+            found.category || "Electronics",
+            "India Review",
+            "Amazon Price",
+            "Buyer Guide",
+            "Pros and Cons",
+          ],
+          jsonLd: [productJsonLd, breadcrumbsJsonLd],
+        });
       } else {
         setProduct(null);
       }

@@ -7,6 +7,7 @@ import ProductCard, { Product } from "./ProductCard";
 import { API_BASE_URL } from "../config/api";
 import { getActiveTrackingId, buildAffiliateUrl, buildMarketplaceSearchUrl } from "../utils/affiliate";
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
+import { updateSEO } from "../utils/seo";
 
 interface SearchResult {
   DetailPageURL: string;
@@ -29,7 +30,13 @@ export default function SearchResults() {
   const queryTimestamp = useState(() => new Date().toLocaleString())[0];
 
   useEffect(() => {
-    document.title = `Search: ${searchTerm} | Yearnit`;
+    updateSEO({
+      title: `Search: "${searchTerm}" | Yearnit Product Guides`,
+      description: `Explore product guides, specifications, and buyer reviews matching "${searchTerm}" on Yearnit.`,
+      url: `https://yearnit.in/search/${encodeURIComponent(searchTerm)}`,
+      type: "website",
+      keywords: [searchTerm, "Product Search", "Yearnit", "Buyer Guides", "India"],
+    });
 
     if (searchTerm) {
       const partnerTag = getActiveTrackingId();

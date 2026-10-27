@@ -1,0 +1,27 @@
+# robots.txt for Yearnit (https://yearnit.in)
+# Independent Product Reviews & Curated Buyer Guides
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Explicit permissions for major search bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+# Sitemap
+Sitemap: https://yearnit.in/sitemap.xml
+Host: https://yearnit.in

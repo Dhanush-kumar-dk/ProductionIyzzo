@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopBar from "./TopBar";
 import Footer from "./Footer";
 import LogIn from "./Login";
+import { updateSEO } from "../utils/seo";
 import {
   ChevronRightIcon,
   PrinterIcon,
@@ -13,6 +14,22 @@ import {
 export default function AffiliateDisclosure() {
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   const [openLogIn, setOpenLogIn] = useState(false);
+
+  useEffect(() => {
+    updateSEO({
+      title: "Amazon Associates Affiliate Disclosure & Transparency Policy | Yearnit",
+      description:
+        "Official Amazon Associates Operating Agreement disclosure and referral mechanics statement for Yearnit. Transparency in product recommendations and monetization.",
+      url: "https://yearnit.in/affiliate-disclosure",
+      type: "article",
+      keywords: [
+        "Amazon Affiliate Disclosure",
+        "Associates Program Statement",
+        "Yearnit Transparency",
+        "Referral Commissions Notice",
+      ],
+    });
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -123,6 +140,25 @@ export default function AffiliateDisclosure() {
               </a>
               <a href="/contact" className="text-[#007185] hover:underline block">
                 • Customer Support
+              </a>
+            </div>
+
+            <div className="pt-3 border-t border-[#E7E7E7] text-xs space-y-2">
+              <span className="font-bold text-[#0F1111] block">Featured Product Guides:</span>
+              <a href="/product/B09N3ZNHTY" className="text-[#007185] hover:underline block">
+                • boAt Airdopes 141 Review
+              </a>
+              <a href="/product/B0CHX1W1XY" className="text-[#007185] hover:underline block">
+                • Apple iPhone 15 Breakdown
+              </a>
+              <a href="/product/B09G9FPHP6" className="text-[#007185] hover:underline block">
+                • Sony WH-1000XM5 ANC Review
+              </a>
+              <a href="/product/B0C7771Z11" className="text-[#007185] hover:underline block">
+                • OnePlus Nord CE 3 Lite Guide
+              </a>
+              <a href="/#featured-catalog" className="text-[#007185] hover:underline font-semibold block pt-1">
+                Explore Full Store Catalog →
               </a>
             </div>
           </aside>
