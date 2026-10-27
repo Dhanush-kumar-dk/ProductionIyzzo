@@ -54,13 +54,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         className="group relative bg-white rounded-xl sm:rounded-2xl border border-gray-200/90 shadow-2xs hover:shadow-xl hover:border-amber-300 transition-all duration-300 flex flex-col h-full overflow-hidden font-poppins cursor-pointer transform hover:-translate-y-0.5 active:scale-[0.99]"
       >
         {/* Top Badges & Info button */}
-        <div className="absolute top-2 inset-x-2 z-20 flex items-center justify-between pointer-events-none">
+        <div className="absolute top-2 inset-x-2 z-20 flex items-center justify-between pointer-events-none gap-1">
           {product.category ? (
-            <span className="bg-gray-950/85 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full shadow-sm tracking-wide truncate max-w-[110px] sm:max-w-none">
+            <span className="bg-gray-950/85 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full shadow-sm tracking-wide truncate max-w-[75px] xs:max-w-[110px] sm:max-w-none">
               {product.category}
             </span>
           ) : product.editorBadge ? (
-            <span className="bg-amber-400 text-gray-950 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm truncate max-w-[110px] sm:max-w-none">
+            <span className="bg-amber-400 text-gray-950 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm truncate max-w-[75px] xs:max-w-[110px] sm:max-w-none">
               {product.editorBadge}
             </span>
           ) : (
@@ -75,7 +75,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               e.stopPropagation();
               setShowDisclosureModal(true);
             }}
-            className="pointer-events-auto p-1 sm:p-1.5 rounded-full bg-white/95 hover:bg-white text-gray-400 hover:text-amber-500 shadow-md backdrop-blur-sm transition transform hover:scale-110 active:scale-95"
+            className="pointer-events-auto p-1 sm:p-1.5 rounded-full bg-white/95 hover:bg-white text-gray-400 hover:text-amber-500 shadow-md backdrop-blur-sm transition transform hover:scale-110 active:scale-95 flex-shrink-0"
             title="Affiliate Disclosure"
             aria-label="Affiliate disclosure info"
           >
@@ -205,7 +205,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 // Allow direct Buy Now on Amazon without bubbling to card navigation
                 e.stopPropagation();
               }}
-              className="w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 px-2.5 sm:px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs hover:shadow-md transition transform active:scale-95 no-underline border border-[#FCD200]"
+              className="w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-2.5 sm:px-4 min-h-[38px] sm:min-h-[42px] bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow-md transition transform active:scale-95 no-underline border border-[#FCD200]"
               title="Buy Now on Amazon"
             >
               <ShoppingBagIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-950 stroke-2 flex-shrink-0" />

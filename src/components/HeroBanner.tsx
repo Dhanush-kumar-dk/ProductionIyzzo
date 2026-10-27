@@ -86,7 +86,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             </div>
 
             {/* Content Container */}
-            <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-12 md:px-16 py-6 sm:py-10 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 items-center w-full">
+            <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-12 md:px-16 py-6 pb-9 sm:py-10 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 items-center w-full">
               <div className="md:col-span-8 space-y-2.5 sm:space-y-4 text-white">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[10px] sm:text-xs font-semibold tracking-wider text-amber-300">
                   <SparklesIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />

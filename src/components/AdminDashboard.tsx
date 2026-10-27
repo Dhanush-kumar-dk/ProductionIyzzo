@@ -66,16 +66,17 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-poppins">
       {/* Top Admin Nav */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition flex-shrink-0"
             >
               <HomeIcon className="w-4 h-4 text-gray-500" />
-              <span>Back to Store</span>
+              <span className="hidden xs:inline">Back to Store</span>
+              <span className="xs:hidden">Store</span>
             </button>
-            <div className="h-5 w-px bg-gray-200 hidden sm:block" />
+            <div className="h-5 w-px bg-gray-200 hidden sm:block flex-shrink-0" />
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <span className="p-1 sm:p-1.5 bg-purple-100 text-purple-700 rounded-lg flex-shrink-0">
                 <ShieldCheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -86,14 +87,14 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-2 sm:gap-3 text-xs flex-shrink-0">
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Live Storefront
             </span>
             <div className="text-right">
               <span className="text-[10px] text-gray-400 block font-medium">Logged in as</span>
-              <span className="font-bold text-gray-800 text-xs truncate max-w-[140px] sm:max-w-xs block">
+              <span className="font-bold text-gray-800 text-xs truncate max-w-[100px] xs:max-w-[140px] sm:max-w-xs block">
                 {adminEmail}
               </span>
             </div>
@@ -102,14 +103,14 @@ const AdminDashboard = () => {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Banner */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white p-6 sm:p-8 shadow-xl overflow-hidden">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white p-5 sm:p-8 shadow-xl overflow-hidden">
           <div className="relative z-10 max-w-2xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-amber-300 border border-white/20 mb-3">
               ⚡ Affiliate Network Engine
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight mb-2">
               Affiliate Operations & Performance
             </h2>
             <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">

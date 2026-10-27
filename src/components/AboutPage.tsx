@@ -1,10 +1,12 @@
 import { useState } from "react";
 import TopBar from "./TopBar";
 import Footer from "./Footer";
+import LogIn from "./Login";
 import { ChevronRightIcon, PrinterIcon, HandThumbUpIcon, HandThumbDownIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 export default function AboutPage() {
   const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [openLogIn, setOpenLogIn] = useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -12,7 +14,12 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-[#EAEDED] flex flex-col font-poppins text-[#0F1111]">
-      <TopBar openLogIn={() => {}} />
+      {openLogIn && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
+          <LogIn onClose={() => setOpenLogIn(false)} />
+        </div>
+      )}
+      <TopBar openLogIn={() => setOpenLogIn(true)} />
 
       <main className="flex-1 py-6 px-3 sm:px-6 lg:px-12 max-w-7xl mx-auto w-full">
         {/* Amazon-style Breadcrumb Bar */}

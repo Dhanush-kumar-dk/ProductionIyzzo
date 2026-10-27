@@ -398,7 +398,7 @@ export default function AdminProducts() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6">
         {/* Status Notification */}
         {statusMessage && (
           <div
@@ -470,7 +470,7 @@ export default function AdminProducts() {
 
         {/* Expandable Manual Product Creation Form */}
         {showAddForm && (
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-5 sm:p-8 animate-fade-in space-y-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 shadow-xl p-4 sm:p-8 animate-fade-in space-y-5 sm:space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-2">
                 <span className="p-2 bg-blue-50 text-blue-600 rounded-xl">
@@ -774,18 +774,18 @@ export default function AdminProducts() {
                 </div>
 
                 {/* Submit CTA */}
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                <div className="pt-4 border-t border-gray-100 flex flex-col-reverse xs:flex-row items-stretch xs:items-center justify-end gap-2.5 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                    className="w-full xs:w-auto px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 text-center"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+                    className="w-full xs:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 text-center"
                   >
                     {isSubmitting ? "Adding Product..." : "Save Product to Store"}
                   </button>

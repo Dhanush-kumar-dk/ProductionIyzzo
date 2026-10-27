@@ -130,7 +130,7 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
 
           {/* Footer */}
           {deals.length > 0 && (
-            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50">
+            <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 pb-safe">
               <p className="text-[11px] text-gray-400 text-center mb-3">
                 * Prices may change based on availability and active discounts.
               </p>
