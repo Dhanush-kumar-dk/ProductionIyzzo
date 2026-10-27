@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { InformationCircleIcon, XMarkIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { buildAffiliateUrl } from "../utils/affiliate";
@@ -14,29 +14,59 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showDisclosureModal, setShowDisclosureModal] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   // Guarantee valid affiliate tracking URL with active partner tag (tag=dk29112306-21)
   const affiliateUrl = buildAffiliateUrl(product.url);
 
-  // Collect available non-empty images
-  const images = [
-    product.image,
-    product.image1,
-    product.image2,
-    ...(product.additionalImages || []),
-  ].filter((img): img is string => Boolean(img && img.trim().length > 0));
+  // Collect available non-empty, working images
+  const images = useMemo(() => {
+    const raw = [
+      product.image,
+      product.image1,
+      product.image2,
+      ...(product.additionalImages || []),
+    ].filter((img): img is string => Boolean(img && img.trim().length > 0 && !brokenImages.has(img)));
+    return Array.from(new Set(raw));
+  }, [product.image, product.image1, product.image2, product.additionalImages, brokenImages]);
 
-  // 3-second automatic carousel slide transition (pauses when user hovers to inspect)
+  // Generate a deterministic seed from product ID so each card gets unique, staggered timing
+  const idSeed = useMemo(() => {
+    let hash = 0;
+    const str = product.id || product.name;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }, [product.id, product.name]);
+
+  // Staggered automatic carousel slide transition (never transitions cards at the same time)
   useEffect(() => {
     if (images.length <= 1 || isHovered) return;
 
-    const timer = setInterval(() => {
-      setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 3000);
+    // Different initial offset per card (between 1.2s and 7.2s)
+    const initialDelay = 1200 + (idSeed % 6) * 1100;
+    // Different interval per card (e.g. 4.0s, 4.9s, 5.8s, 6.7s)
+    const intervalTime = 4000 + (idSeed % 4) * 900;
 
-    return () => clearInterval(timer);
-  }, [images.length, isHovered]);
+    let intervalTimer: ReturnType<typeof setInterval> | null = null;
+
+    // Stagger start with a unique initial delay, then advance at an individual card interval
+    const timeoutTimer = setTimeout(() => {
+      setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+
+      intervalTimer = setInterval(() => {
+        setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, intervalTime);
+    }, initialDelay);
+
+    return () => {
+      clearTimeout(timeoutTimer);
+      if (intervalTimer) clearInterval(intervalTimer);
+    };
+  }, [images.length, isHovered, idSeed]);
 
   const handleCardClick = () => {
     navigate(`/product/${product.id}`);
@@ -44,6 +74,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const currentRating = product.rating || 4.2;
   const reviewCount = product.ratingCount || 1420;
+  const safeActiveIndex = activeImageIndex < images.length ? activeImageIndex : 0;
+  const fallbackPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='%23f3f4f6'%3E%3Crect width='400' height='400'/%3E%3Cpath d='M160 160h80v80h-80z' fill='%23d1d5db'/%3E%3C/svg%3E";
 
   return (
     <>
@@ -83,12 +115,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
 
-        {/* Product Image Carousel Area with 3s Slide Transition */}
+        {/* Product Image Carousel Area with Staggered Slide Transition */}
         <div className="relative w-full aspect-square bg-gray-50/70 overflow-hidden flex items-center justify-center">
           {images.length > 0 ? (
             <div
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
+              style={{ transform: `translateX(-${safeActiveIndex * 100}%)` }}
             >
               {images.map((imgUrl, idx) => (
                 <div
@@ -100,16 +132,28 @@ export default function ProductCard({ product }: ProductCardProps) {
                     alt={`${product.name} - View ${idx + 1}`}
                     className="h-full w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
+                    onError={(e) => {
+                      // Fallback gracefully without flashing broken alt text
+                      setBrokenImages((prev) => new Set(prev).add(imgUrl));
+                      if (e.currentTarget.src !== product.image && !brokenImages.has(product.image)) {
+                        e.currentTarget.src = product.image;
+                      } else {
+                        e.currentTarget.src = fallbackPlaceholder;
+                      }
+                    }}
                   />
                 </div>
               ))}
             </div>
           ) : (
             <img
-              src={product.image}
+              src={product.image || fallbackPlaceholder}
               alt={product.name}
               className="h-full w-full object-contain p-2.5 sm:p-4 mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.src = fallbackPlaceholder;
+              }}
             />
           )}
 
@@ -126,7 +170,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     setActiveImageIndex(idx);
                   }}
                   className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
-                    activeImageIndex === idx
+                    safeActiveIndex === idx
                       ? "bg-amber-500 w-3.5 sm:w-4 shadow-sm"
                       : "bg-gray-300/80 hover:bg-gray-400 w-1 sm:w-1.5"
                   }`}
