@@ -494,6 +494,20 @@ export function getCustomProducts(): Product[] {
   return [];
 }
 
+export function getDeletedProductIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem("yearnit_deleted_products");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map((id: string) => String(id).trim().toUpperCase());
+    }
+  } catch (err) {
+    console.warn("Failed to read deleted product IDs from localStorage:", err);
+  }
+  return [];
+}
+
 export function saveCustomProduct(product: Product): void {
   if (typeof window === "undefined") return;
   const existing = getCustomProducts();
@@ -505,26 +519,82 @@ export function saveCustomProduct(product: Product): void {
   } catch (err) {
     console.warn("Failed to save custom product to localStorage:", err);
   }
+
+  // Remove from deleted list if it was previously deleted
+  const deleted = getDeletedProductIds();
+  if (deleted.includes(cleanId.toUpperCase())) {
+    const updatedDeleted = deleted.filter((id) => id !== cleanId.toUpperCase());
+    try {
+      localStorage.setItem("yearnit_deleted_products", JSON.stringify(updatedDeleted));
+    } catch (err) {
+      console.warn("Failed to update deleted products in localStorage:", err);
+    }
+  }
+
+  window.dispatchEvent(new Event("catalogUpdated"));
+}
+
+export function deleteProduct(productId: string): void {
+  if (typeof window === "undefined" || !productId) return;
+  const cleanId = productId.trim().toUpperCase();
+
+  // 1. Remove from custom products
+  const existing = getCustomProducts();
+  const updatedCustom = existing.filter((p) => p.id.toUpperCase() !== cleanId);
+  try {
+    localStorage.setItem("yearnit_custom_products", JSON.stringify(updatedCustom));
+  } catch (err) {
+    console.warn("Failed to remove custom product from localStorage:", err);
+  }
+
+  // 2. Add to deleted IDs set so curated items are also removed
+  const deleted = getDeletedProductIds();
+  if (!deleted.includes(cleanId)) {
+    const updatedDeleted = [...deleted, cleanId];
+    try {
+      localStorage.setItem("yearnit_deleted_products", JSON.stringify(updatedDeleted));
+    } catch (err) {
+      console.warn("Failed to save deleted product to localStorage:", err);
+    }
+  }
+
   window.dispatchEvent(new Event("catalogUpdated"));
 }
 
 export function removeCustomProduct(productId: string): void {
+  deleteProduct(productId);
+}
+
+export function restoreProduct(productId: string): void {
   if (typeof window === "undefined" || !productId) return;
-  const existing = getCustomProducts();
   const cleanId = productId.trim().toUpperCase();
-  const updated = existing.filter((p) => p.id.toUpperCase() !== cleanId);
+  const deleted = getDeletedProductIds();
+  const updatedDeleted = deleted.filter((id) => id !== cleanId);
   try {
-    localStorage.setItem("yearnit_custom_products", JSON.stringify(updated));
+    localStorage.setItem("yearnit_deleted_products", JSON.stringify(updatedDeleted));
   } catch (err) {
-    console.warn("Failed to remove custom product from localStorage:", err);
+    console.warn("Failed to restore product in localStorage:", err);
+  }
+  window.dispatchEvent(new Event("catalogUpdated"));
+}
+
+export function resetCatalogToDefaults(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("yearnit_deleted_products");
+  } catch (err) {
+    console.warn("Failed to reset deleted products in localStorage:", err);
   }
   window.dispatchEvent(new Event("catalogUpdated"));
 }
 
 export function getAllCatalogProducts(): Product[] {
-  const custom = getCustomProducts();
+  const deletedIds = new Set(getDeletedProductIds());
+  const custom = getCustomProducts().filter((p) => !deletedIds.has(p.id.toUpperCase()));
   const customIds = new Set(custom.map((p) => p.id.toUpperCase()));
-  const defaults = CURATED_PRODUCTS.filter((p) => !customIds.has(p.id.toUpperCase()));
+  const defaults = CURATED_PRODUCTS.filter(
+    (p) => !customIds.has(p.id.toUpperCase()) && !deletedIds.has(p.id.toUpperCase())
+  );
   return [...custom, ...defaults];
 }
 

@@ -10,8 +10,11 @@ import {
   Product,
   getAllCatalogProducts,
   getCustomProducts,
+  getDeletedProductIds,
   saveCustomProduct,
-  removeCustomProduct,
+  deleteProduct,
+  restoreProduct,
+  resetCatalogToDefaults,
 } from "../data/products";
 import ProductCard from "./ProductCard";
 import {
@@ -55,11 +58,14 @@ export default function AdminProducts() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [customProducts, setCustomProducts] = useState<Product[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string; undoId?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form Fields
   const [name, setName] = useState("");
@@ -111,6 +117,7 @@ export default function AdminProducts() {
   const refreshCatalog = () => {
     setProducts(getAllCatalogProducts());
     setCustomProducts(getCustomProducts());
+    setDeletedIds(getDeletedProductIds());
   };
 
   useEffect(() => {
@@ -316,29 +323,59 @@ export default function AdminProducts() {
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!window.confirm(`Are you sure you want to remove product ${productId}?`)) return;
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    const prod = productToDelete;
 
     try {
-      removeCustomProduct(productId);
+      deleteProduct(prod.id);
       try {
-        await supabase.from("products").delete().eq("id", productId);
+        await supabase.from("products").delete().eq("id", prod.id);
       } catch (sbErr) {
         console.warn("Supabase delete notice:", sbErr);
       }
 
       try {
-        await deleteDoc(doc(firestore, "products", productId));
+        await deleteDoc(doc(firestore, "products", prod.id));
       } catch (err) {
         console.warn("Firestore delete skipped:", err);
       }
       setStatusMessage({
         type: "success",
-        text: `Product ${productId} removed from catalog.`,
+        text: `Product "${prod.name}" was removed from the store catalog.`,
+        undoId: prod.id,
       });
       refreshCatalog();
     } catch (err) {
       console.error("Error removing product:", err);
+      setStatusMessage({
+        type: "error",
+        text: `Could not delete product ${prod.id}. Please try again.`,
+      });
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
+    }
+  };
+
+  const handleUndo = (productId: string) => {
+    restoreProduct(productId);
+    setStatusMessage({
+      type: "success",
+      text: "Product restored to store catalog successfully! 🎉",
+    });
+    refreshCatalog();
+  };
+
+  const handleRestoreAll = () => {
+    if (window.confirm("Are you sure you want to restore all default catalog products?")) {
+      resetCatalogToDefaults();
+      setStatusMessage({
+        type: "success",
+        text: "Default store catalog has been restored.",
+      });
+      refreshCatalog();
     }
   };
 
@@ -408,16 +445,28 @@ export default function AdminProducts() {
                 : "bg-red-50 text-red-800 border-red-200"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
-              <span>{statusMessage.text}</span>
+              <span className="truncate">{statusMessage.text}</span>
             </div>
-            <button
-              onClick={() => setStatusMessage(null)}
-              className="p-1 hover:opacity-70 text-gray-500"
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {statusMessage.undoId && (
+                <button
+                  type="button"
+                  onClick={() => handleUndo(statusMessage.undoId!)}
+                  className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs shadow-xs transition"
+                >
+                  Undo
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setStatusMessage(null)}
+                className="p-1 hover:opacity-70 text-gray-500"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -822,7 +871,17 @@ export default function AdminProducts() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            {deletedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRestoreAll}
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs transition"
+                title="Restore all default catalog products"
+              >
+                Restore Defaults ({deletedIds.length})
+              </button>
+            )}
             <label htmlFor="category-filter" className="text-xs font-semibold text-gray-500 whitespace-nowrap">Category:</label>
             <select
               id="category-filter"
@@ -881,20 +940,21 @@ export default function AdminProducts() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => navigate(`/product/${p.id}`)}
                           className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-lg text-xs"
                         >
                           View
                         </button>
-                        {isCustom && (
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="p-1 text-red-500 hover:bg-red-50 rounded-lg"
-                            title="Delete custom product"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setProductToDelete(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-bold rounded-lg text-xs transition border border-red-200"
+                          title="Delete product from catalog"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -977,22 +1037,23 @@ export default function AdminProducts() {
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
+                              type="button"
                               onClick={() => navigate(`/product/${p.id}`)}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-lg text-xs transition"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-xl text-xs transition"
                               title="View product detail page"
                             >
                               <span>View</span>
                               <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
                             </button>
-                            {isCustom && (
-                              <button
-                                onClick={() => handleDeleteProduct(p.id)}
-                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
-                                title="Delete custom product"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => setProductToDelete(p)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-bold rounded-xl text-xs transition border border-red-200 hover:border-red-300"
+                              title="Delete product from catalog"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1004,6 +1065,86 @@ export default function AdminProducts() {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {productToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => {
+            if (!isDeleting) setProductToDelete(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 text-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <TrashIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-gray-950">
+                  Delete Product from Catalog?
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This will immediately remove this product from your live store catalog, carousels, and search results.
+                </p>
+              </div>
+            </div>
+
+            {/* Product Snapshot */}
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-200/80 flex items-center gap-3 mb-5">
+              <img
+                src={productToDelete.image}
+                alt={productToDelete.name}
+                className="w-14 h-14 object-contain rounded-xl bg-white p-1 border border-gray-100 flex-shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-900 line-clamp-2">
+                  {productToDelete.name}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-extrabold text-gray-950">
+                    ₹{productToDelete.price || "Check Price"}
+                  </span>
+                  <span className="font-mono text-[10px] text-gray-400">
+                    ID: {productToDelete.id}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setProductToDelete(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Yes, Delete Product</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

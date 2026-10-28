@@ -1,9 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, firestore } from "../firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { doc, deleteDoc } from "firebase/firestore";
+import { supabase } from "../supabase";
 import { verifyIsAdmin } from "../utils/admin";
 import { DEFAULT_PARTNER_TAG } from "../config/api";
+import {
+  Product,
+  getAllCatalogProducts,
+  getCustomProducts,
+  getDeletedProductIds,
+  deleteProduct,
+  restoreProduct,
+  resetCatalogToDefaults,
+} from "../data/products";
 import {
   ArrowUpTrayIcon,
   ShoppingCartIcon,
@@ -14,11 +25,31 @@ import {
   CubeIcon,
   ChartBarIcon,
   PlusCircleIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+  ArrowTopRightOnSquareIcon,
+  ExclamationTriangleIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+  PlusIcon,
 } from "@heroicons/react/24/solid";
 
 const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customProducts, setCustomProducts] = useState<Product[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+    undoId?: string;
+  } | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,6 +78,91 @@ const AdminDashboard = () => {
     };
   }, [navigate]);
 
+  const refreshCatalog = () => {
+    setProducts(getAllCatalogProducts());
+    setCustomProducts(getCustomProducts());
+    setDeletedIds(getDeletedProductIds());
+  };
+
+  useEffect(() => {
+    refreshCatalog();
+    const handleUpdate = () => refreshCatalog();
+    window.addEventListener("catalogUpdated", handleUpdate);
+    return () => window.removeEventListener("catalogUpdated", handleUpdate);
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    const q = searchQuery.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q)
+    );
+  }, [products, searchQuery]);
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    const prod = productToDelete;
+
+    try {
+      // 1. Delete locally & fire catalogUpdated event
+      deleteProduct(prod.id);
+
+      // 2. Cloud DB sync (Supabase & Firestore)
+      try {
+        await supabase.from("products").delete().eq("id", prod.id);
+      } catch (sbErr) {
+        console.warn("Supabase delete notice:", sbErr);
+      }
+
+      try {
+        await deleteDoc(doc(firestore, "products", prod.id));
+      } catch (fsErr) {
+        console.warn("Firestore delete notice:", fsErr);
+      }
+
+      setToastMessage({
+        type: "success",
+        text: `Product "${prod.name}" was removed from the store catalog.`,
+        undoId: prod.id,
+      });
+
+      refreshCatalog();
+    } catch (err) {
+      console.error("Error removing product:", err);
+      setToastMessage({
+        type: "error",
+        text: `Could not delete product ${prod.id}. Please try again.`,
+      });
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
+    }
+  };
+
+  const handleUndo = (productId: string) => {
+    restoreProduct(productId);
+    setToastMessage({
+      type: "success",
+      text: "Product restored to store catalog successfully! 🎉",
+    });
+    refreshCatalog();
+  };
+
+  const handleRestoreAll = () => {
+    if (window.confirm("Are you sure you want to restore all default catalog products?")) {
+      resetCatalogToDefaults();
+      setToastMessage({
+        type: "success",
+        text: "Default store catalog has been restored.",
+      });
+      refreshCatalog();
+    }
+  };
+
   if (isAdmin === null) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -63,9 +179,9 @@ const AdminDashboard = () => {
   const adminEmail = adminUser?.email || localStorage.getItem("email") || "admin@affiliatepulse.io";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-poppins">
+    <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-poppins pb-16">
       {/* Top Admin Nav */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
@@ -145,9 +261,11 @@ const AdminDashboard = () => {
 
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Orders Shipped</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-1">142</h3>
-              <p className="text-[11px] text-gray-500 font-semibold mt-1">0 returns reported</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catalog Products</p>
+              <h3 className="text-2xl font-black text-gray-900 mt-1">{products.length}</h3>
+              <p className="text-[11px] text-gray-500 font-semibold mt-1">
+                {customProducts.length} custom • {deletedIds.length} hidden
+              </p>
             </div>
             <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
               <CubeIcon className="w-6 h-6" />
@@ -259,7 +377,387 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Live Catalog Management with Delete Product Actions */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                  Store Products Catalog
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                  {products.length} Products
+                </span>
+                {deletedIds.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
+                    {deletedIds.length} Deleted
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Manage active products across your store. Click the delete button on any product to remove it from the live site.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {deletedIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRestoreAll}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition"
+                  title="Restore all default catalog products"
+                >
+                  <ArrowPathIcon className="w-3.5 h-3.5" />
+                  <span>Restore Defaults</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate("/admin/products")}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-950 font-bold text-xs rounded-xl shadow-xs transition"
+              >
+                <PlusIcon className="w-4 h-4" />
+                <span>Add Product</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Toast / Notification Banner */}
+          {toastMessage && (
+            <div
+              className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs font-medium animate-fade-in border ${
+                toastMessage.type === "success"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-red-50 text-red-800 border-red-200"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                {toastMessage.type === "success" ? (
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
+                )}
+                <span className="truncate">{toastMessage.text}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {toastMessage.undoId && (
+                  <button
+                    type="button"
+                    onClick={() => handleUndo(toastMessage.undoId!)}
+                    className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs shadow-xs transition"
+                  >
+                    Undo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setToastMessage(null)}
+                  className="p-1 hover:bg-black/5 rounded-lg text-gray-500"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Search Box */}
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200/90 shadow-2xs flex items-center gap-2">
+            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1" />
+            <input
+              type="text"
+              placeholder="Search products by title, ID/ASIN, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full text-xs sm:text-sm outline-none placeholder-gray-400 font-medium"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-xs text-gray-400 hover:text-gray-600 font-bold px-2 py-1"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Products Table & Mobile Cards */}
+          <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden">
+            {/* Mobile Product Cards (< 640px) */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {filteredProducts.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 text-xs font-medium">
+                  No products found.
+                </div>
+              ) : (
+                filteredProducts.map((p) => {
+                  const isCustom = customProducts.some(
+                    (c) => c.id.toUpperCase() === p.id.toUpperCase()
+                  );
+                  return (
+                    <div key={p.id} className="p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-14 h-14 object-contain rounded-xl bg-gray-50 p-1 border border-gray-100 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            {isCustom ? (
+                              <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-md border border-purple-100">
+                                Custom Added
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-semibold rounded-md">
+                                Curated Catalog
+                              </span>
+                            )}
+                            <span className="text-[10px] font-mono text-gray-400">
+                              {p.id}
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">
+                            {p.name}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100">
+                        <div>
+                          <span className="font-extrabold text-gray-900">
+                            ₹{p.price || "Check Price"}
+                          </span>
+                          {p.mrp && (
+                            <span className="text-[10px] text-gray-400 line-through ml-1.5">
+                              ₹{p.mrp}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/product/${p.id}`)}
+                            className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl text-xs transition"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProductToDelete(p)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-bold rounded-xl text-xs transition border border-red-200"
+                            title="Delete this product"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop & Tablet Table (>= 640px) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50/90 border-b border-gray-100 text-gray-500 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4">Item & Title</th>
+                    <th className="py-3.5 px-4">Category</th>
+                    <th className="py-3.5 px-4">Price / MRP</th>
+                    <th className="py-3.5 px-4">Rating</th>
+                    <th className="py-3.5 px-4">Source</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-gray-400 font-medium">
+                        No products match your criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((p) => {
+                      const isCustom = customProducts.some(
+                        (c) => c.id.toUpperCase() === p.id.toUpperCase()
+                      );
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50/70 transition">
+                          <td className="py-3 px-4 max-w-sm">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={p.image}
+                                alt={p.name}
+                                className="w-12 h-12 object-contain rounded-xl bg-gray-50 p-1 border border-gray-100 flex-shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p
+                                  className="font-bold text-gray-900 truncate max-w-xs"
+                                  title={p.name}
+                                >
+                                  {p.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="font-mono text-[10px] text-gray-400">
+                                    ID: {p.id}
+                                  </span>
+                                  {p.editorBadge && (
+                                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">
+                                      {p.editorBadge}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600 font-medium">
+                            {p.category || "General"}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-black text-gray-950 text-sm">
+                              ₹{p.price || "Check Price"}
+                            </span>
+                            {p.mrp && (
+                              <span className="text-[11px] text-gray-400 line-through block">
+                                ₹{p.mrp}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-amber-600">
+                              ★ {p.rating?.toFixed(1) || "4.5"}
+                            </span>
+                            <span className="text-[10px] text-gray-400 block">
+                              ({p.ratingCount || 1000} ratings)
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {isCustom ? (
+                              <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-lg border border-purple-100">
+                                Custom Added
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] font-semibold rounded-lg">
+                                Curated Catalog
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/product/${p.id}`)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-xl text-xs transition"
+                                title="View product page"
+                              >
+                                <span>View</span>
+                                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setProductToDelete(p)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-bold rounded-xl text-xs transition border border-red-200 hover:border-red-300"
+                                title="Delete product from store"
+                              >
+                                <TrashIcon className="w-3.5 h-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {productToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => {
+            if (!isDeleting) setProductToDelete(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 text-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <TrashIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-gray-950">
+                  Delete Product from Store?
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This will immediately remove this product from your live store catalog, carousels, and search results.
+                </p>
+              </div>
+            </div>
+
+            {/* Product Snapshot */}
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-200/80 flex items-center gap-3 mb-5">
+              <img
+                src={productToDelete.image}
+                alt={productToDelete.name}
+                className="w-14 h-14 object-contain rounded-xl bg-white p-1 border border-gray-100 flex-shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-gray-900 line-clamp-2">
+                  {productToDelete.name}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-extrabold text-gray-950">
+                    ₹{productToDelete.price || "Check Price"}
+                  </span>
+                  <span className="font-mono text-[10px] text-gray-400">
+                    ID: {productToDelete.id}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setProductToDelete(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Yes, Delete Product</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

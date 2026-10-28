@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
@@ -182,6 +182,7 @@ function App() {
           <Route path="/affiliate-disclosure" element={<AffiliateDisclosure />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/search/:searchTerm" element={<SearchResults />} />
