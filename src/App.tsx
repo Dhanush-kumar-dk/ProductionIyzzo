@@ -16,6 +16,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import HeroBanner from "./components/HeroBanner";
 import CategoryStrip from "./components/CategoryStrip";
+import CashbackSteps from "./components/CashbackSteps";
 import FlashDealsBar from "./components/FlashDealsBar";
 import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
@@ -143,6 +144,12 @@ function HomePage() {
         <CategoryStrip
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
+        />
+
+        {/* Three Steps Towards Cashback */}
+        <CashbackSteps
+          onLoginClick={() => setOpenLogIn(true)}
+          onShopClick={scrollToCatalog}
         />
 
         {/* Editorial Spotlight Banner */}
