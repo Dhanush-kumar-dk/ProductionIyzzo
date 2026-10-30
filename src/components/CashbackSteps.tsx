@@ -63,108 +63,106 @@ export const CashbackSteps: FC<CashbackStepsProps> = ({
   return (
     <section
       aria-label="Three steps Towards Cashback"
-      className="w-full px-3 sm:px-6 lg:px-12 py-6 sm:py-8 font-poppins"
+      className="w-full px-3 sm:px-6 lg:px-8 py-8 sm:py-12 font-poppins"
     >
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-xl sm:max-w-2xl mx-auto">
         {/* Section Heading */}
-        <div className="mb-4 sm:mb-6 text-center sm:text-left">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight">
+        <div className="mb-5 sm:mb-6 text-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">
             Three steps Towards Cashback
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-1.5">
             Start saving on every purchase with simple, transparent rewards.
           </p>
         </div>
 
-        {/* 3 Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        {/* 3 Stacked Cards (Matching Mobile Design on All Screens) */}
+        <div className="flex flex-col gap-3.5 sm:gap-4">
           {stepsData.map((step) => (
             <div
               key={step.number}
               onClick={() => handleAction(step.actionType)}
-              className="group relative overflow-hidden rounded-[26px] bg-white border border-gray-100/90 hover:border-orange-200/90 p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_36px_rgba(255,107,32,0.12)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-row md:flex-col justify-between items-center md:items-start min-h-[160px] sm:min-h-[180px] md:min-h-[250px]"
+              className="group relative overflow-hidden rounded-[22px] sm:rounded-[26px] bg-white border border-gray-100/90 hover:border-orange-200/90 p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_28px_rgba(255,107,32,0.10)] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex items-center justify-between"
             >
               {/* Subtle top-left warm orange glow */}
-              <div className="absolute -top-12 -left-12 w-28 h-28 bg-gradient-to-br from-orange-400/10 via-amber-300/5 to-transparent rounded-full blur-xl pointer-events-none group-hover:from-orange-500/15 transition-all duration-500" />
+              <div className="absolute -top-10 -left-10 w-24 h-24 bg-gradient-to-br from-orange-400/10 via-amber-300/5 to-transparent rounded-full blur-xl pointer-events-none group-hover:from-orange-500/15 transition-all duration-500" />
 
               {/* Faint Big Watermark Number (top-right) */}
               <span
                 aria-hidden="true"
-                className="absolute top-2 sm:top-3 right-4 sm:right-6 font-black text-5xl sm:text-6xl md:text-7xl text-[#E9ECEF]/60 group-hover:text-orange-100/80 transition-colors duration-300 select-none pointer-events-none tracking-tighter leading-none"
+                className="absolute top-2 sm:top-3 right-4 sm:right-6 font-black text-4xl sm:text-5xl md:text-6xl text-[#E9ECEF]/70 group-hover:text-orange-100/80 transition-colors duration-300 select-none pointer-events-none tracking-tighter leading-none"
               >
                 {step.number}
               </span>
 
-              {/* Text & Icon Side */}
-              <div className="relative z-10 flex-1 pr-3 sm:pr-4 md:pr-0 md:w-full flex flex-col justify-between">
+              {/* Left Content Area (Icon, Title, Description) */}
+              <div className="relative z-10 flex-1 min-w-0 pr-3 sm:pr-4">
                 {/* Orange Rounded Square Icon Badge */}
-                <div className="mb-3">
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#FF6B20] to-[#F15000] flex items-center justify-center shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                    {step.badgeIcon === "login" && (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.4}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
-                        <polyline points="10 16 14 12 10 8" />
-                        <line x1="14" y1="12" x2="4" y2="12" />
-                      </svg>
-                    )}
-                    {step.badgeIcon === "shop" && (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <path d="M16 10a4 4 0 0 1-8 0" />
-                      </svg>
-                    )}
-                    {step.badgeIcon === "wallet" && (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
-                        <path d="M16 3H4a2 2 0 0 0-2 2v2" />
-                        <circle cx="16" cy="14" r="1.5" fill="currentColor" />
-                      </svg>
-                    )}
-                  </div>
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#FF6B20] to-[#F15000] flex items-center justify-center shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200 flex-shrink-0 mb-2 sm:mb-2.5">
+                  {step.badgeIcon === "login" && (
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.4}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+                      <polyline points="10 16 14 12 10 8" />
+                      <line x1="14" y1="12" x2="4" y2="12" />
+                    </svg>
+                  )}
+                  {step.badgeIcon === "shop" && (
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <path d="M16 10a4 4 0 0 1-8 0" />
+                    </svg>
+                  )}
+                  {step.badgeIcon === "wallet" && (
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+                      <path d="M16 3H4a2 2 0 0 0-2 2v2" />
+                      <circle cx="16" cy="14" r="1.5" fill="currentColor" />
+                    </svg>
+                  )}
                 </div>
 
-                {/* Title & Description */}
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-950 tracking-tight leading-snug group-hover:text-orange-600 transition-colors duration-200">
-                    {step.title}
-                  </h3>
-                  <p className="text-xs sm:text-[13px] text-gray-500 font-normal leading-relaxed mt-1 max-w-[210px] sm:max-w-[250px] md:max-w-none">
-                    {step.description}
-                  </p>
-                </div>
+                {/* Title */}
+                <h3 className="text-sm sm:text-base font-bold text-gray-950 tracking-tight leading-snug group-hover:text-orange-600 transition-colors duration-200">
+                  {step.title}
+                </h3>
+
+                {/* Subtitle / Description */}
+                <p className="text-[11px] sm:text-xs text-gray-500 font-normal leading-relaxed mt-1 max-w-[210px] sm:max-w-[280px]">
+                  {step.description}
+                </p>
               </div>
 
-              {/* Mascot Illustration */}
-              <div className="relative z-10 flex-shrink-0 w-28 sm:w-32 md:w-full md:flex md:justify-end md:mt-3">
+              {/* Right Mascot Illustration */}
+              <div className="relative z-10 flex-shrink-0 w-24 sm:w-28 md:w-32 flex items-center justify-end">
                 <img
                   src={step.mascotSrc}
                   alt={step.mascotAlt}
-                  className="w-24 sm:w-28 md:w-28 h-auto object-contain select-none pointer-events-none drop-shadow-sm group-hover:scale-105 group-hover:rotate-1 transition-transform duration-300 ml-auto"
+                  className="w-20 sm:w-24 md:w-28 h-auto object-contain select-none pointer-events-none drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
               </div>
