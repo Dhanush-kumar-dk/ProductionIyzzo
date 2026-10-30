@@ -78,8 +78,8 @@ export default function Carousel({
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 border-b border-gray-200/80 pb-4 sm:pb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full mb-1">
-            <SparklesIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full mb-1">
+            <SparklesIcon className="w-3.5 h-3.5 flex-shrink-0 text-amber-600" />
             <span>Independent Editorial Reviews</span>
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -100,7 +100,7 @@ export default function Carousel({
               placeholder="Search guides..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="pl-8 pr-2.5 py-1.5 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-2xs w-full sm:w-48 md:w-52"
+              className="pl-8 pr-2.5 py-1.5 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-2xs w-full sm:w-48 md:w-52"
             />
           </div>
 
@@ -111,7 +111,7 @@ export default function Carousel({
             aria-label="Sort product catalog"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm rounded-xl px-2.5 sm:px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-400 shadow-2xs cursor-pointer flex-shrink-0"
+            className="bg-white border border-gray-200 text-gray-700 text-xs sm:text-sm rounded-xl px-2.5 sm:px-3 py-1.5 outline-none focus:ring-2 focus:ring-amber-400 shadow-2xs cursor-pointer flex-shrink-0"
           >
             <option value="featured">Featured Picks</option>
             <option value="name-asc">Name (A-Z)</option>
@@ -123,7 +123,7 @@ export default function Carousel({
       {/* Products Grid */}
       {loading ? (
         <div className="flex justify-center items-center py-16 sm:py-20">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="text-center py-12 sm:py-16 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
@@ -139,7 +139,7 @@ export default function Carousel({
               setLocalSearch("");
               if (onSelectCategory) onSelectCategory("");
             }}
-            className="mt-3 sm:mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition"
+            className="mt-3 sm:mt-4 px-4 py-2 bg-gradient-to-r from-[#FF6B20] to-[#F15000] hover:from-orange-600 hover:to-orange-700 text-white rounded-xl text-xs font-semibold shadow-xs transition"
           >
             Reset Filters
           </button>
