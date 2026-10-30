@@ -4,6 +4,7 @@ import TopBar from "./TopBar";
 import LogIn from "./Login";
 import Footer from "./Footer";
 import ProductCard from "./ProductCard";
+import PriceHistoryTracker from "./PriceHistoryTracker";
 import {
   getProductById,
   getRelatedProducts,
@@ -122,18 +123,21 @@ export default function ProductDetailPage() {
         };
 
         updateSEO({
-          title: `${found.name} Review & Buyer Guide`,
-          description: found.summary || found.shortDetail || `In-depth review of ${found.name} with verified pros, cons, specs, and Amazon India price.`,
+          title: `${found.name} Price History, Review & Buyer Guide`,
+          description: `Price history graph, lowest recorded price, and buying recommendation for ${found.name}. ${found.summary || found.shortDetail || ""}`,
           image: found.image,
           url: canonicalUrl,
           type: "product",
           keywords: [
             found.name,
+            `${found.name} price history`,
+            `${found.name} lowest price`,
+            "best time to buy",
+            "price tracker",
             found.category || "Electronics",
             "India Review",
             "Amazon Price",
             "Buyer Guide",
-            "Pros and Cons",
           ],
           jsonLd: [productJsonLd, breadcrumbsJsonLd],
         });
@@ -336,6 +340,15 @@ export default function ProductDetailPage() {
                   <span>•</span>
                   <span>Free Express Delivery for Prime Members</span>
                 </div>
+                <div className="flex items-center gap-2 mb-2 pt-2 border-t border-gray-200/60 flex-wrap">
+                  <a
+                    href="#price-history"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-lg text-xs font-bold border border-emerald-200 transition"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>View Price History & Best Time to Buy ↓</span>
+                  </a>
+                </div>
                 <p className="text-[11px] text-gray-500 leading-normal italic">
                   Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.
                 </p>
@@ -392,6 +405,11 @@ export default function ProductDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AI Price History & Best Time to Buy Section */}
+        <div id="price-history" className="scroll-mt-20">
+          <PriceHistoryTracker product={product} />
         </div>
 
         {/* Technical Specifications & Details Section */}
