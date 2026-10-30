@@ -146,12 +146,6 @@ function HomePage() {
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* Three Steps Towards Cashback */}
-        <CashbackSteps
-          onLoginClick={() => setOpenLogIn(true)}
-          onShopClick={scrollToCatalog}
-        />
-
         {/* Editorial Spotlight Banner */}
         <FlashDealsBar />
 
@@ -166,6 +160,12 @@ function HomePage() {
 
         {/* Editorial Product Digest */}
         <DealsNewsletter />
+
+        {/* Three Steps Towards Cashback (Before Footer) */}
+        <CashbackSteps
+          onLoginClick={() => setOpenLogIn(true)}
+          onShopClick={scrollToCatalog}
+        />
       </main>
 
       {/* Comprehensive Footer */}
