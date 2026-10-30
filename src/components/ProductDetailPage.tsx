@@ -26,7 +26,6 @@ import {
   LockClosedIcon,
   MapPinIcon,
   TagIcon,
-  CreditCardIcon,
   BookmarkIcon,
   ShareIcon,
   ChevronRightIcon,
