@@ -30,7 +30,10 @@ import {
   ArrowTopRightOnSquareIcon,
   XMarkIcon,
   EyeIcon,
+  BoltIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/solid";
+import { fetchProductDataFromUrl } from "../utils/amazonUrlParser";
 
 const CATEGORIES = [
   "Audio & Wearables",
@@ -90,6 +93,75 @@ export default function AdminProducts() {
     { key: "Brand", value: "" },
     { key: "Warranty", value: "1 Year Official Warranty" },
   ]);
+
+  // URL Auto-Fetch feature state
+  const [isFetchingUrlData, setIsFetchingUrlData] = useState(false);
+  const [fetchFeedback, setFetchFeedback] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+
+  const handleAutoFetch = async (targetUrl?: string) => {
+    const urlToFetch = (targetUrl !== undefined ? targetUrl : url).trim();
+    if (!urlToFetch) {
+      setFetchFeedback({
+        type: "error",
+        message: "Please enter or paste an Amazon product URL first.",
+      });
+      return;
+    }
+
+    setIsFetchingUrlData(true);
+    setFetchFeedback({
+      type: "info",
+      message: "Fetching product data, specs & high-resolution imagery from URL...",
+    });
+
+    try {
+      const data = await fetchProductDataFromUrl(urlToFetch);
+
+      // Populate form fields
+      setName(data.name);
+      setAsin(data.asin);
+      setUrl(data.url);
+      setCategory(data.category);
+      if (!CATEGORIES.includes(data.category)) {
+        setCategory("Other");
+        setCustomCategory(data.category);
+      }
+      setPrice(data.price);
+      setMrp(data.mrp);
+      setRating(data.rating);
+      setRatingCount(data.ratingCount);
+      setImage(data.image);
+      if (data.image1) setImage1(data.image1);
+      if (data.image2) setImage2(data.image2);
+      if (data.editorBadge) setEditorBadge(data.editorBadge);
+      if (data.shortDetail) setShortDetail(data.shortDetail);
+      if (data.summary) setSummary(data.summary);
+      if (data.pros && data.pros.length > 0) setProsText(data.pros.join("\n"));
+      if (data.cons && data.cons.length > 0) setConsText(data.cons.join("\n"));
+      if (data.whoItsFor) setWhoItsFor(data.whoItsFor);
+
+      if (data.specs && Object.keys(data.specs).length > 0) {
+        setSpecRows(
+          Object.entries(data.specs).map(([key, value]) => ({ key, value }))
+        );
+      }
+
+      setFetchFeedback({
+        type: "success",
+        message: `✨ ${data.sourceMessage} All product fields have been populated. You can edit any details below before saving.`,
+      });
+    } catch (err: any) {
+      setFetchFeedback({
+        type: "error",
+        message: err.message || "Failed to extract product data from URL.",
+      });
+    } finally {
+      setIsFetchingUrlData(false);
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -541,6 +613,112 @@ export default function AdminProducts() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column: Form Fields (7 cols) */}
               <form onSubmit={handleFormSubmit} className="lg:col-span-7 space-y-4">
+                {/* 🚀 Quick Add: Auto-Fetch from Product URL */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-amber-300/60 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 bg-amber-400 text-slate-950 rounded-lg shadow-xs">
+                        <BoltIcon className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                          <span>Auto-Fetch Product Details from URL</span>
+                          <span className="text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider">
+                            Instant
+                          </span>
+                        </h3>
+                        <p className="text-[11px] text-gray-500">
+                          Paste any Amazon product link to automatically pull Title, ASIN, Pricing, High-Res Images &amp; Specs.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAutoFetch();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData.getData("text");
+                          if (pasted && pasted.includes("amazon")) {
+                            setTimeout(() => handleAutoFetch(pasted), 100);
+                          }
+                        }}
+                        placeholder="Paste Amazon product link (e.g. https://www.amazon.in/dp/B0CHX1W1XY...)"
+                        className="w-full pl-3.5 pr-8 py-2.5 text-xs sm:text-sm bg-white border border-amber-300/80 rounded-xl outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 text-gray-900 placeholder-gray-400 font-medium"
+                      />
+                      {url && (
+                        <button
+                          type="button"
+                          onClick={() => setUrl("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                        >
+                          <XMarkIcon className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFetch()}
+                      disabled={isFetchingUrlData}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 active:from-amber-600 active:to-amber-700 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow transition disabled:opacity-50 flex-shrink-0 cursor-pointer"
+                    >
+                      {isFetchingUrlData ? (
+                        <>
+                          <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                          <span>Fetching Data...</span>
+                        </>
+                      ) : (
+                        <>
+                          <BoltIcon className="w-4 h-4" />
+                          <span>⚡ Auto-Fetch Data</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Feedback Message */}
+                  {fetchFeedback && (
+                    <div
+                      className={`p-3 rounded-xl text-xs flex items-start gap-2.5 transition-all ${
+                        fetchFeedback.type === "success"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : fetchFeedback.type === "error"
+                          ? "bg-red-50 text-red-800 border border-red-200"
+                          : "bg-blue-50 text-blue-800 border border-blue-200"
+                      }`}
+                    >
+                      {fetchFeedback.type === "success" && (
+                        <CheckCircleIcon className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      {fetchFeedback.type === "error" && (
+                        <XMarkIcon className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      {fetchFeedback.type === "info" && (
+                        <ArrowPathIcon className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
+                      )}
+                      <span className="flex-1 font-medium leading-relaxed">
+                        {fetchFeedback.message}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFetchFeedback(null)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* 1. Title */}
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -599,17 +777,39 @@ export default function AdminProducts() {
                 {/* 3. Product URL & Editor Badge */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Amazon Product URL <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://www.amazon.in/dp/..."
-                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-gray-700">
+                        Amazon Product URL <span className="text-red-500">*</span>
+                      </label>
+                      {url && (
+                        <button
+                          type="button"
+                          onClick={() => handleAutoFetch()}
+                          className="text-[11px] text-amber-600 hover:text-amber-700 font-bold inline-flex items-center gap-1 hover:underline cursor-pointer"
+                        >
+                          <BoltIcon className="w-3 h-3 text-amber-500" />
+                          <span>Fetch from URL</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="url"
+                        required
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="https://www.amazon.in/dp/..."
+                        className="w-full pr-16 px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAutoFetch()}
+                        disabled={isFetchingUrlData || !url.trim()}
+                        className="absolute right-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 transition disabled:opacity-40 cursor-pointer shadow-xs"
+                      >
+                        {isFetchingUrlData ? "..." : "Fetch"}
+                      </button>
+                    </div>
                   </div>
 
                   <div>

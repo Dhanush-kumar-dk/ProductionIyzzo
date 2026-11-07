@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { useState } from "react";
+import { fetchProductDataFromUrl } from "../utils/amazonUrlParser";
 
 export default function ProductUploadForm({
   onClose,
@@ -11,6 +12,29 @@ export default function ProductUploadForm({
   const [image, setImage] = useState("");
   const [url, setUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [fetchNotice, setFetchNotice] = useState<string | null>(null);
+
+  const handleFetchFromUrl = async (inputUrl?: string) => {
+    const target = (inputUrl || url).trim();
+    if (!target) return;
+
+    setIsFetchingUrl(true);
+    setFetchNotice(null);
+    try {
+      const data = await fetchProductDataFromUrl(target);
+      setName(data.name);
+      const cleanPrice = data.price.replace(/[^0-9]/g, "");
+      if (cleanPrice) setPrice(cleanPrice);
+      setImage(data.image);
+      setUrl(data.url);
+      setFetchNotice("✨ Successfully fetched product details!");
+    } catch (err: any) {
+      setFetchNotice(err.message || "Failed to fetch from URL");
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,26 +153,60 @@ export default function ProductUploadForm({
 
         {/* Referral URL */}
         <div>
-          <label
-            htmlFor="referralUrl"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Referral URL
-          </label>
-          <input
-            type="url"
-            id="referralUrl"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            required
-            className="
-              mt-1 h-9 
-              border-2 block w-full 
-              rounded-md border-gray-300 shadow-sm 
-              focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
-              text-sm
-            "
-          />
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="referralUrl"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Amazon / Referral URL
+            </label>
+            {url && (
+              <button
+                type="button"
+                onClick={() => handleFetchFromUrl()}
+                disabled={isFetchingUrl}
+                className="text-xs text-blue-600 hover:text-blue-700 font-bold hover:underline"
+              >
+                {isFetchingUrl ? "Fetching..." : "⚡ Auto-Fetch Data"}
+              </button>
+            )}
+          </div>
+          <div className="relative mt-1">
+            <input
+              type="url"
+              id="referralUrl"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData("text");
+                if (pasted && pasted.includes("amazon")) {
+                  setTimeout(() => handleFetchFromUrl(pasted), 100);
+                }
+              }}
+              placeholder="https://www.amazon.in/dp/..."
+              required
+              className="
+                h-9 pr-20
+                border-2 block w-full 
+                rounded-md border-gray-300 shadow-sm 
+                focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50
+                text-sm px-2
+              "
+            />
+            <button
+              type="button"
+              onClick={() => handleFetchFromUrl()}
+              disabled={isFetchingUrl || !url.trim()}
+              className="absolute right-1 top-1 bottom-1 px-2.5 text-xs font-bold rounded bg-amber-400 hover:bg-amber-500 text-slate-950 disabled:opacity-40"
+            >
+              {isFetchingUrl ? "..." : "Fetch"}
+            </button>
+          </div>
+          {fetchNotice && (
+            <p className="mt-1 text-xs text-emerald-700 font-medium">
+              {fetchNotice}
+            </p>
+          )}
         </div>
 
         {/* Actions */}
