@@ -118,14 +118,35 @@ export function inferCategory(text) {
   return "Consumer Electronics";
 }
 
+export function extractAsinFromUrl(inputUrl) {
+  if (!inputUrl) return "";
+  const trimmed = inputUrl.trim();
+  if (/^[A-Z0-9]{10}$/i.test(trimmed)) return trimmed.toUpperCase();
+  const patterns = [
+    /\/dp\/([A-Z0-9]{10})/i,
+    /\/gp\/product\/([A-Z0-9]{10})/i,
+    /\/gp\/aw\/d\/([A-Z0-9]{10})/i,
+    /\/product\/([A-Z0-9]{10})/i,
+    /\/d\/([A-Z0-9]{10})/i,
+    /[?&]asin=([A-Z0-9]{10})/i,
+    /[?&]ASIN=([A-Z0-9]{10})/i,
+    /\/([A-Z0-9]{10})(?:[/?#\\]|$)/i,
+  ];
+  for (const regex of patterns) {
+    const match = trimmed.match(regex);
+    if (match && match[1]) return match[1].toUpperCase();
+  }
+  return "";
+}
+
 export function parseProductHtml(html, originalUrl = "") {
   // 1. ASIN extraction
-  let asin = "";
-  const asinMatch =
-    originalUrl.match(/(?:dp|gp\/product|\/d\/|\/)([A-Z0-9]{10})(?:[/?#]|$)/i) ||
-    (html && html.match(/name="ASIN"[^>]*value="([A-Z0-9]{10})"/i)) ||
-    (html && html.match(/data-asin="([A-Z0-9]{10})"/i));
-  if (asinMatch) asin = asinMatch[1].toUpperCase();
+  let asin = extractAsinFromUrl(originalUrl);
+  if (!asin && html) {
+    const htmlMatch = html.match(/name="ASIN"[^>]*value="([A-Z0-9]{10})"/i) ||
+                      html.match(/data-asin="([A-Z0-9]{10})"/i);
+    if (htmlMatch && htmlMatch[1]) asin = htmlMatch[1].toUpperCase();
+  }
 
   const slugTitle = extractTitleFromUrlSlug(originalUrl);
 
