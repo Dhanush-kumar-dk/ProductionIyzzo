@@ -114,7 +114,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F7F9FA] flex flex-col font-poppins text-gray-900">
+    <div className="min-h-screen w-full bg-white flex flex-col font-poppins text-gray-900">
       {/* Login Modal */}
       {openLogIn && (
         <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
@@ -136,7 +136,7 @@ function HomePage() {
       />
 
       {/* Main Page Flow */}
-      <main className="flex-1 space-y-2">
+      <main className="flex-1 space-y-0">
         {/* Promotional Hero Slider */}
         <HeroBanner onExploreClick={scrollToCatalog} />
 

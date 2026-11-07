@@ -1,33 +1,34 @@
-import { SparklesIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
-
 export default function FlashDealsBar() {
-  return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 py-3 font-poppins">
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left Info */}
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-amber-400/20 text-amber-400 rounded-xl">
-            <SparklesIcon className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="bg-amber-400 text-gray-950 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">
-                Editorial Spotlight
-              </span>
-              <span className="text-xs text-gray-300 hidden sm:inline-flex items-center gap-1">
-                Independent Evaluation & Hands-on Reviews
-              </span>
-            </div>
-            <h3 className="text-base sm:text-lg font-bold tracking-tight mt-0.5 text-white">
-              Curated Buyer Recommendations & In-Depth Technical Breakdowns
-            </h3>
-          </div>
-        </div>
+  const features = [
+    { icon: "🔗", text: "Shop, Share & Earn" },
+    { icon: "📊", text: "Track Cashback Live" },
+    { icon: "🏷️", text: "Cashback on eligible purchases" },
+    { icon: "👥", text: "Earn when friends buy through your links" },
+    { icon: "₹", text: "Get Real Cashback" },
+    { icon: "✅", text: "Track every order live" },
+    { icon: "+", text: "Daily bonus cash" },
+    { icon: "🎁", text: "Refer & Earn Rewards" },
+  ];
 
-        {/* Right Editorial Trust Badge */}
-        <div className="flex items-center gap-2 self-start md:self-auto bg-white/5 px-4 py-2 rounded-xl border border-white/10 text-xs text-gray-300">
-          <ShieldCheckIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>Independent Reviews • Transparent Affiliate Disclosures</span>
+  return (
+    <div className="w-full bg-white border-y border-gray-100 py-2.5 font-poppins overflow-hidden">
+      <div className="relative flex overflow-x-hidden">
+        {/* Duplicate the list for seamless looping */}
+        <div className="flex gap-0 animate-marquee whitespace-nowrap">
+          {[...features, ...features].map((item, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-2 px-5 text-sm font-medium text-gray-700 flex-shrink-0"
+            >
+              <span className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold flex-shrink-0">
+                {item.icon}
+              </span>
+              <span>{item.text}</span>
+              {idx < [...features, ...features].length - 1 && (
+                <span className="ml-5 text-gray-200 font-normal">|</span>
+              )}
+            </span>
+          ))}
         </div>
       </div>
     </div>

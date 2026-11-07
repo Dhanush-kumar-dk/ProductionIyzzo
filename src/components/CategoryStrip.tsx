@@ -6,14 +6,17 @@ interface Category {
 }
 
 const categories: Category[] = [
-  { id: "all", name: "All Deals", icon: "🔥", badge: "Hot" },
-  { id: "electronics", name: "Electronics", icon: "💻", badge: "-40%" },
-  { id: "clothing", name: "Fashion", icon: "👕", badge: "Trend" },
-  { id: "home", name: "Home & Kitchen", icon: "🏠" },
-  { id: "gadgets", name: "Gadgets & Audio", icon: "🎧", badge: "New" },
-  { id: "footwear", name: "Footwear", icon: "👟" },
-  { id: "beauty", name: "Beauty & Care", icon: "✨" },
-  { id: "budget", name: "Under ₹999", icon: "🏷️", badge: "Budget" },
+  { id: "all", name: "Trending", icon: "🔥", badge: "Hot" },
+  { id: "all-deals", name: "All", icon: "🛍️" },
+  { id: "clothing", name: "Fashion", icon: "👗" },
+  { id: "beauty", name: "Beauty", icon: "💄" },
+  { id: "grocery", name: "Grocery", icon: "🛒" },
+  { id: "electronics", name: "Electronics", icon: "💻" },
+  { id: "laptop", name: "Laptop", icon: "🖥️" },
+  { id: "mobile", name: "Mobile", icon: "📱" },
+  { id: "travel", name: "Travel", icon: "✈️" },
+  { id: "health", name: "Health", icon: "🏥" },
+  { id: "appliances", name: "Appliances", icon: "🏠" },
 ];
 
 interface CategoryStripProps {
@@ -21,75 +24,76 @@ interface CategoryStripProps {
   onSelectCategory: (category: string) => void;
 }
 
-export default function CategoryStrip({
-  selectedCategory,
-  onSelectCategory,
-}: CategoryStripProps) {
+export default function CategoryStrip({ selectedCategory, onSelectCategory }: CategoryStripProps) {
   const currentCategoryClean = (selectedCategory || "").trim().toLowerCase();
 
   const handleCategoryClick = (cat: Category) => {
-    // If clicking "all" or clicking the currently active category, reset to all deals
     const isCurrentlyActive =
       cat.id === "all" ||
       currentCategoryClean === cat.name.toLowerCase() ||
       currentCategoryClean === cat.id.toLowerCase();
-
-    if (isCurrentlyActive) {
-      onSelectCategory("");
-    } else {
-      onSelectCategory(cat.name);
-    }
+    if (isCurrentlyActive) onSelectCategory("");
+    else onSelectCategory(cat.name);
   };
 
   return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 py-4 sm:py-5 font-poppins">
-      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
-        <h2 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span>Shop by Category</span>
-        </h2>
+    <div className="w-full bg-white px-3 sm:px-6 lg:px-10 py-4 font-poppins border-b border-gray-100">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Top Cashback Stores</h2>
         {selectedCategory && (
           <button
             onClick={() => onSelectCategory("")}
-            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-semibold flex items-center gap-1 transition"
+            className="text-xs text-orange-500 hover:text-orange-600 font-semibold flex items-center gap-1 transition"
           >
-            <span>Reset to All Deals</span>
-            <span>✕</span>
+            View All ↗
           </button>
+        )}
+        {!selectedCategory && (
+          <span className="text-xs text-orange-500 font-semibold cursor-pointer hover:text-orange-600 transition">View All ↗</span>
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none touch-scroll pr-4">
+      {/* Category Icons Row */}
+      <div className="flex items-start gap-3 sm:gap-5 overflow-x-auto pb-1 scrollbar-none touch-scroll">
         {categories.map((cat) => {
           const isSelected =
-            (cat.id === "all" && (!selectedCategory || currentCategoryClean === "all" || currentCategoryClean === "all deals")) ||
-            (Boolean(selectedCategory) &&
-              (currentCategoryClean === cat.name.toLowerCase() ||
-                currentCategoryClean === cat.id.toLowerCase()));
+            (cat.id === "all" && (!selectedCategory || currentCategoryClean === "all" || currentCategoryClean === "trending")) ||
+            (Boolean(selectedCategory) && (currentCategoryClean === cat.name.toLowerCase() || currentCategoryClean === cat.id.toLowerCase()));
 
           return (
             <button
               key={cat.id}
-              type="button"
               onClick={() => handleCategoryClick(cat)}
-              className={`flex-shrink-0 relative flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border transition-all duration-200 text-xs sm:text-sm font-semibold shadow-2xs active:scale-95 cursor-pointer ${
-                isSelected
-                  ? "bg-gradient-to-r from-[#FF6B20] to-[#F15000] border-transparent text-white shadow-md shadow-orange-500/25 ring-2 ring-orange-500/20"
-                  : "bg-white border-gray-200/90 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
-              }`}
+              className="flex flex-col items-center gap-2 flex-shrink-0 group"
+              type="button"
             >
-              <span className="text-sm sm:text-base">{cat.icon}</span>
-              <span className="whitespace-nowrap">{cat.name}</span>
-              {cat.badge && (
-                <span
-                  className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
-                    isSelected
-                      ? "bg-white/25 text-white border border-white/30 backdrop-blur-xs"
-                      : "bg-red-50 text-red-700 border border-red-200/70"
+              {/* Icon Circle */}
+              <div
+                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-sm
+                  ${isSelected
+                    ? "bg-orange-500 shadow-orange-200 shadow-md scale-105"
+                    : "bg-gray-50 group-hover:bg-orange-50 border border-gray-100 group-hover:border-orange-200"
                   }`}
-                >
-                  {cat.badge}
-                </span>
-              )}
+              >
+                <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
+
+                {/* Badge */}
+                {cat.badge && (
+                  <span className={`absolute -top-1 -right-1 text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-full leading-none
+                    ${isSelected ? "bg-white text-orange-500" : "bg-orange-500 text-white"}`}>
+                    {cat.badge}
+                  </span>
+                )}
+              </div>
+
+              {/* Label */}
+              <span
+                className={`text-[11px] sm:text-xs font-semibold leading-tight text-center max-w-[64px] transition
+                  ${isSelected ? "text-orange-500" : "text-gray-600 group-hover:text-orange-500"}`}
+              >
+                {cat.name}
+              </span>
             </button>
           );
         })}
