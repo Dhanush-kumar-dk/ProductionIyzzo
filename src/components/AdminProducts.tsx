@@ -114,7 +114,7 @@ export default function AdminProducts() {
     setIsFetchingUrlData(true);
     setFetchFeedback({
       type: "info",
-      message: "Fetching product data, specs & high-resolution imagery from URL...",
+      message: "Scraping live product page, prices, specs & high-resolution imagery from URL...",
     });
 
     try {
@@ -625,13 +625,13 @@ export default function AdminProducts() {
                       </span>
                       <div>
                         <h3 className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
-                          <span>Auto-Fetch Product Details from URL</span>
+                          <span>Live URL Scraper &amp; Auto-Fill</span>
                           <span className="text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider">
-                            Instant
+                            Live Scraper
                           </span>
                         </h3>
                         <p className="text-[11px] text-gray-500">
-                          Paste any Amazon product link to automatically pull Title, ASIN, Pricing, High-Res Images &amp; Specs.
+                          Paste any Amazon product link to scrape live Title, ASIN, Real Price, MRP, High-Res Images &amp; Specs.
                         </p>
                       </div>
                     </div>
@@ -677,12 +677,12 @@ export default function AdminProducts() {
                       {isFetchingUrlData ? (
                         <>
                           <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                          <span>Fetching Data...</span>
+                          <span>Scraping Data...</span>
                         </>
                       ) : (
                         <>
                           <BoltIcon className="w-4 h-4" />
-                          <span>⚡ Auto-Fetch Data</span>
+                          <span>⚡ Scrape from URL</span>
                         </>
                       )}
                     </button>
@@ -791,7 +791,7 @@ export default function AdminProducts() {
                           className="text-[11px] text-amber-600 hover:text-amber-700 font-bold inline-flex items-center gap-1 hover:underline cursor-pointer"
                         >
                           <BoltIcon className="w-3 h-3 text-amber-500" />
-                          <span>Fetch from URL</span>
+                          <span>Scrape from URL</span>
                         </button>
                       )}
                     </div>
