@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mcp-url-converter": {
+      "command": "C:\\Users\\AMMA\\AppData\\Local\\Programs\\Antigravity IDE\\bin\\node.cmd",
+      "args": [
+        "E:\\f drv\\Amazon Affliate\\mcp-url-converter\\build\\index.js"
+      ]
+    }
+  }
+}

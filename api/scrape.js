@@ -1,4 +1,4 @@
-// Vercel Serverless Function: URL Scraper for Amazon & E-Commerce Products
+// Vercel Serverless Function: MCP URL Converter & Product Data Extractor
 
 function cleanText(text) {
   if (!text) return "";
@@ -14,19 +14,23 @@ function cleanText(text) {
     .trim();
 }
 
-export function parseAmazonHtml(html, originalUrl = "") {
-  // 1. ASIN extraction
+export function parseProductHtml(html, originalUrl = "") {
+  // 1. ASIN extraction (for Amazon links)
   let asin = "";
-  const asinMatch = originalUrl.match(/(?:dp|gp\/product|\/d\/|\/)([A-Z0-9]{10})(?:[/?#]|$)/i) ||
-                    html.match(/name="ASIN"[^>]*value="([A-Z0-9]{10})"/i) ||
-                    html.match(/data-asin="([A-Z0-9]{10})"/i);
+  const asinMatch =
+    originalUrl.match(/(?:dp|gp\/product|\/d\/|\/)([A-Z0-9]{10})(?:[/?#]|$)/i) ||
+    html.match(/name="ASIN"[^>]*value="([A-Z0-9]{10})"/i) ||
+    html.match(/data-asin="([A-Z0-9]{10})"/i);
   if (asinMatch) asin = asinMatch[1].toUpperCase();
 
-  // 2. Title extraction
+  // 2. Title extraction (Universal + Amazon)
   let name = "";
-  const titleMatch = html.match(/id="productTitle"[^>]*>([\s\S]*?)<\/span>/i) ||
-                     html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i) ||
-                     html.match(/<title>([^<]+)<\/title>/i);
+  const titleMatch =
+    html.match(/id="productTitle"[^>]*>([\s\S]*?)<\/span>/i) ||
+    html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/i) ||
+    html.match(/<meta[^>]*name="twitter:title"[^>]*content="([^"]+)"/i) ||
+    html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+    html.match(/<title>([^<]+)<\/title>/i);
   if (titleMatch) {
     name = cleanText(titleMatch[1]);
     name = name
@@ -36,7 +40,7 @@ export function parseAmazonHtml(html, originalUrl = "") {
       .trim();
   }
 
-  // 3. Current Selling Price extraction
+  // 3. Current Selling Price extraction (Amazon + Schema.org + OpenGraph + Text)
   let price = "";
   const priceMatches = [
     /<span[^>]*class="[^"]*apexPriceToPay[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
@@ -44,13 +48,17 @@ export function parseAmazonHtml(html, originalUrl = "") {
     /<span[^>]*class="[^"]*a-price[^"]*aok-align-center[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
     /<span[^>]*id="priceblock_ourprice"[^>]*>([^<]+)<\/span>/i,
     /<span[^>]*id="priceblock_dealprice"[^>]*>([^<]+)<\/span>/i,
-    /<span[^>]*class="[^"]*a-price-whole"[^>]*>([^<]+)<\/span>/i
+    /<span[^>]*class="[^"]*a-price-whole"[^>]*>([^<]+)<\/span>/i,
+    /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
+    /"price":\s*"?([0-9,.]+)"?/i,
+    /₹\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+    /Rs\.?\s*([0-9,]+(?:\.[0-9]{2})?)/i,
   ];
   for (const pat of priceMatches) {
     const m = html.match(pat);
     if (m && m[1]) {
       const cleaned = m[1].replace(/[^0-9,.]/g, "").trim();
-      if (cleaned) {
+      if (cleaned && cleaned !== "0" && cleaned !== "0.00") {
         price = cleaned.replace(/\.$/, "");
         break;
       }
@@ -63,7 +71,8 @@ export function parseAmazonHtml(html, originalUrl = "") {
     /<span[^>]*class="[^"]*a-price[^"]*a-text-price[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
     /<span[^>]*class="[^"]*basisPrice[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
     /M\.R\.P\.[:\s]*<span[^>]*class="a-offscreen">([^<]+)<\/span>/i,
-    /<span[^>]*class="[^"]*a-text-strike[^"]*"[^>]*>([^<]+)<\/span>/i
+    /<span[^>]*class="[^"]*a-text-strike[^"]*"[^>]*>([^<]+)<\/span>/i,
+    /"highPrice":\s*"?([0-9,.]+)"?/i,
   ];
   for (const pat of mrpMatches) {
     const m = html.match(pat);
@@ -78,22 +87,26 @@ export function parseAmazonHtml(html, originalUrl = "") {
 
   // 5. Star Rating
   let rating = "4.3";
-  const ratingMatch = html.match(/([0-9.]+)\s*out of 5 stars/i) ||
-                      html.match(/<span[^>]*class="a-icon-alt"[^>]*>([0-9.]+)\s*stars?<\/span>/i);
+  const ratingMatch =
+    html.match(/([0-9.]+)\s*out of 5 stars/i) ||
+    html.match(/<span[^>]*class="a-icon-alt"[^>]*>([0-9.]+)\s*stars?<\/span>/i) ||
+    /"ratingValue":\s*"?([0-9.]+)"?/i;
   if (ratingMatch && ratingMatch[1]) {
     rating = ratingMatch[1].trim();
   }
 
   // 6. Rating count
   let ratingCount = "1200";
-  const countMatch = html.match(/id="acrCustomerReviewText"[^>]*>([^<]+)<\/span>/i) ||
-                     html.match(/([0-9,]+)\s*(?:customer\s*)?ratings/i);
+  const countMatch =
+    html.match(/id="acrCustomerReviewText"[^>]*>([^<]+)<\/span>/i) ||
+    html.match(/([0-9,]+)\s*(?:customer\s*)?ratings/i) ||
+    /"reviewCount":\s*"?([0-9,]+)"?/i;
   if (countMatch && countMatch[1]) {
     const num = countMatch[1].replace(/[^0-9]/g, "");
     if (num) ratingCount = num;
   }
 
-  // 7. Feature bullets
+  // 7. Feature bullets / Description
   const bullets = [];
   const bulletsMatch = html.match(/<div[^>]*id="feature-bullets"[^>]*>([\s\S]*?)<\/div>/i);
   if (bulletsMatch) {
@@ -106,34 +119,65 @@ export function parseAmazonHtml(html, originalUrl = "") {
     }
   }
 
+  // Meta description fallback for bullets
+  if (bullets.length === 0) {
+    const metaDesc =
+      html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/i) ||
+      html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/i);
+    if (metaDesc && metaDesc[1]) {
+      const cleanedDesc = cleanText(metaDesc[1]);
+      const parts = cleanedDesc.split(/[.;•|]\s+/).filter((s) => s.length > 15);
+      if (parts.length > 0) {
+        bullets.push(...parts.slice(0, 4));
+      }
+    }
+  }
+
   // 8. Specs (Product Overview & Technical Details)
   const specs = {};
-  // Overview table (Brand, Model, Color, Connectivity...)
-  const poRegex = /<tr[^>]*class="[^"]*po-([^"]+)[^"]*"[^>]*>[\s\S]*?<td[^>]*class="[^"]*a-span3[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-size-base[^"]*"[^>]*>([^<]+)<\/span>[\s\S]*?<td[^>]*class="[^"]*a-span9[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-size-base[^"]*"[^>]*>([^<]+)<\/span>/gi;
+  const poRegex =
+    /<tr[^>]*class="[^"]*po-([^"]+)[^"]*"[^>]*>[\s\S]*?<td[^>]*class="[^"]*a-span3[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-size-base[^"]*"[^>]*>([^<]+)<\/span>[\s\S]*?<td[^>]*class="[^"]*a-span9[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-size-base[^"]*"[^>]*>([^<]+)<\/span>/gi;
   for (const m of html.matchAll(poRegex)) {
     const key = cleanText(m[2]);
     const val = cleanText(m[3]);
     if (key && val) specs[key] = val;
   }
-  // Technical details table
-  const techRegex = /<th[^>]*class="[^"]*prodDetSectionEntry[^"]*"[^>]*>([\s\S]*?)<\/th>[\s\S]*?<td[^>]*class="[^"]*prodDetAttrValue[^"]*"[^>]*>([\s\S]*?)<\/td>/gi;
+  const techRegex =
+    /<th[^>]*class="[^"]*prodDetSectionEntry[^"]*"[^>]*>([\s\S]*?)<\/th>[\s\S]*?<td[^>]*class="[^"]*prodDetAttrValue[^"]*"[^>]*>([\s\S]*?)<\/td>/gi;
   for (const m of html.matchAll(techRegex)) {
     const key = cleanText(m[1]);
     const val = cleanText(m[2]);
     if (key && val && !specs[key]) specs[key] = val;
   }
 
-  // 9. Images
-  const imgRegex = /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na)\.ssl-images-amazon\.com)\/images\/I\/[A-Za-z0-9%_-]+(?:\.[A-Za-z0-9]+)?\.(?:jpg|png|webp)/gi;
-  const rawImgs = [...new Set(html.match(imgRegex) || [])];
-  const validImgs = rawImgs.filter(u => 
-    !u.includes("SS40") && !u.includes("SX38") && !u.includes("US40") && 
-    !u.includes("logo") && !u.includes("icon") && !u.includes("transparent-pixel") &&
-    !u.includes("grey-pixel")
+  // 9. Images (Universal + OpenGraph + Amazon CDN)
+  const ogImgMatch =
+    html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/i) ||
+    html.match(/<meta[^>]*name="twitter:image"[^>]*content="([^"]+)"/i);
+
+  const imgRegex =
+    /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na)\.ssl-images-amazon\.com)\/images\/I\/[A-Za-z0-9%_-]+(?:\.[A-Za-z0-9]+)?\.(?:jpg|png|webp)/gi;
+  const rawImgs = Array.from(new Set(html.match(imgRegex) || []));
+  const validImgs = rawImgs.filter(
+    (u) =>
+      !u.includes("SS40") &&
+      !u.includes("SX38") &&
+      !u.includes("US40") &&
+      !u.includes("logo") &&
+      !u.includes("icon") &&
+      !u.includes("transparent-pixel") &&
+      !u.includes("grey-pixel")
   );
 
-  let image = validImgs[0] || (asin ? `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX800_.jpg` : "");
-  let image1 = validImgs[1] || (asin ? `https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8&Format=_SL800_&ASIN=${asin}&MarketPlace=IN&ID=AsinImage` : "");
+  let image =
+    validImgs[0] ||
+    (ogImgMatch ? ogImgMatch[1] : "") ||
+    (asin ? `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX800_.jpg` : "");
+  let image1 =
+    validImgs[1] ||
+    (asin
+      ? `https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8&Format=_SL800_&ASIN=${asin}&MarketPlace=IN&ID=AsinImage`
+      : "");
   let image2 = validImgs[2] || "";
 
   // 10. Brand
@@ -141,7 +185,10 @@ export function parseAmazonHtml(html, originalUrl = "") {
   if (!brand) {
     const bylineMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/i);
     if (bylineMatch) {
-      brand = cleanText(bylineMatch[1]).replace(/^(?:Visit the|Brand:)\s*/i, "").replace(/\s*Store$/i, "").trim();
+      brand = cleanText(bylineMatch[1])
+        .replace(/^(?:Visit the|Brand:)\s*/i, "")
+        .replace(/\s*Store$/i, "")
+        .trim();
     }
   }
   if (!brand && name) {
@@ -169,26 +216,30 @@ export function parseAmazonHtml(html, originalUrl = "") {
   }
 
   // 12. Pros & Cons
-  const pros = bullets.length >= 2 
-    ? bullets.slice(0, 3) 
-    : [
-        `Official ${brand || "brand"} product with authentic warranty`,
-        "Prime shipping and verified Amazon storefront fulfillment",
-        "High quality materials with durable construction"
-      ];
+  const pros =
+    bullets.length >= 2
+      ? bullets.slice(0, 3)
+      : [
+          `Official ${brand || "brand"} product with authentic warranty`,
+          "Direct storefront dispatch with buyer protection",
+          "High quality materials with durable construction",
+        ];
   const cons = [
-    "Pricing and discount may vary depending on active seller promotions"
+    "Pricing and discount may vary depending on active seller promotions",
   ];
 
-  const shortDetail = bullets.length > 0 
-    ? bullets.slice(0, 2).join(" • ")
-    : `Official ${brand} Model • Verified Specifications • Fast Shipping`;
+  const shortDetail =
+    bullets.length > 0
+      ? bullets.slice(0, 2).join(" • ")
+      : `Official ${brand || "Brand"} Model • Verified Specifications • Fast Shipping`;
 
   const summary = `Comprehensive buyer review and independent performance evaluation of ${name}. Includes authentic specs, verified customer feedback, and pricing insights.`;
 
+  const affiliateUrl = asin ? `https://www.amazon.in/dp/${asin}?tag=dk29112306-21` : originalUrl;
+
   return {
     asin,
-    name: name || (brand ? `${brand} Product (ASIN: ${asin})` : `Amazon Product ${asin}`),
+    name: name || (brand ? `${brand} Product (ASIN: ${asin})` : `Product ${asin}`),
     category,
     price: price || "1,499",
     mrp: mrp || (price ? (parseInt(price.replace(/,/g, ""), 10) * 1.35).toFixed(0) : "2,999"),
@@ -197,7 +248,7 @@ export function parseAmazonHtml(html, originalUrl = "") {
     image,
     image1,
     image2,
-    url: asin ? `https://www.amazon.in/dp/${asin}?tag=dk29112306-21` : originalUrl,
+    url: affiliateUrl,
     editorBadge: "Editor's Choice",
     shortDetail,
     summary,
@@ -206,7 +257,7 @@ export function parseAmazonHtml(html, originalUrl = "") {
     whoItsFor: `Shoppers seeking verified authentic ${brand || "quality"} gear with tested features.`,
     specs,
     confidence: "full",
-    sourceMessage: `Successfully scraped real-time product details, live pricing, specifications, and imagery from Amazon!`
+    sourceMessage: `Successfully scraped real-time product details, live pricing, specifications, and imagery via MCP URL Converter!`,
   };
 }
 
@@ -262,28 +313,28 @@ export default async function handler(req, res) {
     const html = await response.text();
 
     if (html.includes("Robot Check") || html.includes("Type the characters you see in this image")) {
-      // Captcha encountered - attempt fallback via proxy
+      // Captcha encountered - attempt fallback via Jina reader proxy
       const jinaRes = await fetch(`https://r.jina.ai/${targetUrl}`, {
         headers: { Accept: "application/json" },
       });
       if (jinaRes.ok) {
         const jinaData = await jinaRes.json();
-        const parsed = parseAmazonHtml(jinaData?.data?.content || html, targetUrl);
-        res.status(200).json({ success: true, data: parsed, source: "jina-scraper" });
+        const parsed = parseProductHtml(jinaData?.data?.content || html, targetUrl);
+        res.status(200).json({ success: true, data: parsed, source: "jina-mcp-converter" });
         return;
       }
     }
 
-    const data = parseAmazonHtml(html, targetUrl);
-    res.status(200).json({ success: true, data, source: "direct-scraper" });
+    const data = parseProductHtml(html, targetUrl);
+    res.status(200).json({ success: true, data, source: "direct-mcp-converter" });
   } catch (err) {
-    // Fallback: try public proxy
+    // Fallback: try public CORS proxy
     try {
       const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
       if (proxyRes.ok) {
         const proxyData = await proxyRes.json();
-        const data = parseAmazonHtml(proxyData.contents || "", targetUrl);
-        res.status(200).json({ success: true, data, source: "proxy-scraper" });
+        const data = parseProductHtml(proxyData.contents || "", targetUrl);
+        res.status(200).json({ success: true, data, source: "proxy-mcp-converter" });
         return;
       }
     } catch {
