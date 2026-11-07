@@ -29,8 +29,10 @@ export default function ProductUploadForm({
       setImage(data.image);
       setUrl(data.url);
       setFetchNotice("✨ Successfully fetched product details!");
-    } catch (err: any) {
-      setFetchNotice(err.message || "Failed to fetch from URL");
+    } catch (err: unknown) {
+      setFetchNotice(
+        err instanceof Error ? err.message : "Failed to fetch from URL"
+      );
     } finally {
       setIsFetchingUrl(false);
     }

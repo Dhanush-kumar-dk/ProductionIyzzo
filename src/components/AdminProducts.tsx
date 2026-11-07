@@ -153,10 +153,13 @@ export default function AdminProducts() {
         type: "success",
         message: `✨ ${data.sourceMessage} All product fields have been populated. You can edit any details below before saving.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFetchFeedback({
         type: "error",
-        message: err.message || "Failed to extract product data from URL.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to extract product data from URL.",
       });
     } finally {
       setIsFetchingUrlData(false);

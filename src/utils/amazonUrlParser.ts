@@ -105,7 +105,7 @@ function cleanSlugToTitle(slug: string): string {
     .replace(/\b(ref=|dp|gp)[^ ]*/gi, "")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase());
+    .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
 
 /**
@@ -239,7 +239,9 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
   // 1. Check local catalog first (instant match if product is known)
   const catalog = getAllCatalogProducts();
   const foundInCatalog = catalog.find(
-    (p) => p.id.toUpperCase() === asin || (p.asin && p.asin.toUpperCase() === asin)
+    (p) =>
+      p.id.toUpperCase() === asin ||
+      (p.specs?.ASIN && p.specs.ASIN.toUpperCase() === asin)
   );
 
   if (foundInCatalog) {
@@ -247,7 +249,7 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
       asin,
       name: foundInCatalog.name,
       category: foundInCatalog.category || category,
-      price: foundInCatalog.price,
+      price: foundInCatalog.price || "1,499",
       mrp: foundInCatalog.mrp || "",
       rating: foundInCatalog.rating?.toString() || "4.5",
       ratingCount: foundInCatalog.ratingCount?.toString() || "1200",
@@ -256,12 +258,28 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
       image2: foundInCatalog.image2,
       url: affiliateUrl,
       editorBadge: foundInCatalog.editorBadge || "Top Value Pick",
-      shortDetail: foundInCatalog.shortDetail || `${brand} High Performance Specifications`,
-      summary: foundInCatalog.summary || `Comprehensive independent evaluation of ${foundInCatalog.name}.`,
-      pros: foundInCatalog.pros && foundInCatalog.pros.length > 0 ? foundInCatalog.pros : ["High build quality", "Official brand warranty"],
-      cons: foundInCatalog.cons && foundInCatalog.cons.length > 0 ? foundInCatalog.cons : ["Check retailer bundle contents before purchasing"],
-      whoItsFor: foundInCatalog.whoItsFor || "Tech enthusiasts, everyday buyers, and value-oriented shoppers.",
-      specs: foundInCatalog.specs || { Brand: brand, ASIN: asin, Warranty: "1 Year Official Brand Warranty" },
+      shortDetail:
+        foundInCatalog.shortDetail ||
+        `${brand} High Performance Specifications`,
+      summary:
+        foundInCatalog.summary ||
+        `Comprehensive independent evaluation of ${foundInCatalog.name}.`,
+      pros:
+        foundInCatalog.pros && foundInCatalog.pros.length > 0
+          ? foundInCatalog.pros
+          : ["High build quality", "Official brand warranty"],
+      cons:
+        foundInCatalog.cons && foundInCatalog.cons.length > 0
+          ? foundInCatalog.cons
+          : ["Check retailer bundle contents before purchasing"],
+      whoItsFor:
+        foundInCatalog.whoItsFor ||
+        "Tech enthusiasts, everyday buyers, and value-oriented shoppers.",
+      specs: foundInCatalog.specs || {
+        Brand: brand,
+        ASIN: asin,
+        Warranty: "1 Year Official Brand Warranty",
+      },
       confidence: "catalog",
       sourceMessage: `Matched from verified product catalog database (ASIN: ${asin}).`,
     };
