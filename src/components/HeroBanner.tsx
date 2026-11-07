@@ -2,17 +2,15 @@ import { useState, useEffect } from "react";
 import Image1 from "../assets/image1.jpg";
 import Image2 from "../assets/image2.jpg";
 import Image3 from "../assets/image3.jpg";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
+import { ChevronLeftIcon, ChevronRightIcon, SparklesIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
 
 interface Slide {
   id: number;
-  brand: string;
-  badge: string;
-  badgeBg: string;
-  cashbackLabel: string;
-  cashbackValue: string;
+  tag: string;
+  title: string;
+  highlight: string;
+  description: string;
   bgGradient: string;
-  textColor: string;
   image: string;
   ctaText: string;
 }
@@ -20,167 +18,140 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: 1,
-    brand: "Yearnit",
-    badge: "DIWALI JACKPOT SALE",
-    badgeBg: "bg-yellow-400 text-gray-900",
-    cashbackLabel: "Cashback on every purchase",
-    cashbackValue: "Up to 8%",
-    bgGradient: "from-pink-600 via-rose-500 to-pink-700",
-    textColor: "text-white",
+    tag: "INDEPENDENT EDITORIAL SELECTION",
+    title: "Honest Product Evaluations",
+    highlight: "Tested & Researched",
+    description: "In-depth buyer guides evaluating performance, durability, and practical utility across top electronics and everyday lifestyle essentials.",
+    bgGradient: "from-blue-900 via-indigo-900 to-slate-900",
     image: Image1,
-    ctaText: "Earn now ↗",
+    ctaText: "Explore Buyer Guides",
   },
   {
     id: 2,
-    brand: "Shopsy",
-    badge: "SHOPSY DIWALI MELA",
-    badgeBg: "bg-yellow-300 text-purple-900",
-    cashbackLabel: "Cashback on every purchase",
-    cashbackValue: "Up to 8%",
-    bgGradient: "from-purple-600 via-violet-600 to-purple-800",
-    textColor: "text-white",
+    tag: "UNBIASED BUYER BREAKDOWNS",
+    title: "Clear Pros & Tradeoffs",
+    highlight: "Transparent Insights",
+    description: "We research real-world user feedback and manufacturer specs to highlight honest strengths and limitations before you purchase.",
+    bgGradient: "from-slate-900 via-teal-950 to-slate-900",
     image: Image2,
-    ctaText: "Earn now ↗",
+    ctaText: "Browse Top Recommendations",
   },
   {
     id: 3,
-    brand: "Dot & Key",
-    badge: "UP TO 12.50% CASHBACK",
-    badgeBg: "bg-orange-400 text-white",
-    cashbackLabel: "Cashback on every purchase",
-    cashbackValue: "Up to 12.50%",
-    bgGradient: "from-orange-500 via-orange-400 to-red-500",
-    textColor: "text-white",
+    tag: "COMMUNITY TRUST & VALUE",
+    title: "Quality Gear That Delivers",
+    highlight: "Curated Recommendations",
+    description: "Straightforward recommendations with verified specifications and direct links to official retailer product pages.",
+    bgGradient: "from-slate-950 via-zinc-900 to-gray-950",
     image: Image3,
-    ctaText: "Earn now ↗",
+    ctaText: "View Featured Guides",
   },
 ];
 
 export default function HeroBanner({ onExploreClick }: { onExploreClick: () => void }) {
   const [current, setCurrent] = useState(0);
-  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setAnimating(true);
-      setTimeout(() => { setCurrent((prev) => (prev + 1) % slides.length); setAnimating(false); }, 300);
-    }, 5000);
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 6000);
     return () => clearInterval(timer);
   }, []);
 
   const prevSlide = () => {
-    if (animating) return;
-    setAnimating(true);
-    setTimeout(() => { setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1)); setAnimating(false); }, 200);
+    setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
   const nextSlide = () => {
-    if (animating) return;
-    setAnimating(true);
-    setTimeout(() => { setCurrent((prev) => (prev + 1) % slides.length); setAnimating(false); }, 200);
+    setCurrent((prev) => (prev + 1) % slides.length);
   };
 
-  // Compute which 3 slides to show (current, next, next-next)
-  const getSlideAt = (offset: number) => slides[(current + offset) % slides.length];
-
   return (
-    <div className="w-full bg-white px-3 sm:px-6 lg:px-10 pt-4 pb-2 font-poppins">
-      {/* ── Desktop: 3-Panel Side-by-Side ── */}
-      <div className="hidden md:grid grid-cols-3 gap-3 relative">
-        {[0, 1, 2].map((offset) => {
-          const slide = getSlideAt(offset);
-          return (
-            <div
-              key={slide.id}
-              className={`relative overflow-hidden rounded-2xl min-h-[200px] lg:min-h-[240px] flex flex-col justify-between p-5 cursor-pointer
-                bg-gradient-to-br ${slide.bgGradient} shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group`}
-              onClick={onExploreClick}
-            >
-              {/* Background image */}
-              <div className="absolute inset-0 opacity-20 mix-blend-soft-light">
-                <img src={slide.image} alt={slide.brand} className="w-full h-full object-cover object-center" />
-              </div>
-
-              {/* Top row: brand + badge */}
-              <div className="relative z-10 flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-black text-sm border border-white/30">
-                    {slide.brand.charAt(0)}
-                  </div>
-                  <span className={`text-sm font-bold ${slide.textColor}`}>{slide.brand}</span>
-                </div>
-                <span className={`text-[9px] font-extrabold uppercase px-2 py-1 rounded-lg tracking-wider leading-tight text-center max-w-[80px] ${slide.badgeBg}`}>
-                  {slide.badge}
-                </span>
-              </div>
-
-              {/* Cashback info */}
-              <div className="relative z-10 mt-4">
-                <p className={`text-xs font-medium ${slide.textColor} opacity-80`}>{slide.cashbackLabel}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                    <span className="text-white font-black text-[10px]">Y</span>
-                  </div>
-                  <span className={`text-2xl lg:text-3xl font-black ${slide.textColor} leading-none`}>
-                    {slide.cashbackValue}
-                  </span>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <button className="relative z-10 mt-4 self-start bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition-all duration-200 group-hover:shadow-orange-500/40">
-                {slide.ctaText}
-              </button>
-            </div>
-          );
-        })}
-
-        {/* Nav arrows */}
-        <button onClick={prevSlide} className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-orange-50 transition border border-gray-100">
-          <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
-        </button>
-        <button onClick={nextSlide} className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-orange-50 transition border border-gray-100">
-          <ChevronRightIcon className="w-4 h-4 text-gray-600" />
-        </button>
-      </div>
-
-      {/* ── Mobile: Single Card Slider ── */}
-      <div className="md:hidden relative overflow-hidden rounded-2xl">
+    <div className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4 font-poppins">
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl min-h-[320px] sm:min-h-[400px] md:min-h-[440px] flex items-center">
         {slides.map((slide, idx) => (
           <div
             key={slide.id}
-            className={`absolute inset-0 bg-gradient-to-br ${slide.bgGradient} transition-opacity duration-500 flex flex-col justify-between p-5 min-h-[200px]
-              ${idx === current ? "opacity-100 relative" : "opacity-0 pointer-events-none"}`}
-            onClick={onExploreClick}
+            className={`absolute inset-0 bg-gradient-to-r ${slide.bgGradient} transition-opacity duration-1000 flex items-center ${
+              idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+            }`}
           >
-            <div className="absolute inset-0 opacity-15 mix-blend-soft-light">
-              <img src={slide.image} alt={slide.brand} className="w-full h-full object-cover" />
+            {/* Background image overlay with blend */}
+            <div className="absolute inset-0 opacity-20 mix-blend-overlay">
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover object-center filter blur-[1px]"
+              />
             </div>
-            <div className="relative z-10 flex items-start justify-between">
-              <span className={`text-base font-bold ${slide.textColor}`}>{slide.brand}</span>
-              <span className={`text-[9px] font-extrabold uppercase px-2 py-1 rounded-lg ${slide.badgeBg}`}>{slide.badge}</span>
-            </div>
-            <div className="relative z-10">
-              <p className={`text-xs ${slide.textColor} opacity-80`}>{slide.cashbackLabel}</p>
-              <span className={`text-2xl font-black ${slide.textColor}`}>{slide.cashbackValue}</span>
-              <button className="mt-3 block bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">
-                {slide.ctaText}
-              </button>
+
+            {/* Content Container */}
+            <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-12 md:px-16 py-6 pb-9 sm:py-10 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-8 items-center w-full">
+              <div className="md:col-span-8 space-y-2.5 sm:space-y-4 text-white">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-[10px] sm:text-xs font-semibold tracking-wider text-amber-300">
+                  <SparklesIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="truncate">{slide.tag}</span>
+                </div>
+
+                <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+                  {slide.title}
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-200 mt-0.5 sm:mt-1">
+                    {slide.highlight}
+                  </span>
+                </h1>
+
+                <p className="text-xs sm:text-base text-gray-300 max-w-xl font-normal leading-relaxed line-clamp-3 sm:line-clamp-none">
+                  {slide.description}
+                </p>
+
+                <div className="pt-1 sm:pt-2 flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 sm:gap-4">
+                  <button
+                    onClick={onExploreClick}
+                    className="w-full xs:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg transition transform active:scale-95 text-center"
+                  >
+                    {slide.ctaText}
+                  </button>
+
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-300 font-medium">
+                    <ShieldCheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" />
+                    <span>Independent Research & Direct Store Links</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ))}
-      </div>
 
-      {/* Dot indicators */}
-      <div className="flex items-center justify-center gap-2 mt-3">
-        {slides.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrent(idx)}
-            className={`rounded-full transition-all duration-300 ${idx === current ? "w-6 h-2 bg-orange-500" : "w-2 h-2 bg-gray-300"}`}
-            aria-label={`Slide ${idx + 1}`}
-          />
-        ))}
+        {/* Carousel Navigation Arrows (Desktop / Tablet only to prevent mobile text overlap) */}
+        <button
+          onClick={prevSlide}
+          className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition items-center justify-center"
+          aria-label="Previous Slide"
+        >
+          <ChevronLeftIcon className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={nextSlide}
+          className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition items-center justify-center"
+          aria-label="Next Slide"
+        >
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+
+        {/* Dots indicator */}
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                idx === current ? "w-6 sm:w-8 bg-amber-400" : "w-1.5 sm:w-2 bg-white/40"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
