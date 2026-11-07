@@ -1,22 +1,62 @@
 interface Category {
   id: string;
   name: string;
-  icon: string;
+  imgUrl: string;
   badge?: string;
+  badgeColor?: string;
 }
 
 const categories: Category[] = [
-  { id: "all", name: "Trending", icon: "🔥", badge: "Hot" },
-  { id: "all-deals", name: "All", icon: "🛍️" },
-  { id: "clothing", name: "Fashion", icon: "👗" },
-  { id: "beauty", name: "Beauty", icon: "💄" },
-  { id: "grocery", name: "Grocery", icon: "🛒" },
-  { id: "electronics", name: "Electronics", icon: "💻" },
-  { id: "laptop", name: "Laptop", icon: "🖥️" },
-  { id: "mobile", name: "Mobile", icon: "📱" },
-  { id: "travel", name: "Travel", icon: "✈️" },
-  { id: "health", name: "Health", icon: "🏥" },
-  { id: "appliances", name: "Appliances", icon: "🏠" },
+  {
+    id: "all",
+    name: "All Deals",
+    imgUrl: "https://img.icons8.com/fluency/48/fire-element.png",
+    badge: "HOT",
+    badgeColor: "bg-red-500 text-white",
+  },
+  {
+    id: "electronics",
+    name: "Electronics",
+    imgUrl: "https://img.icons8.com/fluency/48/laptop.png",
+    badge: "-40%",
+    badgeColor: "bg-blue-500 text-white",
+  },
+  {
+    id: "clothing",
+    name: "Fashion",
+    imgUrl: "https://img.icons8.com/fluency/48/shopping-bag.png",
+    badge: "TREND",
+    badgeColor: "bg-pink-500 text-white",
+  },
+  {
+    id: "home",
+    name: "Home & Kitchen",
+    imgUrl: "https://img.icons8.com/fluency/48/home.png",
+  },
+  {
+    id: "gadgets",
+    name: "Gadgets & Audio",
+    imgUrl: "https://img.icons8.com/fluency/48/headphones.png",
+    badge: "NEW",
+    badgeColor: "bg-purple-500 text-white",
+  },
+  {
+    id: "footwear",
+    name: "Footwear",
+    imgUrl: "https://img.icons8.com/fluency/48/sneaker.png",
+  },
+  {
+    id: "beauty",
+    name: "Beauty & Care",
+    imgUrl: "https://img.icons8.com/fluency/48/lipstick.png",
+  },
+  {
+    id: "budget",
+    name: "Under ₹999",
+    imgUrl: "https://img.icons8.com/fluency/48/price-tag.png",
+    badge: "BUDGET",
+    badgeColor: "bg-orange-500 text-white",
+  },
 ];
 
 interface CategoryStripProps {
@@ -37,63 +77,66 @@ export default function CategoryStrip({ selectedCategory, onSelectCategory }: Ca
   };
 
   return (
-    <div className="w-full bg-white px-3 sm:px-6 lg:px-10 py-4 font-poppins border-b border-gray-100">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Top Cashback Stores</h2>
-        {selectedCategory && (
-          <button
-            onClick={() => onSelectCategory("")}
-            className="text-xs text-orange-500 hover:text-orange-600 font-semibold flex items-center gap-1 transition"
-          >
-            View All ↗
-          </button>
-        )}
-        {!selectedCategory && (
-          <span className="text-xs text-orange-500 font-semibold cursor-pointer hover:text-orange-600 transition">View All ↗</span>
-        )}
-      </div>
-
-      {/* Category Icons Row */}
-      <div className="flex items-start gap-3 sm:gap-5 overflow-x-auto pb-1 scrollbar-none touch-scroll">
+    <div className="w-full bg-white px-3 sm:px-6 lg:px-10 py-3 font-poppins border-b border-gray-100">
+      {/* Scrollable row */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-scroll">
         {categories.map((cat) => {
           const isSelected =
-            (cat.id === "all" && (!selectedCategory || currentCategoryClean === "all" || currentCategoryClean === "trending")) ||
-            (Boolean(selectedCategory) && (currentCategoryClean === cat.name.toLowerCase() || currentCategoryClean === cat.id.toLowerCase()));
+            (cat.id === "all" &&
+              (!selectedCategory ||
+                currentCategoryClean === "all" ||
+                currentCategoryClean === "all deals")) ||
+            (Boolean(selectedCategory) &&
+              (currentCategoryClean === cat.name.toLowerCase() ||
+                currentCategoryClean === cat.id.toLowerCase()));
 
           return (
             <button
               key={cat.id}
-              onClick={() => handleCategoryClick(cat)}
-              className="flex flex-col items-center gap-2 flex-shrink-0 group"
               type="button"
+              onClick={() => handleCategoryClick(cat)}
+              className={`relative flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all duration-200 flex-shrink-0 group
+                ${
+                  isSelected
+                    ? "bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-200"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50"
+                }`}
             >
-              {/* Icon Circle */}
+              {/* Category image icon */}
               <div
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-sm
-                  ${isSelected
-                    ? "bg-orange-500 shadow-orange-200 shadow-md scale-105"
-                    : "bg-gray-50 group-hover:bg-orange-50 border border-gray-100 group-hover:border-orange-200"
-                  }`}
+                className={`w-6 h-6 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 transition-all
+                  ${isSelected ? "bg-white/20" : "bg-gray-50"}`}
               >
-                <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
-
-                {/* Badge */}
-                {cat.badge && (
-                  <span className={`absolute -top-1 -right-1 text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-full leading-none
-                    ${isSelected ? "bg-white text-orange-500" : "bg-orange-500 text-white"}`}>
-                    {cat.badge}
-                  </span>
-                )}
+                <img
+                  src={cat.imgUrl}
+                  alt={cat.name}
+                  className="w-5 h-5 object-contain"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback to a neutral placeholder on error
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
               </div>
 
               {/* Label */}
-              <span
-                className={`text-[11px] sm:text-xs font-semibold leading-tight text-center max-w-[64px] transition
-                  ${isSelected ? "text-orange-500" : "text-gray-600 group-hover:text-orange-500"}`}
-              >
+              <span className="text-xs sm:text-sm font-semibold whitespace-nowrap leading-none">
                 {cat.name}
               </span>
+
+              {/* Badge */}
+              {cat.badge && (
+                <span
+                  className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md leading-none tracking-wide flex-shrink-0
+                    ${
+                      isSelected
+                        ? "bg-white/25 text-white border border-white/30"
+                        : cat.badgeColor ?? "bg-gray-100 text-gray-600"
+                    }`}
+                >
+                  {cat.badge}
+                </span>
+              )}
             </button>
           );
         })}
