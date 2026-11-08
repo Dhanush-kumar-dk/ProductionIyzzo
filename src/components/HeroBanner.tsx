@@ -16,13 +16,13 @@ const slides: Slide[] = [
     id: 1,
     title: "Top-Rated Electronics — Mobile, TV & Appliances",
     image: Image1,
-    alt: "Top-Rated Electronics: Mobile, TV & Appliances — Discover the latest smartphones, smart TVs, and home appliances. Shop the latest deals.",
+    alt: "Top-Rated Electronics: Mobile, TV & Appliances — Discover the latest smartphones, smart TVs, and home appliances.",
   },
   {
     id: 2,
     title: "Curated Fashion Picks — Trends & Styles",
     image: Image2,
-    alt: "Curated Fashion Picks: Trends & Styles — Discover the latest in apparel, footwear, and accessories. Shop the latest collection.",
+    alt: "Curated Fashion Picks: Trends & Styles — Discover the latest in apparel, footwear, and accessories.",
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
 
-  // Preload slides in background for zero-latency swiping
+  // Preload slides for zero-latency swiping
   useEffect(() => {
     slides.forEach((slide) => {
       const img = new Image();
@@ -77,7 +77,6 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     const diffX = touchStartXRef.current - e.changedTouches[0].clientX;
     const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
 
-    // Only swipe if horizontal movement is dominant (avoid capturing normal page scrolling)
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
       if (diffX > 0) {
         nextSlide();
@@ -89,41 +88,59 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     touchStartYRef.current = null;
   };
 
+  const prevIndex = (current - 1 + slides.length) % slides.length;
+  const nextIndex = (current + 1) % slides.length;
+
   return (
     <section 
       aria-label="Promotional Carousel" 
-      className="w-full px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins"
+      className="w-full pt-2 sm:pt-3 pb-2 font-poppins select-none overflow-hidden"
     >
       <div
-        className="relative w-full max-w-7xl mx-auto aspect-[1024/260] min-h-[120px] sm:min-h-[180px] md:min-h-[220px] lg:min-h-[260px] rounded-xl sm:rounded-3xl overflow-hidden shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
+        className="relative w-full max-w-[1440px] mx-auto px-1 sm:px-4"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        onClick={onExploreClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onExploreClick();
-          }
-        }}
       >
-        {/* Slides */}
-        {slides.map((slide, idx) => (
+        {/* Multi-Card Peeking Stage */}
+        <div className="relative flex items-center justify-center gap-2.5 xs:gap-3 sm:gap-4 md:gap-5 w-full">
+          {/* Left Peeking Slide */}
           <div
-            key={slide.id}
-            aria-hidden={idx !== current}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
+            onClick={prevSlide}
+            role="button"
+            tabIndex={0}
+            aria-label={`Previous slide: ${slides[prevIndex].title}`}
+            className="w-[78vw] xs:w-[74vw] sm:w-[480px] md:w-[540px] lg:w-[600px] xl:w-[640px] aspect-[2.14/1] h-[145px] xs:h-[165px] sm:h-[195px] md:h-[210px] shrink-0 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer shadow-md opacity-50 hover:opacity-80 transition-all duration-500 transform hover:scale-[1.01] bg-[#090D16]"
           >
             <img
-              src={slide.image}
-              alt={slide.alt}
-              className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
-              loading={idx === 0 ? "eager" : "lazy"}
+              src={slides[prevIndex].image}
+              alt=""
+              className="w-full h-full object-cover object-center pointer-events-none"
+              loading="lazy"
+            />
+          </div>
+
+          {/* Center Active Slide */}
+          <div
+            onClick={onExploreClick}
+            role="button"
+            tabIndex={0}
+            aria-label={`Active slide: ${slides[current].title}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onExploreClick();
+              }
+            }}
+            className="relative w-[78vw] xs:w-[74vw] sm:w-[480px] md:w-[540px] lg:w-[600px] xl:w-[640px] aspect-[2.14/1] h-[145px] xs:h-[165px] sm:h-[195px] md:h-[210px] shrink-0 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer shadow-xl sm:shadow-2xl ring-1 ring-white/15 dark:ring-white/10 transition-all duration-500 transform hover:scale-[1.012] z-10 bg-[#090D16]"
+          >
+            <img
+              key={slides[current].id}
+              src={slides[current].image}
+              alt={slides[current].alt}
+              className="w-full h-full object-cover object-center transition-all duration-700 ease-out"
+              loading="eager"
               decoding="async"
               style={{
                 imageRendering: "-webkit-optimize-contrast",
@@ -131,58 +148,70 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
                 backfaceVisibility: "hidden",
                 WebkitTransform: "translateZ(0)",
                 transform: "translateZ(0)",
-                willChange: "transform, opacity",
               }}
             />
           </div>
-        ))}
 
-        {/* Carousel Navigation Arrows (Touch optimized) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            prevSlide();
-          }}
-          className="absolute left-1.5 xs:left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeftIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
-        </button>
+          {/* Right Peeking Slide */}
+          <div
+            onClick={nextSlide}
+            role="button"
+            tabIndex={0}
+            aria-label={`Next slide: ${slides[nextIndex].title}`}
+            className="w-[78vw] xs:w-[74vw] sm:w-[480px] md:w-[540px] lg:w-[600px] xl:w-[640px] aspect-[2.14/1] h-[145px] xs:h-[165px] sm:h-[195px] md:h-[210px] shrink-0 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer shadow-md opacity-50 hover:opacity-80 transition-all duration-500 transform hover:scale-[1.01] bg-[#090D16]"
+          >
+            <img
+              src={slides[nextIndex].image}
+              alt=""
+              className="w-full h-full object-cover object-center pointer-events-none"
+              loading="lazy"
+            />
+          </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            nextSlide();
-          }}
-          className="absolute right-1.5 xs:right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
-          aria-label="Next Slide"
-        >
-          <ChevronRightIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
-        </button>
+          {/* Floating Navigation Arrows */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              prevSlide();
+            }}
+            className="absolute left-2 xs:left-4 sm:left-8 md:left-14 lg:left-24 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/80 text-white/95 backdrop-blur-md transition-all shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:outline-none"
+            aria-label="Previous Slide"
+          >
+            <ChevronLeftIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
+          </button>
 
-        {/* Thumb-friendly Dots Indicator */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              nextSlide();
+            }}
+            className="absolute right-2 xs:right-4 sm:right-8 md:right-14 lg:right-24 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/80 text-white/95 backdrop-blur-md transition-all shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:outline-none"
+            aria-label="Next Slide"
+          >
+            <ChevronRightIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
+
+        {/* Reference-Styled Indicator Dots (Active Orange Pill + Round Inactive Dots) */}
         <div 
-          className="absolute bottom-1.5 xs:bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 xs:gap-1.5 sm:gap-2 px-2.5 xs:px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-md"
+          className="flex items-center justify-center gap-1.5 xs:gap-2 mt-2.5 sm:mt-3"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
             <button
               type="button"
               key={idx}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrent(idx);
-              }}
+              onClick={() => setCurrent(idx)}
               className="p-1 focus:outline-none"
               aria-label={`Go to slide ${idx + 1}`}
             >
               <span
-                className={`block h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                className={`block transition-all duration-300 rounded-full ${
                   idx === current 
-                    ? "w-5 xs:w-6 sm:w-8 bg-[#FFD814] shadow" 
-                    : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/90"
+                    ? "w-6 xs:w-7 sm:w-8 h-1.5 sm:h-2 bg-[#f97316] shadow-sm" 
+                    : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
                 }`}
               />
             </button>
