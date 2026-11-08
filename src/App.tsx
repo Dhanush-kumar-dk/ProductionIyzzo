@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
+import PageTransition, { TopProgressBar } from "./components/PageTransition";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
 import Carousel from "./components/Carousel";
@@ -174,30 +176,44 @@ function HomePage() {
   );
 }
 
+/**
+ * Animated Routes Wrapper: enables smooth AnimatePresence page transitions across all routes
+ */
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
+        <Route path="/lp" element={<PageTransition><AdLandingPage /></PageTransition>} />
+        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+        <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+        <Route path="/affiliate-disclosure" element={<PageTransition><AffiliateDisclosure /></PageTransition>} />
+        <Route path="/contact" element={<PageTransition><ContactPage /></PageTransition>} />
+        <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
+        <Route path="/admin/products" element={<PageTransition><AdminProducts /></PageTransition>} />
+        <Route path="/search/:searchTerm" element={<PageTransition><SearchResults /></PageTransition>} />
+        <Route path="/admin/upload" element={<PageTransition><AdminUpload /></PageTransition>} />
+        <Route path="/admin/orders" element={<PageTransition><AdminOrders /></PageTransition>} />
+        <Route path="/admin/users" element={<PageTransition><AdminUsers /></PageTransition>} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 function App() {
   return (
     <>
       <Router>
+        <TopProgressBar />
         <RouteTracker />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/lp" element={<AdLandingPage />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/affiliate-disclosure" element={<AffiliateDisclosure />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/search/:searchTerm" element={<SearchResults />} />
-          <Route path="/admin/upload" element={<AdminUpload />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AnimatedRoutes />
         <CookieConsent />
       </Router>
       <Analytics />
