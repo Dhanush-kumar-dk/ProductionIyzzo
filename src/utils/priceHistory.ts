@@ -65,12 +65,29 @@ export function formatINR(val: number): string {
   return "₹" + Math.round(val).toLocaleString("en-IN");
 }
 
-// Format compact currency (e.g. 46990 -> ₹47k)
+// Format compact currency (e.g. 46990 -> ₹47k, but preserves full detail for smaller amounts)
 export function formatCompactINR(val: number): string {
+  if (isNaN(val)) return "₹0";
   if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-  if (val >= 1000) return `₹${Math.round(val / 1000)}k`;
-  return `₹${val}`;
+  if (val >= 10000) {
+    const k = val / 1000;
+    return k % 1 === 0 ? `₹${k}k` : `₹${k.toFixed(1)}k`;
+  }
+  return formatINR(val);
+}
+
+// Dedicated chart tick formatter ensuring no two adjacent ticks get truncated to the same string
+export function formatChartTick(val: number, range?: number): string {
+  if (isNaN(val)) return "₹0";
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+  // If the total price range is small or prices are under 10k, show full clean format (e.g. ₹950, ₹1,050)
+  if (!range || range < 20000 || val < 10000) {
+    return formatINR(val);
+  }
+  const k = val / 1000;
+  return k % 1 === 0 ? `₹${k}k` : `₹${k.toFixed(1)}k`;
 }
 
 // Seeded pseudorandom generator based on product ID string

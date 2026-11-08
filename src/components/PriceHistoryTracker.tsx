@@ -7,6 +7,7 @@ import {
   computeStatsForSubset,
   formatINR,
   formatCompactINR,
+  formatChartTick,
 } from "../utils/priceHistory";
 import {
   ArrowTrendingDownIcon,
@@ -20,6 +21,9 @@ import {
   CalendarIcon,
   XMarkIcon,
   ChartBarIcon,
+  ShieldCheckIcon,
+  ArrowDownIcon,
+  BoltIcon,
 } from "@heroicons/react/24/solid";
 
 interface PriceHistoryTrackerProps {
@@ -126,21 +130,41 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     }
   };
 
-  // --- SVG Chart Calculations ---
-  const chartWidth = 800;
-  const chartHeight = 300;
-  const padding = { top: 30, right: 40, bottom: 42, left: 65 };
+  // --- SVG Chart Dimensions & Coordinates ---
+  const chartWidth = 840;
+  const chartHeight = 310;
+  const padding = { top: 32, right: 38, bottom: 42, left: 66 };
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
-  // Compute Y-scale limits with breathing room
+  // Compute clean Y-scale limits with natural padding
   const prices = displayPoints.map((p) => p.price);
   const minP = Math.min(...prices);
   const maxP = Math.max(...prices);
   const priceRange = maxP - minP || 1000;
-  const yMin = Math.max(0, Math.floor((minP - priceRange * 0.12) / 100) * 100);
-  const yMax = Math.ceil((maxP + priceRange * 0.12) / 100) * 100;
+  
+  // Clean boundaries ensuring room above peak and below trough
+  const yMin = Math.max(0, Math.floor((minP - priceRange * 0.12) / 50) * 50);
+  const yMax = Math.ceil((maxP + priceRange * 0.12) / 50) * 50;
   const yDomain = yMax - yMin || 1;
+
+  // 5 cleanly distributed Y-ticks with distinct unique labels
+  const yTicks = useMemo(() => {
+    const count = 5;
+    const ticks = [];
+    for (let i = 0; i < count; i++) {
+      const pct = i / (count - 1);
+      const yVal = padding.top + pct * plotHeight;
+      const priceVal = Math.round(yMax - pct * yDomain);
+      ticks.push({
+        pct,
+        yVal,
+        priceVal,
+        label: formatChartTick(priceVal, yDomain),
+      });
+    }
+    return ticks;
+  }, [padding.top, plotHeight, yMax, yDomain]);
 
   // Map data point to SVG coordinates
   const coords = useMemo(() => {
@@ -212,7 +236,6 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     const scaleX = chartWidth / rect.width;
     const svgX = clientX * scaleX;
 
-    // Find closest point by X coordinate
     let closestIndex = 0;
     let minDistance = Infinity;
 
@@ -233,32 +256,44 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
 
   const activePoint = hoveredIndex !== null ? coords[hoveredIndex] : null;
 
+  // Discount percentage calculation
+  const discountPercent =
+    activeStats.mrp > activeStats.currentPrice
+      ? Math.round(((activeStats.mrp - activeStats.currentPrice) / activeStats.mrp) * 100)
+      : 0;
+
   return (
-    <div className="bg-white rounded-3xl p-4 sm:p-7 shadow-sm border border-gray-200 mb-8 font-poppins text-gray-900">
-      {/* 1. Header & Section Identity */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-5 border-b border-gray-100 gap-3">
+    <div className="bg-white rounded-3xl p-4 sm:p-7 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] border border-slate-200/80 mb-8 font-poppins text-slate-900 transition-all">
+      {/* =========================================================================
+          1. HEADER & ACTION TOOLBAR
+         ========================================================================= */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 mb-6 border-b border-slate-100 gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-[11px] font-bold mb-1.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/70 rounded-full text-[11px] font-bold text-amber-900 mb-2 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <SparklesIcon className="w-3.5 h-3.5 text-amber-600" />
             <span>AI Price Tracking & Buyer Intelligence</span>
+            <span className="text-amber-300">•</span>
+            <span className="text-slate-600 font-semibold">Amazon India Verified</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight flex items-center gap-2">
+
+          <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight flex items-center gap-2.5">
             <span>Price History & Best Time to Buy</span>
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Verified Amazon India pricing trend, all-time lows, and data-backed purchasing recommendation.
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+            Continuous Amazon India price monitoring. Tracks 365-day fluctuations, verified record lows, and algorithmic buying recommendations.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
           {activeAlert ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold shadow-2xs">
               <BellAlertIcon className="w-4 h-4 text-emerald-600 animate-bounce" />
-              <span>Alert set at {formatINR(activeAlert.targetPrice)}</span>
+              <span>Alert: {formatINR(activeAlert.targetPrice)}</span>
               <button
                 type="button"
                 onClick={handleRemoveAlert}
-                className="text-gray-400 hover:text-red-600 text-xs font-semibold ml-1 underline"
+                className="text-slate-400 hover:text-rose-600 text-xs font-semibold ml-1 underline transition"
                 title="Remove price alert"
               >
                 Cancel
@@ -268,7 +303,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             <button
               type="button"
               onClick={() => setShowAlertModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-xs font-bold shadow-xs transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white rounded-xl text-xs font-bold shadow-xs transition hover:scale-[1.02] active:scale-[0.98]"
             >
               <BellAlertIcon className="w-4 h-4 text-amber-400" />
               <span>Set Price Drop Alert</span>
@@ -279,88 +314,91 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             href={affiliateUrl}
             target="_blank"
             rel="sponsored nofollow noopener"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-extrabold text-xs rounded-xl shadow-xs border border-[#FCD200] transition"
+            className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-slate-950 font-black text-xs rounded-xl shadow-xs border border-[#FCD200] transition hover:scale-[1.02] active:scale-[0.98]"
           >
-            <ShoppingBagIcon className="w-3.5 h-3.5" />
+            <ShoppingBagIcon className="w-4 h-4" />
             <span>Buy at {formatINR(activeStats.currentPrice)}</span>
           </a>
         </div>
       </div>
 
-      {/* Success Notification */}
+      {/* Alert Notification Toast */}
       {alertSuccessMsg && (
-        <div className="mb-5 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircleIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+        <div className="mb-6 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/90 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-2xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <span>{alertSuccessMsg}</span>
           </div>
           <button
             type="button"
             onClick={() => setAlertSuccessMsg(null)}
-            className="text-emerald-700 hover:opacity-75"
+            className="p-1 rounded-lg text-emerald-700 hover:bg-emerald-100 transition"
           >
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* 2. "Should You Buy Now?" Verdict Banner (Inspired by DealsSpy / PriceHistory) */}
+      {/* =========================================================================
+          2. "SHOULD YOU BUY NOW?" VERDICT CARD (ALGORITHMIC SCORE)
+         ========================================================================= */}
       <div
         className={`rounded-2xl p-4 sm:p-6 mb-6 border transition-all ${
           advice.verdict === "BEST_TIME"
-            ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border-emerald-300"
+            ? "bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-emerald-100/40 border-emerald-200 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.12)]"
             : advice.verdict === "GOOD_TIME"
-            ? "bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 border-blue-200"
-            : "bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-amber-300"
+            ? "bg-gradient-to-r from-blue-50/80 via-sky-50/50 to-indigo-50/40 border-blue-200 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.12)]"
+            : "bg-gradient-to-r from-amber-50/80 via-yellow-50/50 to-orange-50/40 border-amber-200 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.12)]"
         }`}
       >
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-3xl">
-            <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-3xl">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wide uppercase shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black tracking-wider uppercase shadow-2xs ${
                   advice.verdict === "BEST_TIME"
                     ? "bg-emerald-600 text-white"
                     : advice.verdict === "GOOD_TIME"
                     ? "bg-blue-600 text-white"
-                    : "bg-amber-500 text-gray-950"
+                    : "bg-amber-500 text-slate-950"
                 }`}
               >
                 {advice.verdict === "BEST_TIME" ? (
-                  <CheckBadgeIcon className="w-4 h-4 text-amber-300" />
+                  <CheckBadgeIcon className="w-4 h-4 text-emerald-200" />
                 ) : advice.verdict === "GOOD_TIME" ? (
-                  <CheckCircleIcon className="w-4 h-4 text-white" />
+                  <CheckCircleIcon className="w-4 h-4 text-blue-200" />
                 ) : (
-                  <ClockIcon className="w-4 h-4 text-gray-950" />
+                  <ClockIcon className="w-4 h-4 text-slate-950" />
                 )}
                 <span>{advice.badgeText}</span>
               </span>
 
-              <span className="text-xs font-bold text-gray-700">
-                • Verified Amazon Historical Score
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600">
+                <ShieldCheckIcon className="w-4 h-4 text-emerald-600" />
+                <span>Verified Historical Record</span>
               </span>
             </div>
 
-            <h3 className="text-base sm:text-lg font-extrabold text-gray-950">
+            <h3 className="text-base sm:text-lg font-black text-slate-950 tracking-tight">
               {advice.verdictTitle}
             </h3>
 
-            <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
               {advice.verdictDescription}
             </p>
           </div>
 
-          {/* Buy Rating Score Box */}
-          <div className="bg-white/95 rounded-2xl p-3.5 sm:p-4 border border-gray-200/80 shadow-xs flex items-center gap-4 flex-shrink-0 min-w-[240px] justify-between">
+          {/* Buy Rating Score & Drop Chance Box */}
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-5 flex-shrink-0 min-w-[260px] justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                Buy Recommendation
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Buy Score
               </span>
               <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-2xl font-black text-gray-950">
+                <span className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
                   {advice.buyRating}
                 </span>
-                <span className="text-xs text-gray-400 font-bold">/ 10</span>
+                <span className="text-xs text-slate-400 font-bold">/ 10</span>
               </div>
               <span
                 className={`text-[11px] font-bold ${
@@ -375,14 +413,16 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               </span>
             </div>
 
-            <div className="text-right border-l border-gray-100 pl-3">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+            <div className="text-right border-l border-slate-100 pl-4">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Drop Probability
               </span>
-              <span className="text-sm font-extrabold text-gray-900 block mt-0.5">
-                {advice.dropChancePercentage}%
-              </span>
-              <span className="text-[10px] text-gray-500 font-medium">
+              <div className="flex items-center justify-end gap-1 mt-0.5">
+                <span className="text-lg sm:text-xl font-black text-slate-900">
+                  {advice.dropChancePercentage}%
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-semibold">
                 {advice.dropChanceLabel}
               </span>
             </div>
@@ -390,93 +430,122 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
         </div>
       </div>
 
-      {/* 3. Key Price Metrics Cards (Current, Lowest, Average, Highest) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6">
-        {/* Current Price */}
-        <div className="bg-gray-50/80 rounded-2xl p-3.5 sm:p-4 border border-gray-200/70 shadow-2xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+      {/* =========================================================================
+          3. KEY PRICE METRIC CARDS (CLEAN FINTECH DESIGN)
+         ========================================================================= */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        {/* 1. Current Price */}
+        <div className="group bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] hover:border-slate-300 transition hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Current Price
             </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-200/60 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-700">Live</span>
+            </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-gray-950 tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 tracking-tight">
             {formatINR(activeStats.currentPrice)}
           </div>
-          <div className="text-[11px] text-emerald-700 font-semibold mt-1">
-            {activeStats.mrp > activeStats.currentPrice
-              ? `${Math.round(
-                  ((activeStats.mrp - activeStats.currentPrice) / activeStats.mrp) * 100
-                )}% off M.R.P (${formatINR(activeStats.mrp)})`
-              : "Active Amazon Deal"}
+          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+            {discountPercent > 0 ? (
+              <>
+                <span className="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[10px] font-black tracking-wide">
+                  {discountPercent}% OFF
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium line-through">
+                  {formatINR(activeStats.mrp)}
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-slate-500 font-semibold">Amazon Direct Offer</span>
+            )}
           </div>
         </div>
 
-        {/* Lowest Recorded Price */}
-        <div className="bg-emerald-50/50 rounded-2xl p-3.5 sm:p-4 border border-emerald-200/70 shadow-2xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">
+        {/* 2. Lowest Price */}
+        <div className="group bg-white rounded-2xl p-4 sm:p-5 border border-emerald-200/90 shadow-[0_2px_12px_-3px_rgba(16,185,129,0.08)] hover:border-emerald-300 transition hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
               Lowest Price
             </span>
-            <ArrowTrendingDownIcon className="w-4 h-4 text-emerald-600" />
+            <div className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <ArrowTrendingDownIcon className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-emerald-900 tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 tracking-tight">
             {formatINR(activeStats.lowestPrice)}
           </div>
-          <div className="text-[11px] text-emerald-700 font-medium mt-1 truncate" title={activeStats.lowestDate}>
-            on {activeStats.lowestDate}
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-emerald-800 font-medium truncate" title={activeStats.lowestDate}>
+            <span>on {activeStats.lowestDate}</span>
           </div>
         </div>
 
-        {/* Average Price */}
-        <div className="bg-blue-50/50 rounded-2xl p-3.5 sm:p-4 border border-blue-200/70 shadow-2xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wide">
+        {/* 3. Average Price */}
+        <div className="group bg-white rounded-2xl p-4 sm:p-5 border border-blue-200/90 shadow-[0_2px_12px_-3px_rgba(59,130,246,0.08)] hover:border-blue-300 transition hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">
               Average Price
             </span>
-            <ChartBarIcon className="w-4 h-4 text-blue-600" />
+            <div className="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+              <ChartBarIcon className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-blue-900 tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-950 tracking-tight">
             {formatINR(activeStats.averagePrice)}
           </div>
-          <div className="text-[11px] text-blue-700 font-medium mt-1">
-            {activeStats.diffFromAverage > 0
-              ? `${formatINR(activeStats.diffFromAverage)} lower than avg`
-              : `${formatINR(Math.abs(activeStats.diffFromAverage))} above avg`}
+          <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold">
+            {activeStats.diffFromAverage > 0 ? (
+              <span className="inline-flex items-center gap-0.5 text-emerald-700">
+                <ArrowDownIcon className="w-3 h-3" />
+                <span>{formatINR(activeStats.diffFromAverage)} lower than avg</span>
+              </span>
+            ) : (
+              <span className="text-amber-800">
+                +{formatINR(Math.abs(activeStats.diffFromAverage))} higher than avg
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Highest Recorded Price */}
-        <div className="bg-amber-50/50 rounded-2xl p-3.5 sm:p-4 border border-amber-200/70 shadow-2xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wide">
+        {/* 4. Highest Recorded Price */}
+        <div className="group bg-white rounded-2xl p-4 sm:p-5 border border-amber-200/90 shadow-[0_2px_12px_-3px_rgba(245,158,11,0.08)] hover:border-amber-300 transition hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
               Highest Price
             </span>
-            <ArrowTrendingUpIcon className="w-4 h-4 text-amber-600" />
+            <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <ArrowTrendingUpIcon className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-lg sm:text-2xl font-black text-amber-950 tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-950 tracking-tight">
             {formatINR(activeStats.highestPrice)}
           </div>
-          <div className="text-[11px] text-amber-800 font-medium mt-1 truncate" title={activeStats.highestDate}>
-            on {activeStats.highestDate}
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-amber-900 font-medium truncate" title={activeStats.highestDate}>
+            <span>on {activeStats.highestDate}</span>
           </div>
         </div>
       </div>
 
-      {/* 4. Interactive SVG Graph & Timeframe Filter Toolbar */}
-      <div className="bg-white rounded-2xl p-3 sm:p-5 border border-gray-200/90 shadow-2xs mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+      {/* =========================================================================
+          4. INTERACTIVE PRICE FLUCTUATION CURVE CARD
+         ========================================================================= */}
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm mb-6">
+        {/* Chart Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider">
               Price Fluctuation Curve:
             </span>
-            <span className="text-xs text-gray-400">
-              ({displayPoints.length} verified price checks)
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">
+              {displayPoints.length} verified checks
             </span>
           </div>
 
-          {/* Timeframe Selector Pills */}
-          <div className="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-xl self-start sm:self-auto">
+          {/* Segmented Timeframe Switcher */}
+          <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-2xl self-start sm:self-auto border border-slate-200/60 shadow-2xs">
             {(
               [
                 { id: "1M", label: "1 Month" },
@@ -493,10 +562,10 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   setSelectedTimeframe(tf.id);
                   setHoveredIndex(null);
                 }}
-                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 ${
                   selectedTimeframe === tf.id
-                    ? "bg-white text-gray-950 shadow-xs"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-slate-950 text-white shadow-xs scale-100"
+                    : "text-slate-600 hover:text-slate-950 hover:bg-white/60"
                 }`}
               >
                 {tf.label}
@@ -506,7 +575,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
         </div>
 
         {/* The SVG Canvas Container */}
-        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] max-h-[360px] select-none touch-none">
+        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] max-h-[380px] select-none touch-none">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
@@ -515,57 +584,58 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             onPointerLeave={handlePointerLeave}
           >
             <defs>
-              {/* Emerald/Green Area Fill Gradient */}
+              {/* Premium Multi-stop Area Gradient */}
               <linearGradient id="priceAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" stopOpacity="0.28" />
-                <stop offset="60%" stopColor="#059669" stopOpacity="0.08" />
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.22" />
+                <stop offset="50%" stopColor="#059669" stopOpacity="0.07" />
                 <stop offset="100%" stopColor="#10B981" stopOpacity="0.00" />
               </linearGradient>
 
-              {/* Stroke Gradient */}
+              {/* Curve Stroke Gradient */}
               <linearGradient id="priceLineGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#3B82F6" />
-                <stop offset="70%" stopColor="#10B981" />
+                <stop offset="0%" stopColor="#2563EB" />
+                <stop offset="65%" stopColor="#10B981" />
                 <stop offset="100%" stopColor="#059669" />
               </linearGradient>
 
-              {/* Drop Shadow for Pin Tooltips */}
-              <filter id="shadowFilter" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.12" />
+              {/* Glow Filter for Curve Line */}
+              <filter id="curveGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#10B981" floodOpacity="0.28" />
+              </filter>
+
+              {/* Soft Drop Shadow for Tooltips */}
+              <filter id="pillShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0F172A" floodOpacity="0.18" />
               </filter>
             </defs>
 
-            {/* Background horizontal grid lines */}
-            {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-              const yVal = padding.top + pct * plotHeight;
-              const priceVal = Math.round(yMax - pct * yDomain);
-              return (
-                <g key={i}>
-                  <line
-                    x1={padding.left}
-                    y1={yVal}
-                    x2={padding.left + plotWidth}
-                    y2={yVal}
-                    stroke="#E5E7EB"
-                    strokeWidth="1"
-                    strokeDasharray={pct === 1 || pct === 0 ? "" : "3 3"}
-                  />
-                  <text
-                    x={padding.left - 8}
-                    y={yVal + 3.5}
-                    textAnchor="end"
-                    fontSize="10"
-                    fill="#9CA3AF"
-                    fontFamily="Poppins, sans-serif"
-                    fontWeight="500"
-                  >
-                    {formatCompactINR(priceVal)}
-                  </text>
-                </g>
-              );
-            })}
+            {/* Background Horizontal Gridlines and Distinct Y-Ticks */}
+            {yTicks.map((tick, i) => (
+              <g key={i}>
+                <line
+                  x1={padding.left}
+                  y1={tick.yVal}
+                  x2={padding.left + plotWidth}
+                  y2={tick.yVal}
+                  stroke="#F1F5F9"
+                  strokeWidth="1.2"
+                  strokeDasharray={i === 0 || i === yTicks.length - 1 ? "" : "4 5"}
+                />
+                <text
+                  x={padding.left - 12}
+                  y={tick.yVal + 3.5}
+                  textAnchor="end"
+                  fontSize="11"
+                  fill="#94A3B8"
+                  fontFamily="Poppins, sans-serif"
+                  fontWeight="600"
+                >
+                  {tick.label}
+                </text>
+              </g>
+            ))}
 
-            {/* Average Price Reference Line */}
+            {/* Average Price Benchmark Line */}
             {avgY >= padding.top && avgY <= padding.top + plotHeight && (
               <g>
                 <line
@@ -573,100 +643,111 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   y1={avgY}
                   x2={padding.left + plotWidth}
                   y2={avgY}
-                  stroke="#3B82F6"
+                  stroke="#6366F1"
                   strokeWidth="1.5"
-                  strokeDasharray="5 4"
-                  opacity="0.8"
+                  strokeDasharray="5 5"
+                  opacity="0.85"
                 />
-                <rect
-                  x={padding.left + plotWidth - 105}
-                  y={avgY - 10}
-                  width="100"
-                  height="18"
-                  rx="9"
-                  fill="#EFF6FF"
-                  stroke="#BFDBFE"
-                  strokeWidth="1"
-                />
-                <text
-                  x={padding.left + plotWidth - 55}
-                  y={avgY + 2.5}
-                  textAnchor="middle"
-                  fontSize="9.5"
-                  fill="#1E40AF"
-                  fontFamily="Poppins, sans-serif"
-                  fontWeight="bold"
-                >
-                  Avg: {formatCompactINR(activeStats.averagePrice)}
-                </text>
+                <g filter="url(#pillShadow)">
+                  <rect
+                    x={padding.left + plotWidth - 110}
+                    y={avgY - 11}
+                    width="106"
+                    height="22"
+                    rx="11"
+                    fill="#EEF2FF"
+                    stroke="#C7D2FE"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={padding.left + plotWidth - 57}
+                    y={avgY + 3.5}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="#4338CA"
+                    fontFamily="Poppins, sans-serif"
+                    fontWeight="800"
+                  >
+                    Avg: {formatINR(activeStats.averagePrice)}
+                  </text>
+                </g>
               </g>
             )}
 
             {/* Area Fill */}
             {areaPath && <path d={areaPath} fill="url(#priceAreaGrad)" />}
 
-            {/* Smooth Line Path */}
+            {/* Smooth Glowing Line Path */}
             {linePath && (
               <path
                 d={linePath}
                 fill="none"
                 stroke="url(#priceLineGrad)"
-                strokeWidth="3"
+                strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                filter="url(#curveGlow)"
               />
             )}
 
-            {/* Pinned Lowest Point Dot & Marker */}
+            {/* Pinned Lowest Price Dot & Badge (With NO broken CSS animate-ping) */}
             {coords[lowestIdx] && (
               <g>
+                {/* Concentric Soft Halo */}
                 <circle
                   cx={coords[lowestIdx].x}
                   cy={coords[lowestIdx].y}
-                  r="7"
+                  r="9"
                   fill="#10B981"
-                  opacity="0.3"
-                  className="animate-ping"
+                  fillOpacity="0.25"
                 />
                 <circle
                   cx={coords[lowestIdx].x}
                   cy={coords[lowestIdx].y}
-                  r="5"
+                  r="5.5"
                   fill="#059669"
                   stroke="#FFFFFF"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 />
-                <g filter="url(#shadowFilter)">
+                {/* Floating Lowest Price Pill */}
+                <g filter="url(#pillShadow)">
                   <rect
-                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 42, padding.left + plotWidth - 85))}
-                    y={Math.max(padding.top + 2, coords[lowestIdx].y - 26)}
-                    width="84"
-                    height="19"
-                    rx="6"
+                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 45, padding.left + plotWidth - 90))}
+                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 28)}
+                    width="90"
+                    height="22"
+                    rx="11"
                     fill="#065F46"
                   />
                   <text
-                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 42, padding.left + plotWidth - 85)) + 42}
-                    y={Math.max(padding.top + 2, coords[lowestIdx].y - 26) + 12.5}
+                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 45, padding.left + plotWidth - 90)) + 45}
+                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 28) + 14.5}
                     textAnchor="middle"
                     fill="#FFFFFF"
-                    fontSize="9.5"
+                    fontSize="10"
                     fontFamily="Poppins, sans-serif"
-                    fontWeight="bold"
+                    fontWeight="800"
                   >
-                    Low: {formatCompactINR(activeStats.lowestPrice)}
+                    Low: {formatINR(activeStats.lowestPrice)}
                   </text>
                 </g>
               </g>
             )}
 
-            {/* Pinned Highest Point Dot */}
+            {/* Pinned Highest Price Dot */}
             {coords[highestIdx] && highestIdx !== lowestIdx && (
               <g>
                 <circle
                   cx={coords[highestIdx].x}
                   cy={coords[highestIdx].y}
-                  r="5"
+                  r="7.5"
+                  fill="#F59E0B"
+                  fillOpacity="0.25"
+                />
+                <circle
+                  cx={coords[highestIdx].x}
+                  cy={coords[highestIdx].y}
+                  r="4.5"
                   fill="#D97706"
                   stroke="#FFFFFF"
                   strokeWidth="2"
@@ -674,49 +755,60 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               </g>
             )}
 
-            {/* Current Price Dot (Last point on right) */}
+            {/* Current Price Dot (Last point on the curve) */}
             {coords[coords.length - 1] && (
               <g>
                 <circle
                   cx={coords[coords.length - 1].x}
                   cy={coords[coords.length - 1].y}
-                  r="6"
+                  r="9"
                   fill="#2563EB"
-                  stroke="#FFFFFF"
-                  strokeWidth="2"
+                  fillOpacity="0.25"
                 />
-              </g>
-            )}
-
-            {/* Hover Crosshair & Interactive Scrubber */}
-            {activePoint && (
-              <g>
-                {/* Vertical guideline */}
-                <line
-                  x1={activePoint.x}
-                  y1={padding.top}
-                  x2={activePoint.x}
-                  y2={padding.top + plotHeight}
-                  stroke="#4B5563"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 4"
-                  opacity="0.7"
-                />
-                {/* Highlight active dot */}
                 <circle
-                  cx={activePoint.x}
-                  cy={activePoint.y}
-                  r="7"
-                  fill="#1F2937"
+                  cx={coords[coords.length - 1].x}
+                  cy={coords[coords.length - 1].y}
+                  r="5.5"
+                  fill="#2563EB"
                   stroke="#FFFFFF"
                   strokeWidth="2.5"
                 />
               </g>
             )}
 
-            {/* X-axis date labels */}
+            {/* Interactive Scrubber & Hover Guideline */}
+            {activePoint && (
+              <g>
+                <line
+                  x1={activePoint.x}
+                  y1={padding.top}
+                  x2={activePoint.x}
+                  y2={padding.top + plotHeight}
+                  stroke="#475569"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                  opacity="0.75"
+                />
+                <circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r="9"
+                  fill="#0F172A"
+                  fillOpacity="0.2"
+                />
+                <circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r="6.5"
+                  fill="#0F172A"
+                  stroke="#FFFFFF"
+                  strokeWidth="2.5"
+                />
+              </g>
+            )}
+
+            {/* X-Axis Date Labels */}
             {coords.map((c, i) => {
-              // Space out X-axis labels to avoid crowd
               const step = Math.ceil(coords.length / 5);
               const isFirst = i === 0;
               const isLast = i === coords.length - 1;
@@ -728,10 +820,10 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                 <text
                   key={i}
                   x={c.x}
-                  y={padding.top + plotHeight + 20}
+                  y={padding.top + plotHeight + 22}
                   textAnchor={isFirst ? "start" : isLast ? "end" : "middle"}
-                  fontSize="9.5"
-                  fill="#6B7280"
+                  fontSize="10"
+                  fill="#64748B"
                   fontFamily="Poppins, sans-serif"
                   fontWeight="600"
                 >
@@ -741,38 +833,41 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             })}
           </svg>
 
-          {/* Floating HTML Tooltip when hovering over a point */}
+          {/* Floating Glassmorphic Tooltip on Hover */}
           {activePoint && (
             <div
               className="absolute pointer-events-none z-30 transition-transform duration-75"
               style={{
                 left: `${(activePoint.x / chartWidth) * 100}%`,
                 top: `${(activePoint.y / chartHeight) * 100}%`,
-                transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "12px"}, -60%)`,
+                transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "14px"}, -60%)`,
               }}
             >
-              <div className="bg-gray-900/95 backdrop-blur-md text-white p-2.5 rounded-xl shadow-xl border border-gray-700 text-xs min-w-[155px] space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-gray-400 border-b border-gray-700/80 pb-1">
+              <div className="bg-slate-950/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-slate-800 text-xs min-w-[170px] space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1.5">
                   <span>{activePoint.pt.displayDate}</span>
                   {activePoint.pt.isSaleEvent && (
-                    <span className="text-amber-400 font-bold">Deal Event</span>
+                    <span className="text-amber-400 font-extrabold flex items-center gap-1">
+                      <BoltIcon className="w-3 h-3" />
+                      <span>Sale</span>
+                    </span>
                   )}
                 </div>
-                <div className="text-sm font-extrabold text-amber-300">
+                <div className="text-base font-black text-amber-300">
                   {formatINR(activePoint.pt.price)}
                 </div>
                 {activePoint.pt.label && (
-                  <div className="text-[10px] text-emerald-400 font-medium">
+                  <div className="text-[10px] text-emerald-400 font-semibold truncate">
                     {activePoint.pt.label}
                   </div>
                 )}
-                <div className="text-[10px] text-gray-400">
+                <div className="text-[10px] text-slate-400 font-medium">
                   {activePoint.pt.price < activeStats.averagePrice ? (
-                    <span className="text-emerald-400">
+                    <span className="text-emerald-400 font-bold">
                       ↓ {formatINR(activeStats.averagePrice - activePoint.pt.price)} below avg
                     </span>
                   ) : (
-                    <span>
+                    <span className="text-slate-300">
                       ↑ {formatINR(activePoint.pt.price - activeStats.averagePrice)} above avg
                     </span>
                   )}
@@ -783,165 +878,170 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
         </div>
 
         {/* Bottom Legend */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 pt-3 mt-2 border-t border-gray-100 text-[11px] text-gray-500 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-emerald-500 rounded" />
+        <div className="flex items-center justify-center gap-5 sm:gap-8 pt-4 mt-3 border-t border-slate-100 text-[11px] text-slate-500 font-medium flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="w-3.5 h-1 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full" />
             <span>Price Trend</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 border-t border-dashed border-blue-600" />
-            <span>Average ({formatCompactINR(activeStats.averagePrice)})</span>
+          <div className="flex items-center gap-2">
+            <span className="w-3.5 h-0.5 border-t-2 border-dashed border-indigo-600" />
+            <span>Average ({formatINR(activeStats.averagePrice)})</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-700 border border-white" />
-            <span>All-Time Low ({formatCompactINR(activeStats.lowestPrice)})</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-emerald-200" />
+            <span>All-Time Low ({formatINR(activeStats.lowestPrice)})</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 border border-white" />
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 ring-2 ring-blue-200" />
             <span>Current Price</span>
           </div>
         </div>
       </div>
 
-      {/* 5. "When is the Best Time to Buy?" Expert Insights Guide */}
+      {/* =========================================================================
+          5. EXPERT PURCHASING INSIGHTS & SEASONAL GUIDE
+         ========================================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Purchasing Strategy */}
-        <div className="bg-gray-50/70 rounded-2xl p-4 sm:p-5 border border-gray-200/80 space-y-2.5">
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+        {/* Seasonal Sale Windows */}
+        <div className="bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 space-y-2.5">
+          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-blue-600" />
             <span>Seasonal Sale Windows</span>
           </h4>
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <p className="text-xs text-slate-600 leading-relaxed">
             {advice.seasonalTrendNote}
           </p>
-          <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
-            <span className="text-gray-500">Expected next low in mega sale:</span>
-            <span className="font-extrabold text-emerald-700">
+          <div className="pt-2.5 border-t border-slate-200/70 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium">Expected next low in mega sale:</span>
+            <span className="font-black text-emerald-700">
               ~{formatINR(advice.expectedLowestSalePrice)}
             </span>
           </div>
         </div>
 
-        {/* Target Buying Price Recommendation */}
-        <div className="bg-gray-50/70 rounded-2xl p-4 sm:p-5 border border-gray-200/80 space-y-2.5">
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+        {/* Target Buying Threshold */}
+        <div className="bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200/80 space-y-2.5">
+          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <CheckBadgeIcon className="w-4 h-4 text-emerald-600" />
             <span>Target Buying Threshold</span>
           </h4>
-          <p className="text-xs text-gray-600 leading-relaxed">
+          <p className="text-xs text-slate-600 leading-relaxed">
             Our algorithmic price model recommends buying this item if the price is at or below{" "}
-            <strong className="text-gray-900">{formatINR(advice.targetPriceAlertSuggestion)}</strong>.
-            At this level, you are within 2% of the lowest price in the past 12 months.
+            <strong className="text-slate-900">{formatINR(advice.targetPriceAlertSuggestion)}</strong>.
+            At this price point, you are within 2% of the historical record low.
           </p>
-          <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs">
-            <span className="text-gray-500">Savings vs Typical Retail:</span>
-            <span className="font-extrabold text-emerald-700">
+          <div className="pt-2.5 border-t border-slate-200/70 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium">Savings vs Typical Retail:</span>
+            <span className="font-black text-emerald-700">
               {formatINR(advice.savingsVsRegular)} ({advice.savingsPercentage}%)
             </span>
           </div>
         </div>
       </div>
 
-      {/* 6. Historical Price Events Table */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-2xs overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-            Verified Historical Price Milestones
+      {/* =========================================================================
+          6. HISTORICAL PRICE MILESTONES TABLE
+         ========================================================================= */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <ShieldCheckIcon className="w-4 h-4 text-emerald-600" />
+            <span>Verified Historical Price Milestones</span>
           </h4>
-          <span className="text-[11px] text-gray-500 font-medium">Source: Amazon India Records</span>
+          <span className="text-[11px] text-slate-500 font-medium">Amazon India Verified Crawler</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50/50 text-gray-500 uppercase tracking-wider border-b border-gray-100 text-[10px]">
+            <thead className="bg-slate-50/50 text-slate-500 uppercase tracking-wider border-b border-slate-100 text-[10px]">
               <tr>
-                <th className="py-2.5 px-4 font-bold">Event / Record</th>
-                <th className="py-2.5 px-4 font-bold">Recorded Price</th>
-                <th className="py-2.5 px-4 font-bold">Date</th>
-                <th className="py-2.5 px-4 font-bold">Comparison vs Today</th>
-                <th className="py-2.5 px-4 font-bold text-right">Verdict</th>
+                <th className="py-3 px-5 font-bold">Event / Record</th>
+                <th className="py-3 px-5 font-bold">Recorded Price</th>
+                <th className="py-3 px-5 font-bold">Date</th>
+                <th className="py-3 px-5 font-bold">Comparison vs Today</th>
+                <th className="py-3 px-5 font-bold text-right">Verdict</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               <tr className="bg-emerald-50/30">
-                <td className="py-3 px-4 font-bold text-emerald-950 flex items-center gap-1.5">
+                <td className="py-3.5 px-5 font-bold text-emerald-950 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>All-Time Lowest Ever</span>
                 </td>
-                <td className="py-3 px-4 font-black text-emerald-700 text-sm">
+                <td className="py-3.5 px-5 font-black text-emerald-700 text-sm">
                   {formatINR(activeStats.lowestPrice)}
                 </td>
-                <td className="py-3 px-4 text-gray-600 font-medium">
+                <td className="py-3.5 px-5 text-slate-600 font-medium">
                   {activeStats.lowestDate}
                 </td>
-                <td className="py-3 px-4 text-emerald-800 font-semibold">
+                <td className="py-3.5 px-5 text-emerald-800 font-semibold">
                   {activeStats.diffFromLowest === 0
                     ? "Active Today (Lowest Recorded)"
                     : `-₹${activeStats.diffFromLowest.toLocaleString()} (-${activeStats.diffPercentFromLowest}%)`}
                 </td>
-                <td className="py-3 px-4 text-right">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <td className="py-3.5 px-5 text-right">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/60">
                     Historic Low
                   </span>
                 </td>
               </tr>
 
               <tr>
-                <td className="py-3 px-4 font-bold text-gray-900 flex items-center gap-1.5">
+                <td className="py-3.5 px-5 font-bold text-slate-900 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
                   <span>90-Day Rolling Average</span>
                 </td>
-                <td className="py-3 px-4 font-extrabold text-gray-950">
+                <td className="py-3.5 px-5 font-black text-slate-950">
                   {formatINR(activeStats.averagePrice)}
                 </td>
-                <td className="py-3 px-4 text-gray-500">Last 3 Months</td>
-                <td className="py-3 px-4 font-semibold text-gray-700">
+                <td className="py-3.5 px-5 text-slate-500">Last 3 Months</td>
+                <td className="py-3.5 px-5 font-semibold text-slate-700">
                   {activeStats.diffFromAverage > 0
                     ? `Today is ₹${activeStats.diffFromAverage.toLocaleString()} cheaper`
                     : `Today is ₹${Math.abs(activeStats.diffFromAverage).toLocaleString()} higher`}
                 </td>
-                <td className="py-3 px-4 text-right">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                <td className="py-3.5 px-5 text-right">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
                     Typical Baseline
                   </span>
                 </td>
               </tr>
 
               <tr>
-                <td className="py-3 px-4 font-bold text-gray-900 flex items-center gap-1.5">
+                <td className="py-3.5 px-5 font-bold text-slate-900 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   <span>Highest Recorded Price</span>
                 </td>
-                <td className="py-3 px-4 font-bold text-amber-900">
+                <td className="py-3.5 px-5 font-black text-amber-950">
                   {formatINR(activeStats.highestPrice)}
                 </td>
-                <td className="py-3 px-4 text-gray-600 font-medium">
+                <td className="py-3.5 px-5 text-slate-600 font-medium">
                   {activeStats.highestDate}
                 </td>
-                <td className="py-3 px-4 text-emerald-700 font-semibold">
+                <td className="py-3.5 px-5 text-emerald-700 font-semibold">
                   +₹{activeStats.diffFromHighest.toLocaleString()} savings today
                 </td>
-                <td className="py-3 px-4 text-right">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+                <td className="py-3.5 px-5 text-right">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200/60">
                     Peak Price
                   </span>
                 </td>
               </tr>
 
-              <tr className="bg-gray-50/40">
-                <td className="py-3 px-4 font-bold text-gray-900 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-gray-400" />
+              <tr className="bg-slate-50/40">
+                <td className="py-3.5 px-5 font-bold text-slate-900 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-slate-400" />
                   <span>Maximum Retail Price (M.R.P)</span>
                 </td>
-                <td className="py-3 px-4 font-semibold text-gray-400 line-through">
+                <td className="py-3.5 px-5 font-semibold text-slate-400 line-through">
                   {formatINR(activeStats.mrp)}
                 </td>
-                <td className="py-3 px-4 text-gray-500">Manufacturer Tag</td>
-                <td className="py-3 px-4 text-emerald-700 font-bold">
+                <td className="py-3.5 px-5 text-slate-500">Manufacturer Tag</td>
+                <td className="py-3.5 px-5 text-emerald-700 font-bold">
                   Save {formatINR(activeStats.mrp - activeStats.currentPrice)}
                 </td>
-                <td className="py-3 px-4 text-right">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">
+                <td className="py-3.5 px-5 text-right">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
                     Catalog MRP
                   </span>
                 </td>
@@ -951,19 +1051,21 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
         </div>
       </div>
 
-      {/* 7. Price Drop Alert Modal */}
+      {/* =========================================================================
+          7. PRICE DROP ALERT MODAL
+         ========================================================================= */}
       {showAlertModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
           onClick={() => setShowAlertModal(false)}
         >
           <div
-            className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 text-gray-900"
+            className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 text-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between pb-3 border-b border-gray-100 mb-4">
-              <div className="flex items-center gap-2 text-gray-950 font-bold text-base">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2.5 text-slate-950 font-bold text-base">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
                   <BellAlertIcon className="w-5 h-5" />
                 </div>
                 <span>Set Price Drop Alert</span>
@@ -971,20 +1073,20 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               <button
                 type="button"
                 onClick={() => setShowAlertModal(false)}
-                className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+            <p className="text-xs text-slate-600 mb-4 leading-relaxed">
               We monitor Amazon India price changes continuously. We will immediately ping you when{" "}
               <strong>{product.name}</strong> drops to your target price.
             </p>
 
             <form onSubmit={handleSaveAlert} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 block mb-1">
                   Target Price (₹ INR)
                 </label>
                 <input
@@ -993,17 +1095,17 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   value={alertTargetPrice}
                   onChange={(e) => setAlertTargetPrice(e.target.value)}
                   placeholder={`e.g. ${activeStats.lowestPrice}`}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm font-bold text-gray-950 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-950 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
               </div>
 
-              {/* Quick Presets */}
+              {/* Quick Preset Buttons */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-gray-400 font-semibold mr-1">Quick Select:</span>
+                <span className="text-[11px] text-slate-400 font-semibold mr-1">Quick Select:</span>
                 <button
                   type="button"
                   onClick={() => setAlertTargetPrice(activeStats.lowestPrice.toString())}
-                  className="px-2 py-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-lg border border-emerald-200 hover:bg-emerald-100"
+                  className="px-2.5 py-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-lg border border-emerald-200 hover:bg-emerald-100 transition"
                 >
                   Lowest ({formatINR(activeStats.lowestPrice)})
                 </button>
@@ -1014,7 +1116,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                       Math.round(activeStats.currentPrice * 0.95).toString()
                     )
                   }
-                  className="px-2 py-1 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-lg hover:bg-gray-200"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-lg hover:bg-slate-200 transition"
                 >
                   5% Drop ({formatINR(activeStats.currentPrice * 0.95)})
                 </button>
@@ -1025,14 +1127,14 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                       Math.round(activeStats.currentPrice * 0.9).toString()
                     )
                   }
-                  className="px-2 py-1 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-lg hover:bg-gray-200"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-lg hover:bg-slate-200 transition"
                 >
                   10% Drop ({formatINR(activeStats.currentPrice * 0.9)})
                 </button>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 block mb-1">
                   Your Notification Email
                 </label>
                 <input
@@ -1041,21 +1143,21 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   value={alertEmail}
                   onChange={(e) => setAlertEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-medium text-gray-950 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-950 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowAlertModal(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-gray-950 text-xs font-extrabold rounded-xl shadow-md transition"
+                  className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-md transition"
                 >
                   Save Price Alert
                 </button>
