@@ -77,7 +77,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
       className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4 font-poppins"
     >
       <div
-        className="relative w-full aspect-[1024/260] min-h-[120px] sm:min-h-[180px] md:min-h-[220px] lg:min-h-[260px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl bg-slate-950 cursor-pointer group select-none"
+        className="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[2.3/1] min-h-[190px] sm:min-h-[280px] md:min-h-[340px] max-h-[460px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -104,8 +104,12 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             <img
               src={slide.image}
               alt={slide.alt}
-              className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-500 ease-out"
+              className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
               loading={idx === 0 ? "eager" : "lazy"}
+              decoding="async"
+              style={{
+                imageRendering: "-webkit-optimize-contrast",
+              }}
             />
           </div>
         ))}
@@ -117,7 +121,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             e.stopPropagation();
             prevSlide();
           }}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-105 active:scale-95 focus:opacity-100 focus:outline-none"
+          className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Previous Slide"
         >
           <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -129,7 +133,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             e.stopPropagation();
             nextSlide();
           }}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-105 active:scale-95 focus:opacity-100 focus:outline-none"
+          className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Next Slide"
         >
           <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -137,7 +141,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
         {/* Dots Indicator */}
         <div 
-          className="absolute bottom-2 sm:bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 bg-black/25 backdrop-blur-sm rounded-full"
+          className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 bg-black/35 backdrop-blur-md rounded-full border border-white/10 shadow-md"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
