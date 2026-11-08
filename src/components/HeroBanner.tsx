@@ -32,7 +32,7 @@ const slides: Slide[] = [
   },
 ];
 
-// Cloned slides for continuous infinite looping: [Slide3, Slide1, Slide2, Slide3, Slide1]
+// Cloned boundaries for continuous infinite sliding: [Clone(Slide3), Slide1, Slide2, Slide3, Clone(Slide1)]
 const extendedSlides: Slide[] = [
   slides[slides.length - 1],
   ...slides,
@@ -43,37 +43,12 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const [displayIndex, setDisplayIndex] = useState(1);
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+
   const isTransitioningRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
 
-  const [metrics, setMetrics] = useState({ containerWidth: 0, cardWidth: 0, gap: 16 });
-
-  // Measure container and card size dynamically on mount and resize
-  useEffect(() => {
-    const updateMetrics = () => {
-      if (containerRef.current && cardRef.current) {
-        const cWidth = containerRef.current.offsetWidth;
-        const cCard = cardRef.current.offsetWidth;
-        const gapVal = window.innerWidth >= 768 ? 20 : window.innerWidth >= 640 ? 16 : 12;
-        setMetrics({ containerWidth: cWidth, cardWidth: cCard, gap: gapVal });
-      }
-    };
-
-    updateMetrics();
-    // Re-check after a tick for fonts/layout to settle
-    const t = setTimeout(updateMetrics, 50);
-    window.addEventListener("resize", updateMetrics);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", updateMetrics);
-    };
-  }, []);
-
-  // Preload slides for zero-latency instant rendering
+  // Preload all slides in background for zero-latency swiping
   useEffect(() => {
     slides.forEach((slide) => {
       const img = new Image();
@@ -102,21 +77,19 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     setDisplayIndex(idx + 1);
   };
 
-  // Seamless Infinite Looping via Transition Reset
+  // Seamless Infinite Looping: Reset position on clone boundary with zero flash
   const handleTransitionEnd = () => {
     isTransitioningRef.current = false;
     if (displayIndex >= extendedSlides.length - 1) {
-      // Reached cloned first slide -> silently snap back to real first slide
       setIsTransitionEnabled(false);
       setDisplayIndex(1);
     } else if (displayIndex <= 0) {
-      // Reached cloned last slide -> silently snap back to real last slide
       setIsTransitionEnabled(false);
       setDisplayIndex(slides.length);
     }
   };
 
-  // Re-enable CSS transition after snap-back
+  // Re-enable transition on the next animation frame after silent snap
   useEffect(() => {
     if (!isTransitionEnabled) {
       const raf = requestAnimationFrame(() => {
@@ -128,7 +101,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     }
   }, [isTransitionEnabled]);
 
-  // Running carousel: auto-advance every 4.8 seconds smoothly
+  // Running carousel: auto-advance smoothly every 4.8s
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
@@ -147,7 +120,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const handleTouchEnd = (e: React.TouchEvent) => {
     setIsPaused(false);
     if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-    
+
     const diffX = touchStartXRef.current - e.changedTouches[0].clientX;
     const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
 
@@ -162,88 +135,63 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     touchStartYRef.current = null;
   };
 
-  // Calculate pixel offset to keep active card exactly centered in viewport
-  const { containerWidth, cardWidth, gap } = metrics;
-  const translateX = cardWidth > 0 
-    ? ((containerWidth - cardWidth) / 2) - displayIndex * (cardWidth + gap)
-    : 0;
-
   // Active indicator dot calculation
   const activeDot = (displayIndex - 1 + slides.length) % slides.length;
 
   return (
     <section 
       aria-label="Promotional Carousel" 
-      className="w-full pt-2 sm:pt-3 pb-3 font-poppins select-none overflow-hidden"
+      className="w-full px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins select-none"
     >
       <div
-        ref={containerRef}
-        className="relative w-full max-w-[1440px] mx-auto px-1 sm:px-2 overflow-hidden"
+        className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] group cursor-pointer transition-shadow"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onClick={onExploreClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onExploreClick();
+          }
+        }}
       >
-        {/* Animated Running Sliding Track */}
+        {/* Animated Running Sliding Track: One slide covers the entire banner width */}
         <div
-          className={`flex items-center ${
-            isTransitionEnabled 
-              ? "transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]" 
+          className={`flex w-full ${
+            isTransitionEnabled
+              ? "transition-transform duration-600 ease-[cubic-bezier(0.25,1,0.5,1)]"
               : "transition-none"
           }`}
           style={{
-            transform: `translate3d(${translateX}px, 0, 0)`,
-            gap: `${gap}px`,
+            transform: `translate3d(-${displayIndex * 100}%, 0, 0)`,
           }}
           onTransitionEnd={handleTransitionEnd}
         >
-          {extendedSlides.map((slide, idx) => {
-            const isActive = idx === displayIndex;
-            return (
-              <div
-                key={`${slide.id}-${idx}`}
-                ref={idx === 1 ? cardRef : null}
-                onClick={() => {
-                  if (isActive) {
-                    onExploreClick();
-                  } else if (idx < displayIndex) {
-                    prevSlide();
-                  } else {
-                    nextSlide();
-                  }
+          {extendedSlides.map((slide, idx) => (
+            <div
+              key={`${slide.id}-${idx}`}
+              className="w-full shrink-0 aspect-[2.14/1] min-h-[160px] xs:min-h-[185px] sm:min-h-[230px] md:min-h-[270px] lg:min-h-[295px] max-h-[360px] relative overflow-hidden"
+            >
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+                loading={idx === 1 || idx === 2 ? "eager" : "lazy"}
+                decoding="async"
+                style={{
+                  imageRendering: "-webkit-optimize-contrast",
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
+                  WebkitTransform: "translateZ(0)",
+                  transform: "translateZ(0)",
                 }}
-                role="button"
-                tabIndex={isActive ? 0 : -1}
-                aria-label={slide.title}
-                onKeyDown={(e) => {
-                  if (isActive && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    onExploreClick();
-                  }
-                }}
-                className={`w-[84vw] xs:w-[80vw] sm:w-[540px] md:w-[620px] lg:w-[680px] xl:w-[740px] aspect-[2.14/1] h-[165px] xs:h-[190px] sm:h-[235px] md:h-[265px] lg:h-[290px] shrink-0 rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 bg-[#090D16] ${
-                  isActive 
-                    ? "opacity-100 scale-100 shadow-xl sm:shadow-2xl ring-1 ring-white/15 dark:ring-white/10 z-10" 
-                    : "opacity-55 hover:opacity-85 scale-[0.98] shadow-md z-0"
-                }`}
-              >
-                <img
-                  src={slide.image}
-                  alt={slide.alt}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out"
-                  loading={idx === 1 || idx === 2 ? "eager" : "lazy"}
-                  decoding="async"
-                  style={{
-                    imageRendering: "-webkit-optimize-contrast",
-                    WebkitBackfaceVisibility: "hidden",
-                    backfaceVisibility: "hidden",
-                    WebkitTransform: "translateZ(0)",
-                    transform: "translateZ(0)",
-                  }}
-                />
-              </div>
-            );
-          })}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Floating Navigation Arrows */}
@@ -253,10 +201,10 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             e.stopPropagation();
             prevSlide();
           }}
-          className="absolute left-2 xs:left-4 sm:left-6 md:left-12 lg:left-16 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/50 hover:bg-black/85 text-white/95 backdrop-blur-md transition-all shadow-md sm:shadow-xl hover:scale-110 active:scale-95 focus:outline-none"
+          className="absolute left-2 xs:left-3 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Previous Slide"
         >
-          <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <ChevronLeftIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
@@ -265,30 +213,33 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             e.stopPropagation();
             nextSlide();
           }}
-          className="absolute right-2 xs:right-4 sm:right-6 md:right-12 lg:right-16 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/50 hover:bg-black/85 text-white/95 backdrop-blur-md transition-all shadow-md sm:shadow-xl hover:scale-110 active:scale-95 focus:outline-none"
+          className="absolute right-2 xs:right-3 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Next Slide"
         >
-          <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <ChevronRightIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* Reference-Styled Indicator Dots (Active Orange Pill + Round Inactive Dots) */}
         <div 
-          className="flex items-center justify-center gap-1.5 xs:gap-2 mt-3 sm:mt-4"
+          className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 xs:gap-2 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-md"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
             <button
               type="button"
               key={idx}
-              onClick={() => goToSlide(idx)}
+              onClick={(e) => {
+                e.stopPropagation();
+                goToSlide(idx);
+              }}
               className="p-1 focus:outline-none"
               aria-label={`Go to slide ${idx + 1}`}
             >
               <span
                 className={`block transition-all duration-300 rounded-full ${
                   idx === activeDot 
-                    ? "w-7 xs:w-8 sm:w-9 h-1.5 sm:h-2 bg-[#f97316] shadow-sm" 
-                    : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
+                    ? "w-6 xs:w-7 sm:w-8 h-1.5 sm:h-2 bg-[#f97316] shadow-sm" 
+                    : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/50 hover:bg-white/90"
                 }`}
               />
             </button>
