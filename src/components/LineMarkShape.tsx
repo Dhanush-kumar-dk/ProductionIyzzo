@@ -3,13 +3,15 @@ import { formatINR, formatChartTick } from "../utils/priceHistory";
 
 export type Shape = "circle" | "square" | "diamond" | "cross" | "star" | "triangle" | "wye";
 
-export const marksMapping = {
+export type MarkCallback = (params: { index: number; total: number }) => boolean;
+
+export const marksMapping: Record<string, MarkCallback> = {
   true: () => true,
   false: () => false,
-  start: ({ index }: { index: number }) => index === 0,
-  end: ({ index, total }: { index: number; total: number }) => index === total - 1,
-  "({index})=>index%2===0": ({ index }: { index: number }) => index % 2 === 0,
-} as const;
+  start: ({ index }) => index === 0,
+  end: ({ index, total }) => index === total - 1,
+  "({index})=>index%2===0": ({ index }) => index % 2 === 0,
+};
 
 // Fallback weather dataset matching official MUI X-Charts documentation
 export const defaultWeatherDataset = [
@@ -180,7 +182,7 @@ function renderMark(x: number, y: number, shape: Shape, key: string | number) {
 }
 
 interface LineMarkShapeProps {
-  dataset?: Array<{ month: string; price?: number; london?: number; [key: string]: any }>;
+  dataset?: Array<{ month: string; price?: number; london?: number; [key: string]: string | number | undefined }>;
   seriesLabel?: string;
   dataKey?: string;
   height?: number;
@@ -383,10 +385,11 @@ export default function LineMarkShape({
 
           {/* Series Marks rendering according to showMark function and shape */}
           {coords.map((c) => {
-            const shouldShow = marksMapping[marks]({
+            const markFn = marksMapping[marks] || marksMapping.true;
+            const shouldShow = markFn({
               index: c.idx,
               total: coords.length,
-            } as any);
+            });
 
             if (!shouldShow) return null;
             return renderMark(c.x, c.y, shape, c.idx);

@@ -22,6 +22,15 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
     const handleUpdate = () => loadDeals();
     window.addEventListener("wishlistUpdated", handleUpdate);
     return () => window.removeEventListener("wishlistUpdated", handleUpdate);
@@ -35,7 +44,7 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-label="Saved Deals Wishlist">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"

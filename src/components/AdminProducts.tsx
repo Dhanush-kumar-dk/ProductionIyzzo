@@ -170,7 +170,8 @@ export default function AdminProducts() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.search.includes("add=true") || (location.state as any)?.openAdd) {
+    const locState = location.state as { openAdd?: boolean } | null;
+    if (location.search.includes("add=true") || locState?.openAdd) {
       setShowAddForm(true);
     }
   }, [location]);

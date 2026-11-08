@@ -1,21 +1,11 @@
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { AnimatePresence } from "framer-motion";
 import PageTransition, { TopProgressBar } from "./components/PageTransition";
+import ErrorBoundary from "./components/ErrorBoundary";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
 import Carousel from "./components/Carousel";
-import AdminDashboard from "./components/AdminDashboard";
-import SearchResults from "./components/SearchResults";
-import AdminUpload from "./components/AdminUpload";
-import AdminOrders from "./components/AdminOrders";
-import AdminUsers from "./components/AdminUsers";
-import AdminProducts from "./components/AdminProducts";
-import NotFound from "./components/NotFound";
-
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-
 import HeroBanner from "./components/HeroBanner";
 import CategoryStrip from "./components/CategoryStrip";
 import CashbackSteps from "./components/CashbackSteps";
@@ -23,15 +13,27 @@ import FlashDealsBar from "./components/FlashDealsBar";
 import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
-import AdLandingPage from "./components/AdLandingPage";
-import PrivacyPolicy from "./components/PrivacyPolicy";
-import TermsOfService from "./components/TermsOfService";
-import AboutPage from "./components/AboutPage";
-import AffiliateDisclosure from "./components/AffiliateDisclosure";
-import ContactPage from "./components/ContactPage";
-import ProductDetailPage from "./components/ProductDetailPage";
 import SavedDealsModal from "./components/SavedDealsModal";
 import CookieConsent from "./components/CookieConsent";
+
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
+// Lazy-loaded secondary & admin routes to optimize initial bundle performance
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const SearchResults = lazy(() => import("./components/SearchResults"));
+const AdminUpload = lazy(() => import("./components/AdminUpload"));
+const AdminOrders = lazy(() => import("./components/AdminOrders"));
+const AdminUsers = lazy(() => import("./components/AdminUsers"));
+const AdminProducts = lazy(() => import("./components/AdminProducts"));
+const NotFound = lazy(() => import("./components/NotFound"));
+const AdLandingPage = lazy(() => import("./components/AdLandingPage"));
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./components/TermsOfService"));
+const AboutPage = lazy(() => import("./components/AboutPage"));
+const AffiliateDisclosure = lazy(() => import("./components/AffiliateDisclosure"));
+const ContactPage = lazy(() => import("./components/ContactPage"));
+const ProductDetailPage = lazy(() => import("./components/ProductDetailPage"));
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -52,6 +54,18 @@ function RouteTracker() {
   }, [location.pathname]);
 
   return null;
+}
+
+/**
+ * Lightweight loading skeleton for lazy-loaded route transitions
+ */
+function PageFallback() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-3">
+      <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs font-medium text-gray-400">Loading page...</span>
+    </div>
+  );
 }
 
 function HomePage() {
@@ -183,33 +197,35 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
-        <Route path="/lp" element={<PageTransition><AdLandingPage /></PageTransition>} />
-        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-        <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-        <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
-        <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
-        <Route path="/affiliate-disclosure" element={<PageTransition><AffiliateDisclosure /></PageTransition>} />
-        <Route path="/contact" element={<PageTransition><ContactPage /></PageTransition>} />
-        <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
-        <Route path="/admin/products" element={<PageTransition><AdminProducts /></PageTransition>} />
-        <Route path="/search/:searchTerm" element={<PageTransition><SearchResults /></PageTransition>} />
-        <Route path="/admin/upload" element={<PageTransition><AdminUpload /></PageTransition>} />
-        <Route path="/admin/orders" element={<PageTransition><AdminOrders /></PageTransition>} />
-        <Route path="/admin/users" element={<PageTransition><AdminUsers /></PageTransition>} />
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-      </Routes>
-    </AnimatePresence>
+    <Suspense fallback={<PageFallback />}>
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><HomePage /></PageTransition>} />
+          <Route path="/lp" element={<PageTransition><AdLandingPage /></PageTransition>} />
+          <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+          <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+          <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+          <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+          <Route path="/affiliate-disclosure" element={<PageTransition><AffiliateDisclosure /></PageTransition>} />
+          <Route path="/contact" element={<PageTransition><ContactPage /></PageTransition>} />
+          <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
+          <Route path="/admin/products" element={<PageTransition><AdminProducts /></PageTransition>} />
+          <Route path="/search/:searchTerm" element={<PageTransition><SearchResults /></PageTransition>} />
+          <Route path="/admin/upload" element={<PageTransition><AdminUpload /></PageTransition>} />
+          <Route path="/admin/orders" element={<PageTransition><AdminOrders /></PageTransition>} />
+          <Route path="/admin/users" element={<PageTransition><AdminUsers /></PageTransition>} />
+          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        </Routes>
+      </AnimatePresence>
+    </Suspense>
   );
 }
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <Router>
         <TopProgressBar />
         <RouteTracker />
@@ -218,7 +234,7 @@ function App() {
       </Router>
       <Analytics />
       <SpeedInsights />
-    </>
+    </ErrorBoundary>
   );
 }
 
