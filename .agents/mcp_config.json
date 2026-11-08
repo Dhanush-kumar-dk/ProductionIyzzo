@@ -1,10 +1,13 @@
 {
   "mcpServers": {
     "mcp-url-converter": {
-      "command": "C:\\Users\\AMMA\\AppData\\Local\\Programs\\Antigravity IDE\\bin\\node.cmd",
+      "command": "C:\\Users\\AMMA\\AppData\\Local\\Programs\\Antigravity IDE\\Antigravity IDE.exe",
       "args": [
         "E:\\f drv\\Amazon Affliate\\mcp-url-converter\\build\\index.js"
-      ]
+      ],
+      "env": {
+        "ELECTRON_RUN_AS_NODE": "1"
+      }
     }
   }
 }
