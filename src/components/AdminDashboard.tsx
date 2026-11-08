@@ -6,6 +6,8 @@ import { doc, deleteDoc } from "firebase/firestore";
 import { supabase } from "../supabase";
 import { verifyIsAdmin } from "../utils/admin";
 import { DEFAULT_PARTNER_TAG } from "../config/api";
+import { getViewerSummary } from "../utils/visitorAnalytics";
+import DailyViewersChart from "./DailyViewersChart";
 import {
   Product,
   getAllCatalogProducts,
@@ -24,6 +26,7 @@ import {
   BanknotesIcon,
   CubeIcon,
   ChartBarIcon,
+  EyeIcon,
   PlusCircleIcon,
   TrashIcon,
   MagnifyingGlassIcon,
@@ -49,6 +52,7 @@ const AdminDashboard = () => {
     text: string;
     undoId?: string;
   } | null>(null);
+  const [viewerSummary, setViewerSummary] = useState(() => getViewerSummary(30));
 
   const navigate = useNavigate();
 
@@ -66,7 +70,7 @@ const AdminDashboard = () => {
       }
     };
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       checkAccess(user);
     });
 
@@ -87,8 +91,14 @@ const AdminDashboard = () => {
   useEffect(() => {
     refreshCatalog();
     const handleUpdate = () => refreshCatalog();
+    const handleViewerUpdate = () => setViewerSummary(getViewerSummary(30));
+
     window.addEventListener("catalogUpdated", handleUpdate);
-    return () => window.removeEventListener("catalogUpdated", handleUpdate);
+    window.addEventListener("viewerStatsUpdated", handleViewerUpdate);
+    return () => {
+      window.removeEventListener("catalogUpdated", handleUpdate);
+      window.removeEventListener("viewerStatsUpdated", handleViewerUpdate);
+    };
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -236,14 +246,14 @@ const AdminDashboard = () => {
         </div>
 
         {/* Overview KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Sales</p>
               <h3 className="text-2xl font-black text-gray-900 mt-1">₹84,240</h3>
               <p className="text-[11px] text-emerald-600 font-semibold mt-1">↑ +14.2% this month</p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <BanknotesIcon className="w-6 h-6" />
             </div>
           </div>
@@ -254,8 +264,24 @@ const AdminDashboard = () => {
               <h3 className="text-2xl font-black text-emerald-600 mt-1">₹5,896</h3>
               <p className="text-[11px] text-emerald-600 font-semibold mt-1">~7.0% effective fee rate</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <ChartBarIcon className="w-6 h-6" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Viewers</p>
+              <h3 className="text-2xl font-black text-indigo-600 mt-1">
+                {viewerSummary.totalUniqueViewers.toLocaleString()}
+              </h3>
+              <p className="text-[11px] text-indigo-600 font-semibold mt-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {viewerSummary.todayUniqueViewers} today • Live
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <EyeIcon className="w-6 h-6" />
             </div>
           </div>
 
@@ -267,7 +293,7 @@ const AdminDashboard = () => {
                 {customProducts.length} custom • {deletedIds.length} hidden
               </p>
             </div>
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <CubeIcon className="w-6 h-6" />
             </div>
           </div>
@@ -275,16 +301,19 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Partner Tag</p>
-              <h3 className="text-sm font-extrabold text-purple-700 mt-1 truncate max-w-[150px]">
+              <h3 className="text-sm font-extrabold text-purple-700 mt-1 truncate max-w-[130px]">
                 {DEFAULT_PARTNER_TAG}
               </h3>
               <p className="text-[11px] text-purple-600 font-semibold mt-1">PA-API / Creators Active</p>
             </div>
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <ShieldCheckIcon className="w-6 h-6" />
             </div>
           </div>
         </div>
+
+        {/* Day-Wise Total Viewers Analytics Graph */}
+        <DailyViewersChart />
 
         {/* Action Modules */}
         <div>

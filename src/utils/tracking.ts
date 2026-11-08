@@ -6,6 +6,7 @@
 
 import { getAttribution } from "./attribution";
 import { API_BASE_URL } from "../config/api";
+import { recordDailyVisit } from "./visitorAnalytics";
 
 declare global {
   interface Window {
@@ -201,6 +202,9 @@ export function trackPageView(pagePath?: string): void {
   const eventId = generateEventId();
   const attribution = getAttribution();
   const path = pagePath || window.location.pathname;
+
+  // 0. Update internal daily viewers analytics
+  recordDailyVisit(path);
 
   // 1. Meta Pixel PageView
   if (window.fbq) {
