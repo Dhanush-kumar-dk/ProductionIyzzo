@@ -11,24 +11,6 @@ export const marksMapping = {
   "({index})=>index%2===0": ({ index }: { index: number }) => index % 2 === 0,
 } as const;
 
-export const marksOptions: (keyof typeof marksMapping)[] = [
-  "true",
-  "false",
-  "start",
-  "end",
-  "({index})=>index%2===0",
-];
-
-export const shapes: Shape[] = [
-  "circle",
-  "square",
-  "diamond",
-  "cross",
-  "star",
-  "triangle",
-  "wye",
-];
-
 // Fallback weather dataset matching official MUI X-Charts documentation
 export const defaultWeatherDataset = [
   { month: "Jan", london: 59, paris: 57 },
@@ -177,8 +159,8 @@ function renderMark(x: number, y: number, shape: Shape, key: string | number) {
       return (
         <g key={key}>
           <line x1={x} y1={y} x2={x} y2={y - 5.5} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-          <line x1={x} y1={y} x2={x + 4.8} y2={y + 2.8} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-          <line x1={x} y1={y} x2={x - 4.8} y2={y + 2.8} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={x} y1={y + 0} x2={x + 4.8} y2={y + 2.8} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={x} y1={y + 0} x2={x - 4.8} y2={y + 2.8} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
         </g>
       );
     case "circle":
@@ -203,6 +185,8 @@ interface LineMarkShapeProps {
   dataKey?: string;
   height?: number;
   isCurrency?: boolean;
+  marks?: keyof typeof marksMapping;
+  shape?: Shape;
 }
 
 export default function LineMarkShape({
@@ -211,17 +195,16 @@ export default function LineMarkShape({
   dataKey = "price",
   height = 280,
   isCurrency = true,
+  marks = "true",
+  shape = "circle",
 }: LineMarkShapeProps) {
-  const [marks, setMarks] = React.useState<keyof typeof marksMapping>("true");
-  const [shape, setShape] = React.useState<Shape>("circle");
   const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
-
   const svgRef = React.useRef<SVGSVGElement | null>(null);
 
-  // SVG Geometry
-  const chartWidth = 780;
+  // SVG Geometry - Clean Full Width
+  const chartWidth = 860;
   const chartHeight = height;
-  const padding = { top: 30, right: 30, bottom: 45, left: 60 };
+  const padding = { top: 30, right: 35, bottom: 45, left: 65 };
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
@@ -296,254 +279,185 @@ export default function LineMarkShape({
   const activePoint = hoveredIdx !== null ? coords[hoveredIdx] : null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs font-poppins text-slate-900 w-full">
-      {/* =========================================================================
-          MUI-Style Control Stack (TextField select for marks & shape)
-         ========================================================================= */}
-      <div className="flex flex-row md:flex-col gap-3 min-w-[170px] shrink-0">
-        {/* 1. Marks Select Field */}
-        <div className="relative flex-1 md:flex-none">
-          <label className="block text-[11px] font-bold text-slate-600 mb-1 tracking-wide uppercase">
-            marks
-          </label>
-          <div className="relative">
-            <select
-              value={marks}
-              onChange={(e) => setMarks(e.target.value as keyof typeof marksMapping)}
-              className="w-full h-11 px-3.5 pr-8 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 outline-none hover:border-slate-500 focus:border-[#0288D1] focus:ring-1 focus:ring-[#0288D1] transition appearance-none cursor-pointer shadow-2xs"
-            >
-              {marksOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-              </svg>
-            </div>
-          </div>
+    <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs font-poppins text-slate-900 w-full">
+      {/* MUI Legend Row */}
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <span className="w-3.5 h-3.5 rounded-xs bg-[#0288D1] shrink-0 shadow-2xs" />
+          <span className="text-xs sm:text-sm font-bold text-slate-900">{seriesLabel}</span>
+          <span className="text-[11px] text-slate-400 font-medium">• curve: 'natural'</span>
         </div>
 
-        {/* 2. Shape Select Field */}
-        <div className="relative flex-1 md:flex-none">
-          <label className="block text-[11px] font-bold text-slate-600 mb-1 tracking-wide uppercase">
-            shape
-          </label>
-          <div className="relative">
-            <select
-              value={shape}
-              onChange={(e) => setShape(e.target.value as Shape)}
-              className="w-full h-11 px-3.5 pr-8 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 outline-none hover:border-slate-500 focus:border-[#0288D1] focus:ring-1 focus:ring-[#0288D1] transition appearance-none cursor-pointer shadow-2xs capitalize"
-            >
-              {shapes.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-              </svg>
-            </div>
+        {activePoint && (
+          <div className="text-xs sm:text-sm font-bold text-[#0288D1]">
+            <span>{activePoint.item.month}: </span>
+            <span className="text-slate-950 font-black">
+              {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
+            </span>
           </div>
-        </div>
-
-        {/* Shape Preview Badge */}
-        <div className="hidden md:flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 text-[11px] text-slate-600 font-medium mt-1">
-          <svg width="20" height="20" viewBox="0 0 20 20" className="shrink-0">
-            {renderMark(10, 10, shape, "preview")}
-          </svg>
-          <span className="capitalize font-bold text-slate-800">{shape}</span>
-          <span className="text-slate-400 text-[10px]">mark shape</span>
-        </div>
+        )}
       </div>
 
-      {/* =========================================================================
-          MUI X-Charts LineChart Box
-         ========================================================================= */}
-      <div className="flex-1 min-w-0">
-        {/* MUI Legend Row */}
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-xs bg-[#0288D1] shrink-0" />
-            <span className="text-xs font-bold text-slate-800">{seriesLabel}</span>
-            <span className="text-[10px] text-slate-400 font-medium">• curve: 'natural'</span>
-          </div>
+      {/* Full-Width Chart SVG */}
+      <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] max-h-[360px] select-none touch-none">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+          className="w-full h-full overflow-visible"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handlePointerLeave}
+        >
+          {/* Grid: Vertical = true */}
+          {coords.map((c, i) => (
+            <line
+              key={`vert-${i}`}
+              x1={c.x}
+              y1={padding.top}
+              x2={c.x}
+              y2={padding.top + plotHeight}
+              stroke="#E2E8F0"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.85"
+            />
+          ))}
 
-          {activePoint && (
-            <div className="text-xs font-bold text-[#0288D1]">
-              <span>{activePoint.item.month}: </span>
-              <span className="text-slate-900 font-black">
-                {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Chart SVG */}
-        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] max-h-[340px] select-none touch-none">
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            className="w-full h-full overflow-visible"
-            onPointerMove={handlePointerMove}
-            onPointerLeave={handlePointerLeave}
-          >
-            {/* Grid: Vertical = true */}
-            {coords.map((c, i) => (
+          {/* Grid: Horizontal = true */}
+          {yTicks.map((t, i) => (
+            <g key={`horiz-${i}`}>
               <line
-                key={`vert-${i}`}
-                x1={c.x}
-                y1={padding.top}
-                x2={c.x}
-                y2={padding.top + plotHeight}
+                x1={padding.left}
+                y1={t.yVal}
+                x2={padding.left + plotWidth}
+                y2={t.yVal}
                 stroke="#E2E8F0"
                 strokeWidth="1"
                 strokeDasharray="3 3"
-                opacity="0.8"
+                opacity="0.85"
               />
-            ))}
-
-            {/* Grid: Horizontal = true */}
-            {yTicks.map((t, i) => (
-              <g key={`horiz-${i}`}>
-                <line
-                  x1={padding.left}
-                  y1={t.yVal}
-                  x2={padding.left + plotWidth}
-                  y2={t.yVal}
-                  stroke="#E2E8F0"
-                  strokeWidth="1"
-                  strokeDasharray="3 3"
-                  opacity="0.8"
-                />
-                <text
-                  x={padding.left - 10}
-                  y={t.yVal + 3.5}
-                  textAnchor="end"
-                  fontSize="11"
-                  fill="#64748B"
-                  fontFamily="Poppins, Roboto, sans-serif"
-                  fontWeight="500"
-                >
-                  {t.label}
-                </text>
-              </g>
-            ))}
-
-            {/* X Axis Baseline Line */}
-            <line
-              x1={padding.left}
-              y1={padding.top + plotHeight}
-              x2={padding.left + plotWidth}
-              y2={padding.top + plotHeight}
-              stroke="#94A3B8"
-              strokeWidth="1.2"
-            />
-
-            {/* Y Axis Baseline Line */}
-            <line
-              x1={padding.left}
-              y1={padding.top}
-              x2={padding.left}
-              y2={padding.top + plotHeight}
-              stroke="#94A3B8"
-              strokeWidth="1.2"
-            />
-
-            {/* Natural Spline Line (MUI curve: 'natural') */}
-            {splinePath && (
-              <path
-                d={splinePath}
-                fill="none"
-                stroke="#0288D1"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            )}
-
-            {/* Series Marks rendering according to showMark function and shape */}
-            {coords.map((c) => {
-              const shouldShow = marksMapping[marks]({
-                index: c.idx,
-                total: coords.length,
-              } as any);
-
-              if (!shouldShow) return null;
-              return renderMark(c.x, c.y, shape, c.idx);
-            })}
-
-            {/* Active Crosshair & Highlight Mark on Hover */}
-            {activePoint && (
-              <g>
-                <line
-                  x1={activePoint.x}
-                  y1={padding.top}
-                  x2={activePoint.x}
-                  y2={padding.top + plotHeight}
-                  stroke="#0288D1"
-                  strokeWidth="1.2"
-                  strokeDasharray="4 4"
-                  opacity="0.8"
-                />
-                <circle
-                  cx={activePoint.x}
-                  cy={activePoint.y}
-                  r="7.5"
-                  fill="#0288D1"
-                  fillOpacity="0.25"
-                />
-                {renderMark(activePoint.x, activePoint.y, shape, "active-mark")}
-              </g>
-            )}
-
-            {/* X Axis Point Labels */}
-            {coords.map((c, i) => (
               <text
-                key={`xlabel-${i}`}
-                x={c.x}
-                y={padding.top + plotHeight + 20}
-                textAnchor="middle"
+                x={padding.left - 12}
+                y={t.yVal + 3.5}
+                textAnchor="end"
                 fontSize="11"
                 fill="#64748B"
                 fontFamily="Poppins, Roboto, sans-serif"
                 fontWeight="500"
               >
-                {c.item.month}
+                {t.label}
               </text>
-            ))}
-          </svg>
+            </g>
+          ))}
 
-          {/* Interactive Tooltip Card on Hover */}
-          {activePoint && (
-            <div
-              className="absolute pointer-events-none z-30 transition-transform duration-75"
-              style={{
-                left: `${(activePoint.x / chartWidth) * 100}%`,
-                top: `${(activePoint.y / chartHeight) * 100}%`,
-                transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "12px"}, -60%)`,
-              }}
-            >
-              <div className="bg-slate-900/95 backdrop-blur-md text-white px-3 py-2 rounded-xl shadow-xl border border-slate-700 text-xs min-w-[130px] space-y-1">
-                <div className="text-[10px] text-slate-400 border-b border-slate-800 pb-1">
-                  {activePoint.item.date || `${activePoint.item.month}`}
-                </div>
-                <div className="text-sm font-black text-amber-300">
-                  {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
-                </div>
-                {activePoint.item.label && (
-                  <div className="text-[10px] text-emerald-400 font-semibold truncate">
-                    {activePoint.item.label}
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* X Axis Baseline Line */}
+          <line
+            x1={padding.left}
+            y1={padding.top + plotHeight}
+            x2={padding.left + plotWidth}
+            y2={padding.top + plotHeight}
+            stroke="#94A3B8"
+            strokeWidth="1.2"
+          />
+
+          {/* Y Axis Baseline Line */}
+          <line
+            x1={padding.left}
+            y1={padding.top}
+            x2={padding.left}
+            y2={padding.top + plotHeight}
+            stroke="#94A3B8"
+            strokeWidth="1.2"
+          />
+
+          {/* Natural Spline Line (MUI curve: 'natural') */}
+          {splinePath && (
+            <path
+              d={splinePath}
+              fill="none"
+              stroke="#0288D1"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           )}
-        </div>
+
+          {/* Series Marks rendering according to showMark function and shape */}
+          {coords.map((c) => {
+            const shouldShow = marksMapping[marks]({
+              index: c.idx,
+              total: coords.length,
+            } as any);
+
+            if (!shouldShow) return null;
+            return renderMark(c.x, c.y, shape, c.idx);
+          })}
+
+          {/* Active Crosshair & Highlight Mark on Hover */}
+          {activePoint && (
+            <g>
+              <line
+                x1={activePoint.x}
+                y1={padding.top}
+                x2={activePoint.x}
+                y2={padding.top + plotHeight}
+                stroke="#0288D1"
+                strokeWidth="1.2"
+                strokeDasharray="4 4"
+                opacity="0.85"
+              />
+              <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r="7.5"
+                fill="#0288D1"
+                fillOpacity="0.25"
+              />
+              {renderMark(activePoint.x, activePoint.y, shape, "active-mark")}
+            </g>
+          )}
+
+          {/* X Axis Point Labels */}
+          {coords.map((c, i) => (
+            <text
+              key={`xlabel-${i}`}
+              x={c.x}
+              y={padding.top + plotHeight + 22}
+              textAnchor="middle"
+              fontSize="11"
+              fill="#64748B"
+              fontFamily="Poppins, Roboto, sans-serif"
+              fontWeight="500"
+            >
+              {c.item.month}
+            </text>
+          ))}
+        </svg>
+
+        {/* Interactive Tooltip Card on Hover */}
+        {activePoint && (
+          <div
+            className="absolute pointer-events-none z-30 transition-transform duration-75"
+            style={{
+              left: `${(activePoint.x / chartWidth) * 100}%`,
+              top: `${(activePoint.y / chartHeight) * 100}%`,
+              transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "14px"}, -60%)`,
+            }}
+          >
+            <div className="bg-slate-900/95 backdrop-blur-md text-white px-3.5 py-2.5 rounded-xl shadow-xl border border-slate-700 text-xs min-w-[140px] space-y-1">
+              <div className="text-[10px] text-slate-400 border-b border-slate-800 pb-1">
+                {activePoint.item.date || `${activePoint.item.month}`}
+              </div>
+              <div className="text-sm font-black text-amber-300">
+                {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
+              </div>
+              {activePoint.item.label && (
+                <div className="text-[10px] text-emerald-400 font-semibold truncate">
+                  {activePoint.item.label}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

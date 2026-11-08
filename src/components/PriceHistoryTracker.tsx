@@ -7,7 +7,7 @@ import {
   computeStatsForSubset,
   formatINR,
 } from "../utils/priceHistory";
-import LineMarkShape, { defaultWeatherDataset } from "./LineMarkShape";
+import LineMarkShape from "./LineMarkShape";
 import {
   ArrowTrendingDownIcon,
   ArrowTrendingUpIcon,
@@ -44,7 +44,6 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
   const [alertEmail, setAlertEmail] = useState<string>("");
   const [alertSuccessMsg, setAlertSuccessMsg] = useState<string | null>(null);
   const [showAlertModal, setShowAlertModal] = useState<boolean>(false);
-  const [datasetView, setDatasetView] = useState<"product" | "weather">("product");
 
   // 1. Generate full 365-day deterministic price history
   const historyData = useMemo(() => {
@@ -425,74 +424,39 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             </span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            {/* Dataset toggle */}
-            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200/70 text-[11px] font-bold">
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/70 text-xs font-bold shadow-2xs self-start sm:self-auto">
+            {(
+              [
+                { id: "1M", label: "1 Month" },
+                { id: "3M", label: "3 Months" },
+                { id: "6M", label: "6 Months" },
+                { id: "1Y", label: "1 Year" },
+                { id: "ALL", label: "All Time" },
+              ] as const
+            ).map((tf) => (
               <button
+                key={tf.id}
                 type="button"
-                onClick={() => setDatasetView("product")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  datasetView === "product"
+                onClick={() => setSelectedTimeframe(tf.id)}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all ${
+                  selectedTimeframe === tf.id
                     ? "bg-[#0288D1] text-white shadow-2xs font-black"
-                    : "text-slate-500 hover:text-slate-900"
+                    : "text-slate-500 hover:text-slate-950 hover:bg-white/50"
                 }`}
               >
-                Product Deals (₹)
+                {tf.label}
               </button>
-              <button
-                type="button"
-                onClick={() => setDatasetView("weather")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  datasetView === "weather"
-                    ? "bg-[#0288D1] text-white shadow-2xs font-black"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                Weather Demo
-              </button>
-            </div>
-
-            {/* Timeframe Selector (for product deals) */}
-            {datasetView === "product" && (
-              <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/70 text-xs font-bold shadow-2xs">
-                {(
-                  [
-                    { id: "1M", label: "1M" },
-                    { id: "3M", label: "3M" },
-                    { id: "6M", label: "6M" },
-                    { id: "1Y", label: "1Y" },
-                    { id: "ALL", label: "All" },
-                  ] as const
-                ).map((tf) => (
-                  <button
-                    key={tf.id}
-                    type="button"
-                    onClick={() => setSelectedTimeframe(tf.id)}
-                    className={`px-2.5 py-1 rounded-lg transition-all ${
-                      selectedTimeframe === tf.id
-                        ? "bg-slate-950 text-white shadow-2xs font-black"
-                        : "text-slate-500 hover:text-slate-950 hover:bg-white/50"
-                    }`}
-                  >
-                    {tf.label}
-                  </button>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         </div>
 
         {/* The Exact MUI X-Charts LineMarkShape Component */}
         <LineMarkShape
-          dataset={datasetView === "product" ? chartDataset : defaultWeatherDataset}
-          seriesLabel={
-            datasetView === "product"
-              ? `${product.name.slice(0, 30)}... Price (₹)`
-              : "London precipitation (mm)"
-          }
-          dataKey={datasetView === "product" ? "price" : "london"}
+          dataset={chartDataset}
+          seriesLabel={`${product.name.slice(0, 36)}... Price (₹)`}
+          dataKey="price"
           height={280}
-          isCurrency={datasetView === "product"}
+          isCurrency={true}
         />
 
         {/* Milestone Quick Stats Strip */}
