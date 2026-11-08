@@ -6,7 +6,6 @@ import {
   filterPointsByTimeframe,
   computeStatsForSubset,
   formatINR,
-  formatCompactINR,
   formatChartTick,
 } from "../utils/priceHistory";
 import {
