@@ -36,8 +36,17 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
 
-  // Auto-advance every 5.5 seconds, paused when user hovers
+  // Preload all slides in background for zero-latency mobile swiping
+  useEffect(() => {
+    slides.forEach((slide) => {
+      const img = new Image();
+      img.src = slide.image;
+    });
+  }, []);
+
+  // Auto-advance every 5.5 seconds, paused when user hovers or touches
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
@@ -54,30 +63,39 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     setCurrent((prev) => (prev + 1) % slides.length);
   };
 
+  // Touch Swipe Gesture Detection with Vertical Scroll Guard
   const handleTouchStart = (e: React.TouchEvent) => {
+    setIsPaused(true);
     touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) {
+    setIsPaused(false);
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    
+    const diffX = touchStartXRef.current - e.changedTouches[0].clientX;
+    const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
+
+    // Only swipe if horizontal movement is dominant (avoid capturing normal page scrolling)
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+      if (diffX > 0) {
         nextSlide();
       } else {
         prevSlide();
       }
     }
     touchStartXRef.current = null;
+    touchStartYRef.current = null;
   };
 
   return (
     <section 
       aria-label="Promotional Carousel" 
-      className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4 font-poppins"
+      className="w-full px-2.5 sm:px-6 lg:px-12 pt-2.5 sm:pt-4 font-poppins"
     >
       <div
-        className="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[2.3/1] min-h-[190px] sm:min-h-[280px] md:min-h-[340px] max-h-[460px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none"
+        className="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[2.3/1] max-h-[480px] rounded-xl sm:rounded-3xl overflow-hidden shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -104,27 +122,33 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             <img
               src={slide.image}
               alt={slide.alt}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 1440px"
               className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
               loading={idx === 0 ? "eager" : "lazy"}
               decoding="async"
               style={{
                 imageRendering: "-webkit-optimize-contrast",
+                WebkitBackfaceVisibility: "hidden",
+                backfaceVisibility: "hidden",
+                WebkitTransform: "translateZ(0)",
+                transform: "translateZ(0)",
+                willChange: "transform, opacity",
               }}
             />
           </div>
         ))}
 
-        {/* Carousel Navigation Arrows */}
+        {/* Carousel Navigation Arrows (Touch optimized) */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             prevSlide();
           }}
-          className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
+          className="absolute left-1.5 xs:left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Previous Slide"
         >
-          <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <ChevronLeftIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
@@ -133,15 +157,15 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             e.stopPropagation();
             nextSlide();
           }}
-          className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-85 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
+          className="absolute right-1.5 xs:right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-1.5 xs:p-2 sm:p-2.5 rounded-full bg-black/45 hover:bg-black/75 text-white/95 backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-md sm:shadow-lg hover:scale-110 active:scale-95 focus:opacity-100 focus:outline-none"
           aria-label="Next Slide"
         >
-          <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <ChevronRightIcon className="w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Dots Indicator */}
+        {/* Thumb-friendly Dots Indicator */}
         <div 
-          className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 bg-black/35 backdrop-blur-md rounded-full border border-white/10 shadow-md"
+          className="absolute bottom-2 xs:bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 xs:gap-1.5 sm:gap-2 px-2.5 xs:px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-md"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
@@ -152,13 +176,17 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
                 e.stopPropagation();
                 setCurrent(idx);
               }}
-              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                idx === current 
-                  ? "w-6 sm:w-8 bg-[#FFD814] shadow" 
-                  : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/90"
-              }`}
+              className="p-1 focus:outline-none"
               aria-label={`Go to slide ${idx + 1}`}
-            />
+            >
+              <span
+                className={`block h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                  idx === current 
+                    ? "w-5 xs:w-6 sm:w-8 bg-[#FFD814] shadow" 
+                    : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/90"
+                }`}
+              />
+            </button>
           ))}
         </div>
       </div>
