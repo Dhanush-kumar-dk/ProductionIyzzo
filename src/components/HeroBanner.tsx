@@ -37,6 +37,14 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const [isPaused, setIsPaused] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
+  // Preload all slides in background for zero-latency switching
+  useEffect(() => {
+    slides.forEach((slide) => {
+      const img = new Image();
+      img.src = slide.image;
+    });
+  }, []);
+
   // Auto-advance every 5.5 seconds, paused when user hovers
   useEffect(() => {
     if (isPaused) return;
@@ -106,6 +114,14 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
               alt={slide.alt}
               className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-500 ease-out"
               loading={idx === 0 ? "eager" : "lazy"}
+              decoding="async"
+              style={{
+                imageRendering: "-webkit-optimize-contrast",
+                WebkitBackfaceVisibility: "hidden",
+                backfaceVisibility: "hidden",
+                WebkitTransform: "translateZ(0)",
+                transform: "translateZ(0)",
+              }}
             />
           </div>
         ))}
