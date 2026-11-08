@@ -519,6 +519,29 @@ export default async function handler(req, res) {
 
   const targetUrl = rawUrl.trim();
 
+  // Tier 0: Check if local mcp-url-converter server is running (localhost:8001)
+  for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
+    try {
+      const mcpCtrl = new AbortController();
+      const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 2500);
+      const mcpRes = await fetch(
+        `${host}/extract-product?url=${encodeURIComponent(targetUrl)}`,
+        { signal: mcpCtrl.signal }
+      );
+      clearTimeout(mcpTimeout);
+      if (mcpRes.ok) {
+        const json = await mcpRes.json();
+        if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
+          sendResponse(200, json);
+          return;
+        }
+      }
+      break;
+    } catch {
+      // Server not running on this host - continue
+    }
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 7500);

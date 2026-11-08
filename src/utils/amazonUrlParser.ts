@@ -596,6 +596,37 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
   const trimmed = inputUrl.trim();
   const asin = extractAsinFromUrl(trimmed) || "";
 
+  // 0. Tier 0: Local mcp-url-converter server (optional — fast when running)
+  // Start it with: node ../mcp-url-converter/build/index.js  (or start.bat)
+  for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
+    try {
+      const mcpCtrl = new AbortController();
+      const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 3000);
+
+      const mcpRes = await fetch(
+        `${host}/extract-product?url=${encodeURIComponent(trimmed)}`,
+        { method: "GET", signal: mcpCtrl.signal }
+      );
+      clearTimeout(mcpTimeout);
+
+      if (mcpRes.ok) {
+        const ct = mcpRes.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+          const json = await mcpRes.json();
+          if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
+            return {
+              ...json.data,
+              sourceMessage: `[mcp-url-converter] ${json.data.sourceMessage || "Extracted from local server."}`,
+            } as ExtractedProductData;
+          }
+        }
+      }
+      break; // Host responded (success or failure) — stop trying alternates
+    } catch {
+      // Server not running on this host — silently continue
+    }
+  }
+
   // 1. Tier 1: Try /api/scrape serverless scraper endpoint
   try {
     const controller = new AbortController();
