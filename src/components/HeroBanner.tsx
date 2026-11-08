@@ -48,7 +48,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
 
-  // Preload all slides in background for zero-latency swiping
+  // Preload all slides in background for zero-latency instant rendering
   useEffect(() => {
     slides.forEach((slide) => {
       const img = new Image();
@@ -141,7 +141,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   return (
     <section 
       aria-label="Promotional Carousel" 
-      className="w-full px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins select-none"
+      className="w-full flex justify-center items-center px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins select-none"
     >
       <div
         className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] group cursor-pointer transition-shadow"
@@ -159,27 +159,29 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           }
         }}
       >
-        {/* Animated Running Sliding Track: One slide covers the entire banner width */}
+        {/* Animated Running Sliding Track: Exactly one slide covers the entire container, centered */}
         <div
-          className={`flex w-full ${
+          className={`flex ${
             isTransitionEnabled
               ? "transition-transform duration-600 ease-[cubic-bezier(0.25,1,0.5,1)]"
               : "transition-none"
           }`}
           style={{
-            transform: `translate3d(-${displayIndex * 100}%, 0, 0)`,
+            width: `${extendedSlides.length * 100}%`,
+            transform: `translate3d(-${(displayIndex * 100) / extendedSlides.length}%, 0, 0)`,
           }}
           onTransitionEnd={handleTransitionEnd}
         >
           {extendedSlides.map((slide, idx) => (
             <div
               key={`${slide.id}-${idx}`}
-              className="w-full shrink-0 aspect-[2.14/1] min-h-[160px] xs:min-h-[185px] sm:min-h-[230px] md:min-h-[270px] lg:min-h-[295px] max-h-[360px] relative overflow-hidden"
+              style={{ width: `${100 / extendedSlides.length}%` }}
+              className="shrink-0 aspect-[2.14/1] sm:aspect-[2.4/1] md:aspect-[2.7/1] min-h-[165px] xs:min-h-[190px] sm:min-h-[235px] md:min-h-[275px] lg:min-h-[300px] max-h-[380px] relative overflow-hidden"
             >
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+                className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out block"
                 loading={idx === 1 || idx === 2 ? "eager" : "lazy"}
                 decoding="async"
                 style={{
