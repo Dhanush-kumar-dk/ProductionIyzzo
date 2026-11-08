@@ -144,7 +144,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
       className="w-full flex justify-center items-center px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins select-none"
     >
       <div
-        className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] group cursor-pointer transition-shadow"
+        className="relative w-full max-w-7xl mx-auto aspect-[1376/643] overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] group cursor-pointer transition-shadow"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -159,9 +159,9 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           }
         }}
       >
-        {/* Animated Running Sliding Track: Exactly one slide covers the entire container, centered */}
+        {/* Animated Running Sliding Track: Exact aspect ratio matching the banner images for 100% fit */}
         <div
-          className={`flex ${
+          className={`flex h-full ${
             isTransitionEnabled
               ? "transition-transform duration-600 ease-[cubic-bezier(0.25,1,0.5,1)]"
               : "transition-none"
@@ -176,12 +176,12 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
             <div
               key={`${slide.id}-${idx}`}
               style={{ width: `${100 / extendedSlides.length}%` }}
-              className="shrink-0 aspect-[2.14/1] sm:aspect-[2.4/1] md:aspect-[2.7/1] min-h-[165px] xs:min-h-[190px] sm:min-h-[235px] md:min-h-[275px] lg:min-h-[300px] max-h-[380px] relative overflow-hidden"
+              className="shrink-0 h-full w-full relative overflow-hidden bg-[#090D16] flex items-center justify-center"
             >
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out block"
+                className="w-full h-full object-contain object-center block select-none pointer-events-none group-hover:scale-[1.012] transition-transform duration-700 ease-out"
                 loading={idx === 1 || idx === 2 ? "eager" : "lazy"}
                 decoding="async"
                 style={{
