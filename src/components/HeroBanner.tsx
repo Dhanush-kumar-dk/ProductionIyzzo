@@ -2,16 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import Image1 from "../assets/image1.jpg";
 import Image2 from "../assets/image2.jpg";
 import Image3 from "../assets/image3.jpg";
-import Image1Mobile from "../assets/image1-mobile.jpg";
-import Image2Mobile from "../assets/image2-mobile.jpg";
-import Image3Mobile from "../assets/image3-mobile.jpg";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 
 interface Slide {
   id: number;
   title: string;
   image: string;
-  mobileImage: string;
   alt: string;
 }
 
@@ -20,21 +16,18 @@ const slides: Slide[] = [
     id: 1,
     title: "Top-Rated Electronics — Mobile, TV & Appliances",
     image: Image1,
-    mobileImage: Image1Mobile,
     alt: "Top-Rated Electronics: Mobile, TV & Appliances — Discover the latest smartphones, smart TVs, and home appliances. Shop the latest deals.",
   },
   {
     id: 2,
     title: "Curated Fashion Picks — Trends & Styles",
     image: Image2,
-    mobileImage: Image2Mobile,
     alt: "Curated Fashion Picks: Trends & Styles — Discover the latest in apparel, footwear, and accessories. Shop the latest collection.",
   },
   {
     id: 3,
     title: "Essential Accessories — Bags, Watches & More",
     image: Image3,
-    mobileImage: Image3Mobile,
     alt: "Essential Accessories: Bags, Watches & More — Complete your look with premium accessories and everyday essentials.",
   },
 ];
@@ -45,13 +38,11 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
 
-  // Preload all slides (desktop + mobile) in background for zero-latency swiping
+  // Preload slides in background for zero-latency swiping
   useEffect(() => {
     slides.forEach((slide) => {
-      const imgDesktop = new Image();
-      imgDesktop.src = slide.image;
-      const imgMobile = new Image();
-      imgMobile.src = slide.mobileImage;
+      const img = new Image();
+      img.src = slide.image;
     });
   }, []);
 
@@ -104,7 +95,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
       className="w-full px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins"
     >
       <div
-        className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
+        className="relative w-full max-w-7xl mx-auto aspect-[1024/260] min-h-[120px] sm:min-h-[180px] md:min-h-[220px] lg:min-h-[260px] rounded-xl sm:rounded-3xl overflow-hidden shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -119,16 +110,6 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           }
         }}
       >
-        {/* Invisible natural spacer using <picture> so the container automatically sizes to the mobile image on mobile (1:1) and desktop image on desktop (16:9 widescreen) with zero layout shift */}
-        <picture className="w-full h-auto block pointer-events-none select-none opacity-0 invisible" aria-hidden="true">
-          <source media="(max-width: 640px)" srcSet={slides[0].mobileImage} />
-          <img
-            src={slides[0].image}
-            alt=""
-            className="w-full h-auto block"
-          />
-        </picture>
-
         {/* Slides */}
         {slides.map((slide, idx) => (
           <div
@@ -138,24 +119,21 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
               idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
             }`}
           >
-            <picture className="w-full h-full block">
-              <source media="(max-width: 640px)" srcSet={slide.mobileImage} />
-              <img
-                src={slide.image}
-                alt={slide.alt}
-                className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
-                loading={idx === 0 ? "eager" : "lazy"}
-                decoding="async"
-                style={{
-                  imageRendering: "-webkit-optimize-contrast",
-                  WebkitBackfaceVisibility: "hidden",
-                  backfaceVisibility: "hidden",
-                  WebkitTransform: "translateZ(0)",
-                  transform: "translateZ(0)",
-                  willChange: "transform, opacity",
-                }}
-              />
-            </picture>
+            <img
+              src={slide.image}
+              alt={slide.alt}
+              className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+              loading={idx === 0 ? "eager" : "lazy"}
+              decoding="async"
+              style={{
+                imageRendering: "-webkit-optimize-contrast",
+                WebkitBackfaceVisibility: "hidden",
+                backfaceVisibility: "hidden",
+                WebkitTransform: "translateZ(0)",
+                transform: "translateZ(0)",
+                willChange: "transform, opacity",
+              }}
+            />
           </div>
         ))}
 
