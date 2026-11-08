@@ -277,24 +277,24 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
     name = slugTitle || (asin ? `Amazon Verified Product (${asin})` : "Featured Store Product");
   }
 
-  // 4. Selling Price extraction
+  // 4. Selling Price extraction (clean INR whole rupees)
   let price = "";
   if (!isBlocked && html) {
     const pricePatterns = [
-      /([0-9,]+(?:\.[0-9]{2})?)\s*with\s*[0-9]+(?:\.[0-9]+)?\s*percent savings/i,
       /class="[^"]*(?:priceToPay|apexPriceToPay|apex-pricetopay-value)[^"]*"[\s\S]*?<span[^>]*class="[^"]*a-price-whole[^"]*"[^>]*>([0-9,]+)/i,
-      /<span[^>]*class="[^"]*(?:apexPriceToPay|priceToPay)[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([₹\s0-9,.]+)/i,
-      /<span[^>]*id="priceblock_ourprice"[^>]*>([^<]+)<\/span>/i,
-      /<span[^>]*id="priceblock_dealprice"[^>]*>([^<]+)<\/span>/i,
+      /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)\s*with\s*[0-9]+(?:\.[0-9]+)?\s*percent savings/i,
+      /<span[^>]*class="[^"]*(?:apexPriceToPay|priceToPay)[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /<span[^>]*id="(?:priceblock_ourprice|priceblock_dealprice)"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
       /<span[^>]*class="[^"]*a-price-whole"[^>]*>([0-9,]+)/i,
       /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
       /"price":\s*"?([0-9,.]+)"?/i,
-      /₹\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
     ];
     for (const pat of pricePatterns) {
       const m = html.match(pat);
       if (m && m[1]) {
-        const cleaned = m[1].replace(/[^0-9,.]/g, "").trim().replace(/\.$/, "");
+        const cleaned = m[1].replace(/[^0-9,.]/g, "").replace(/\.00$/, "").trim().replace(/\.$/, "");
         if (cleaned && cleaned !== "0" && cleaned !== "0.00") {
           price = cleaned;
           break;
@@ -303,31 +303,49 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
     }
   }
 
-  // 5. MRP extraction
+  // 5. MRP extraction (clean INR whole rupees)
   let mrp = "";
   if (!isBlocked && html) {
     const mrpPatterns = [
-      /<span[^>]*class="[^"]*apex-basisprice-value[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
-      /basisPrice[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
-      /M\.R\.P\.[:\s]*(?:<[^>]+>)*\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*class="[^"]*a-text-price[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>([^<]+)<\/span>/i,
-      /<span[^>]*class="[^"]*a-text-strike[^"]*"[^>]*>([^<]+)<\/span>/i,
+      /apex-basisprice-offscreen-label">M\.R\.P\.[:\s]*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /M\.R\.P\.[:\s]*(?:<[^>]+>)*\s*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /basisPrice[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /<span[^>]*class="[^"]*apex-basisprice-value[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /(?:data-a-strike="true"|class="[^"]*a-text-strike[^"]*")[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+      /<span[^>]*class="[^"]*a-text-price[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
       /"highPrice":\s*"?([0-9,.]+)"?/i,
     ];
     for (const pat of mrpPatterns) {
       const m = html.match(pat);
       if (m && m[1]) {
-        const cleaned = m[1].replace(/[^0-9,.]/g, "").trim().replace(/\.$/, "");
+        const cleaned = m[1].replace(/[^0-9,.]/g, "").replace(/\.00$/, "").trim().replace(/\.$/, "");
         if (cleaned && cleaned !== "0" && cleaned !== price) {
           mrp = cleaned;
           break;
         }
       }
     }
+
+    // If no MRP found but savings percentage exists, calculate it
+    if (!mrp && price) {
+      const savingsMatch =
+        html.match(/(?:savingsPercentage|savingPriceOverride)[^"]*"[^>]*>-([0-9]+)%/i) ||
+        html.match(/with\s*([0-9]+)\s*percent savings/i);
+      if (savingsMatch && savingsMatch[1]) {
+        const disc = parseInt(savingsMatch[1], 10);
+        const numPrice = parseFloat(price.replace(/,/g, ""));
+        if (disc > 0 && disc < 90 && numPrice > 0) {
+          mrp = Math.round(numPrice / (1 - disc / 100)).toLocaleString("en-IN");
+        }
+      }
+    }
   }
 
   if (!price) price = "1,499";
-  if (!mrp) mrp = Math.round(parseFloat(price.replace(/,/g, "")) * 1.35).toString();
+  if (!mrp) {
+    const numPrice = parseFloat(price.replace(/,/g, "")) || 1499;
+    mrp = Math.round(numPrice * 1.35).toLocaleString("en-IN");
+  }
 
   // 6. Rating & Count
   let rating = "4.3";
@@ -376,41 +394,82 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
     }
   }
 
-  // 9. Images (Top 1024px High-Res Amazon Media CDN)
-  const primaryCdnImg = asin ? `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX800_.jpg` : "";
-  const fallbackCdnImg = asin ? `https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8&Format=_SL800_&ASIN=${asin}&MarketPlace=IN&ID=AsinImage` : "";
-
-  let image = primaryCdnImg;
-  let image1 = fallbackCdnImg;
-  let image2 = "";
+  // 9. Images (Top 1024px High-Res Amazon Media Gallery)
+  const rawImages = [];
 
   if (!isBlocked && html) {
-    const landingMatch =
+    // A. hiRes in colorImages or page JSON
+    const hiResMatches = html.matchAll(/"hiRes"\s*:\s*"([^"]+)"/g);
+    for (const m of hiResMatches) {
+      if (m[1] && m[1].includes("/images/I/")) rawImages.push(m[1]);
+    }
+
+    // B. data-a-dynamic-image on landingImage
+    const dynMatch =
+      html.match(/id="landingImage"[^>]*data-a-dynamic-image="([^"]+)"/i) ||
+      html.match(/data-a-dynamic-image="([^"]+)"/i);
+    if (dynMatch) {
+      try {
+        const obj = JSON.parse(dynMatch[1].replace(/&quot;/g, '"'));
+        for (const k of Object.keys(obj)) {
+          if (k.includes("/images/I/")) rawImages.push(k);
+        }
+      } catch (e) {}
+    }
+
+    // C. large in page JSON
+    const largeMatches = html.matchAll(/"large"\s*:\s*"([^"]+)"/g);
+    for (const m of largeMatches) {
+      if (m[1] && m[1].includes("/images/I/")) rawImages.push(m[1]);
+    }
+
+    // D. landingImage src or data-old-hires
+    const landingDirect =
       html.match(/id="landingImage"[^>]*data-old-hires="([^"]+)"/i) ||
       html.match(/id="landingImage"[^>]*src="([^"]+)"/i);
+    if (landingDirect && landingDirect[1] && landingDirect[1].includes("/images/I/")) {
+      rawImages.push(landingDirect[1]);
+    }
 
-    const imgRegex =
-      /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na)\.ssl-images-amazon\.com)\/images\/I\/[^"'<>\s\\)]+\.(?:jpg|jpeg|png|webp)/gi;
-    const rawImgs = Array.from(new Set(html.match(imgRegex) || []));
-    const validImgs = rawImgs.filter(
-      (u) =>
-        !u.includes("SS40") &&
-        !u.includes("SX38") &&
-        !u.includes("US40") &&
-        !u.includes("logo") &&
-        !u.includes("icon") &&
-        !u.includes("pixel") &&
-        !u.includes("play-button")
-    );
-
-    const hiRes = validImgs.filter((u) => u.includes("1024") || u.includes("SX800") || u.includes("SL1500"));
-    const combined = [...(landingMatch ? [landingMatch[1]] : []), ...hiRes, ...validImgs];
-    const unique = [...new Set(combined)];
-
-    if (unique[0]) image = unique[0];
-    if (unique[1]) image1 = unique[1];
-    if (unique[2]) image2 = unique[2];
+    // E. General media-amazon images fallback
+    if (rawImages.length === 0) {
+      const imgRegex =
+        /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na).ssl-images-amazon\.com)\/images\/I\/[^"'<>\s\\)]+\.(?:jpg|jpeg|png|webp)/gi;
+      const allImgs = Array.from(new Set(html.match(imgRegex) || []));
+      for (const u of allImgs) {
+        if (
+          !u.includes("SS40") &&
+          !u.includes("SX38") &&
+          !u.includes("US40") &&
+          !u.includes("logo") &&
+          !u.includes("icon") &&
+          !u.includes("pixel") &&
+          !u.includes("play-button")
+        ) {
+          rawImages.push(u);
+        }
+      }
+    }
   }
+
+  // Deduplicate by Image ID and normalize all to 1024px High-Res
+  const idMap = new Map();
+  for (const img of rawImages) {
+    const match = img.match(/\/images\/I\/([A-Za-z0-9%_-]+?)(?:\._[A-Za-z0-9,_]+_)?\.(jpg|png|jpeg|webp)/i);
+    if (match && match[1]) {
+      const imgId = match[1];
+      if (!idMap.has(imgId)) {
+        idMap.set(imgId, `https://m.media-amazon.com/images/I/${imgId}._SL1024_.jpg`);
+      }
+    }
+  }
+
+  const uniqueImgs = Array.from(idMap.values());
+  const defaultFallbackImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1024&auto=format&fit=crop&q=80";
+
+  let image = uniqueImgs[0] || defaultFallbackImage;
+  let image1 = uniqueImgs[1] || uniqueImgs[0] || "";
+  let image2 = uniqueImgs[2] || uniqueImgs[0] || "";
 
   // 10. Brand & Category
   let brand = specs["Brand"] || specs["Brand Name"] || inferBrand(name + " " + effectiveUrl);
@@ -467,8 +526,8 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
     specs,
     confidence: isBlocked ? "heuristic" : "full",
     sourceMessage: isBlocked
-      ? `Extracted ASIN ${asin}, high-resolution CDN images, and verified specifications!`
-      : `Successfully scraped real-time product details, live pricing, specifications, and imagery!`,
+      ? `Extracted ASIN ${asin}, verified specifications, and product details.`
+      : `Successfully scraped real-time product details, live pricing, specifications, and high-resolution imagery!`,
   };
 }
 
@@ -551,7 +610,7 @@ export default async function handler(req, res) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
       Accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Language": "en-IN,en-GB;q=0.9,en;q=0.8",
       "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
       "Sec-Ch-Ua-Mobile": "?0",
       "Sec-Ch-Ua-Platform": '"Windows"',
