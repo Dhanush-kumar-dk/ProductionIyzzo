@@ -92,10 +92,10 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   return (
     <section 
       aria-label="Promotional Carousel" 
-      className="w-full px-2.5 sm:px-6 lg:px-12 pt-2.5 sm:pt-4 font-poppins"
+      className="w-full px-2 sm:px-6 lg:px-12 pt-2 sm:pt-4 font-poppins"
     >
       <div
-        className="relative w-full aspect-[16/9] sm:aspect-[2/1] lg:aspect-[2.3/1] max-h-[480px] rounded-xl sm:rounded-3xl overflow-hidden shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
+        className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-xl sm:rounded-3xl shadow-lg sm:shadow-2xl bg-[#090D16] cursor-pointer group select-none transition-shadow"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -110,6 +110,14 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           }
         }}
       >
+        {/* Invisible natural spacer image to establish exact fit-content height across all mobile devices */}
+        <img
+          src={slides[0].image}
+          alt=""
+          aria-hidden="true"
+          className="w-full h-auto block pointer-events-none select-none opacity-0 invisible"
+        />
+
         {/* Slides */}
         {slides.map((slide, idx) => (
           <div
@@ -123,7 +131,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
               src={slide.image}
               alt={slide.alt}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 1440px"
-              className="w-full h-full object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
+              className="w-full h-full object-contain sm:object-cover object-center group-hover:scale-[1.015] transition-transform duration-700 ease-out"
               loading={idx === 0 ? "eager" : "lazy"}
               decoding="async"
               style={{
@@ -165,7 +173,7 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
 
         {/* Thumb-friendly Dots Indicator */}
         <div 
-          className="absolute bottom-2 xs:bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 xs:gap-1.5 sm:gap-2 px-2.5 xs:px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-md"
+          className="absolute bottom-1.5 xs:bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 xs:gap-1.5 sm:gap-2 px-2.5 xs:px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-md"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
