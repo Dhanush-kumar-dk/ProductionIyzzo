@@ -31,6 +31,7 @@ interface PriceHistoryTrackerProps {
 }
 
 type TimeframeType = "1M" | "3M" | "6M" | "1Y" | "ALL";
+type ChartModeType = "smooth" | "stepped";
 
 interface StoredAlert {
   productId: string;
@@ -39,8 +40,71 @@ interface StoredAlert {
   createdAt: string;
 }
 
+// Monotone Cubic Hermite Spline (Fritsch-Carlson algorithm)
+// Guarantees zero artificial overshoot at peaks and valleys
+function getMonotoneSplinePath(points: { x: number; y: number }[]): string {
+  const n = points.length;
+  if (n === 0) return "";
+  if (n === 1) return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  if (n === 2) {
+    return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)} ${points[1].y.toFixed(1)}`;
+  }
+
+  // 1. Calculate secants (slopes between consecutive points)
+  const dx: number[] = [];
+  const dy: number[] = [];
+  const m: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const dX = points[i + 1].x - points[i].x;
+    const dY = points[i + 1].y - points[i].y;
+    dx.push(dX);
+    dy.push(dY);
+    m.push(dY / (dX || 1e-6));
+  }
+
+  // 2. Calculate monotone tangents (flat at local extrema to prevent overshooting)
+  const tangents: number[] = [];
+  tangents.push(m[0]);
+  for (let i = 1; i < n - 1; i++) {
+    if (m[i - 1] * m[i] <= 0) {
+      tangents.push(0); // Flat peak or trough
+    } else {
+      const w1 = 2 * dx[i] + dx[i - 1];
+      const w2 = dx[i] + 2 * dx[i - 1];
+      tangents.push((w1 + w2) / (w1 / m[i - 1] + w2 / m[i]));
+    }
+  }
+  tangents.push(m[n - 2]);
+
+  // 3. Build smooth Cubic Bezier path
+  let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const segDx = dx[i];
+    const cp1x = p1.x + segDx / 3;
+    const cp1y = p1.y + (tangents[i] * segDx) / 3;
+    const cp2x = p2.x - segDx / 3;
+    const cp2y = p2.y - (tangents[i + 1] * segDx) / 3;
+    path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return path;
+}
+
+// Stepped / Discrete Amazon Price Changes (Keepa & CamelCamelCamel style)
+function getSteppedPath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return "";
+  let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p2 = points[i + 1];
+    path += ` H ${p2.x.toFixed(1)} V ${p2.y.toFixed(1)}`;
+  }
+  return path;
+}
+
 export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeType>("3M");
+  const [chartMode, setChartMode] = useState<ChartModeType>("smooth");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeAlert, setActiveAlert] = useState<StoredAlert | null>(null);
   const [alertTargetPrice, setAlertTargetPrice] = useState<string>("");
@@ -131,21 +195,22 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
   };
 
   // --- SVG Chart Dimensions & Coordinates ---
-  const chartWidth = 840;
-  const chartHeight = 310;
-  const padding = { top: 32, right: 38, bottom: 42, left: 66 };
+  // Gutter right: 78px to reserve clean space for benchmark scale tags (e.g. Avg: ₹775)
+  const chartWidth = 880;
+  const chartHeight = 330;
+  const padding = { top: 32, right: 80, bottom: 44, left: 66 };
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
-  // Compute clean Y-scale limits with natural padding
+  // Compute clean Y-scale limits with natural headroom & floor room
   const prices = displayPoints.map((p) => p.price);
   const minP = Math.min(...prices);
   const maxP = Math.max(...prices);
-  const priceRange = maxP - minP || 1000;
-  
-  // Clean boundaries ensuring room above peak and below trough
-  const yMin = Math.max(0, Math.floor((minP - priceRange * 0.12) / 50) * 50);
-  const yMax = Math.ceil((maxP + priceRange * 0.12) / 50) * 50;
+  const priceRange = maxP - minP || 500;
+
+  // Snap to clean 25/50 rupee boundaries
+  const yMin = Math.max(0, Math.floor((minP - priceRange * 0.15) / 25) * 25);
+  const yMax = Math.ceil((maxP + priceRange * 0.15) / 25) * 25;
   const yDomain = yMax - yMin || 1;
 
   // 5 cleanly distributed Y-ticks with distinct unique labels
@@ -166,7 +231,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     return ticks;
   }, [padding.top, plotHeight, yMax, yDomain]);
 
-  // Map data point to SVG coordinates
+  // Map data points to SVG coordinates
   const coords = useMemo(() => {
     const total = displayPoints.length;
     return displayPoints.map((pt, idx) => {
@@ -176,28 +241,13 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     });
   }, [displayPoints, plotWidth, plotHeight, padding.left, padding.top, yMax, yDomain]);
 
-  // Build smooth cubic bezier SVG path
+  // Build the active curve path (monotone spline vs stepped)
   const linePath = useMemo(() => {
     if (coords.length === 0) return "";
-    if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
-
-    let path = `M ${coords[0].x} ${coords[0].y}`;
-    for (let i = 0; i < coords.length - 1; i++) {
-      const p0 = coords[i === 0 ? 0 : i - 1];
-      const p1 = coords[i];
-      const p2 = coords[i + 1];
-      const p3 = coords[i + 2 < coords.length ? i + 2 : i + 1];
-
-      // Catmull-Rom to Cubic Bezier control points
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-    return path;
-  }, [coords]);
+    return chartMode === "smooth"
+      ? getMonotoneSplinePath(coords)
+      : getSteppedPath(coords);
+  }, [coords, chartMode]);
 
   // Build enclosed SVG path for gradient area fill
   const areaPath = useMemo(() => {
@@ -205,7 +255,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     const firstX = coords[0].x;
     const lastX = coords[coords.length - 1].x;
     const bottomY = padding.top + plotHeight;
-    return `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+    return `${linePath} L ${lastX.toFixed(1)} ${bottomY.toFixed(1)} L ${firstX.toFixed(1)} ${bottomY.toFixed(1)} Z`;
   }, [linePath, coords, padding.top, plotHeight]);
 
   // Average price Y coordinate on chart
@@ -228,7 +278,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
     return best;
   }, [displayPoints]);
 
-  // Interactive scrubber on hover/touch
+  // Interactive scrubber on pointer move / touch
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current || coords.length === 0) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -256,7 +306,9 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
 
   const activePoint = hoveredIndex !== null ? coords[hoveredIndex] : null;
 
-  // Discount percentage calculation
+  // Current active display price (either hovered checkpoint or live current price)
+  const currentActivePrice = activePoint ? activePoint.pt.price : activeStats.currentPrice;
+  const currentActiveDiffFromAvg = activeStats.averagePrice - currentActivePrice;
   const discountPercent =
     activeStats.mrp > activeStats.currentPrice
       ? Math.round(((activeStats.mrp - activeStats.currentPrice) / activeStats.mrp) * 100)
@@ -529,48 +581,130 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
       </div>
 
       {/* =========================================================================
-          4. INTERACTIVE PRICE FLUCTUATION CURVE CARD
+          4. REDESIGNED INTERACTIVE PRICE FLUCTUATION GRAPH CARD
          ========================================================================= */}
       <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm mb-6">
-        {/* Chart Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider">
-              Price Fluctuation Curve:
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">
-              {displayPoints.length} verified checks
-            </span>
+        {/* Dynamic Real-Time Scrubber Header & Controls Toolbar */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                {activePoint ? "Historical Point Inspection" : "Price Fluctuation Curve"}
+              </span>
+
+              {activePoint?.pt.isSaleEvent && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black">
+                  <BoltIcon className="w-3 h-3 text-amber-600" />
+                  <span>{activePoint.pt.label || "Festival Sale Deal"}</span>
+                </span>
+              )}
+
+              {!activePoint && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+                  <span>{displayPoints.length} verified checks</span>
+                </span>
+              )}
+
+              <span className="text-slate-300">•</span>
+              <span className="text-[11px] font-semibold text-slate-500">
+                {activePoint ? activePoint.pt.displayDate : "Amazon India Verified Record"}
+              </span>
+            </div>
+
+            {/* Dynamic Value Display */}
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                {formatINR(currentActivePrice)}
+              </span>
+
+              <div className="text-xs sm:text-sm font-bold flex items-center gap-2">
+                {currentActiveDiffFromAvg > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-700 font-black">
+                    <ArrowDownIcon className="w-3.5 h-3.5" />
+                    <span>
+                      {formatINR(currentActiveDiffFromAvg)} (
+                      {Math.round((currentActiveDiffFromAvg / activeStats.averagePrice) * 100)}%) below 90-day avg
+                    </span>
+                  </span>
+                ) : currentActiveDiffFromAvg < 0 ? (
+                  <span className="inline-flex items-center gap-1 text-amber-800 font-black">
+                    <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
+                    <span>
+                      +{formatINR(Math.abs(currentActiveDiffFromAvg))} (
+                      {Math.round((Math.abs(currentActiveDiffFromAvg) / activeStats.averagePrice) * 100)}%) above 90-day avg
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-blue-700 font-bold">Exact 90-day average baseline</span>
+                )}
+
+                {currentActivePrice <= activeStats.lowestPrice && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black tracking-wide uppercase">
+                    Record Low Deal
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Segmented Timeframe Switcher */}
-          <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-2xl self-start sm:self-auto border border-slate-200/60 shadow-2xs">
-            {(
-              [
-                { id: "1M", label: "1 Month" },
-                { id: "3M", label: "3 Months" },
-                { id: "6M", label: "6 Months" },
-                { id: "1Y", label: "1 Year" },
-                { id: "ALL", label: "All Time" },
-              ] as const
-            ).map((tf) => (
+          {/* Controls: Smooth/Stepped View Mode & Segmented Timeframe Switcher */}
+          <div className="flex items-center gap-2.5 flex-wrap self-start lg:self-auto">
+            {/* View Mode Switcher */}
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/70 text-xs font-bold shadow-2xs">
               <button
-                key={tf.id}
                 type="button"
-                onClick={() => {
-                  setSelectedTimeframe(tf.id);
-                  setHoveredIndex(null);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 ${
-                  selectedTimeframe === tf.id
-                    ? "bg-slate-950 text-white shadow-xs scale-100"
-                    : "text-slate-600 hover:text-slate-950 hover:bg-white/60"
+                onClick={() => setChartMode("smooth")}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  chartMode === "smooth"
+                    ? "bg-white text-slate-950 shadow-2xs font-black"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
+                title="Monotone financial curve (smooth & natural)"
               >
-                {tf.label}
+                Curve
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setChartMode("stepped")}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  chartMode === "stepped"
+                    ? "bg-white text-slate-950 shadow-2xs font-black"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="Stepped price history (Keepa & CamelCamelCamel style)"
+              >
+                Stepped
+              </button>
+            </div>
+
+            {/* Timeframe Selector */}
+            <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/70 text-xs font-bold shadow-2xs">
+              {(
+                [
+                  { id: "1M", label: "1 Month" },
+                  { id: "3M", label: "3 Months" },
+                  { id: "6M", label: "6 Months" },
+                  { id: "1Y", label: "1 Year" },
+                  { id: "ALL", label: "All Time" },
+                ] as const
+              ).map((tf) => (
+                <button
+                  key={tf.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedTimeframe(tf.id);
+                    setHoveredIndex(null);
+                  }}
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all ${
+                    selectedTimeframe === tf.id
+                      ? "bg-slate-950 text-white shadow-2xs font-black"
+                      : "text-slate-500 hover:text-slate-950 hover:bg-white/50"
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -586,8 +720,8 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             <defs>
               {/* Premium Multi-stop Area Gradient */}
               <linearGradient id="priceAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" stopOpacity="0.22" />
-                <stop offset="50%" stopColor="#059669" stopOpacity="0.07" />
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.20" />
+                <stop offset="60%" stopColor="#059669" stopOpacity="0.05" />
                 <stop offset="100%" stopColor="#10B981" stopOpacity="0.00" />
               </linearGradient>
 
@@ -598,16 +732,46 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                 <stop offset="100%" stopColor="#059669" />
               </linearGradient>
 
+              {/* Shaded Bargain Zone Gradient (Below Average) */}
+              <linearGradient id="bargainZoneGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.07" />
+                <stop offset="100%" stopColor="#10B981" stopOpacity="0.01" />
+              </linearGradient>
+
               {/* Glow Filter for Curve Line */}
               <filter id="curveGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#10B981" floodOpacity="0.28" />
+                <feDropShadow dx="0" dy="2.5" stdDeviation="3.5" floodColor="#10B981" floodOpacity="0.25" />
               </filter>
 
-              {/* Soft Drop Shadow for Tooltips */}
-              <filter id="pillShadow" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0F172A" floodOpacity="0.18" />
+              {/* Soft Drop Shadow for Scale Tags */}
+              <filter id="tagShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" floodColor="#0F172A" floodOpacity="0.14" />
               </filter>
             </defs>
+
+            {/* Shaded Bargain Zone: Visually marks the below-average price region */}
+            {avgY < padding.top + plotHeight && (
+              <g>
+                <rect
+                  x={padding.left}
+                  y={avgY}
+                  width={plotWidth}
+                  height={padding.top + plotHeight - avgY}
+                  fill="url(#bargainZoneGrad)"
+                />
+                <text
+                  x={padding.left + 8}
+                  y={avgY + 13}
+                  fontSize="8.5"
+                  fill="#059669"
+                  fontFamily="Poppins, sans-serif"
+                  fontWeight="700"
+                  opacity="0.8"
+                >
+                  ↓ Bargain Territory (Below 90-Day Avg)
+                </text>
+              </g>
+            )}
 
             {/* Background Horizontal Gridlines and Distinct Y-Ticks */}
             {yTicks.map((tick, i) => (
@@ -635,7 +799,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               </g>
             ))}
 
-            {/* Average Price Benchmark Line */}
+            {/* Average Price Benchmark Line (Spans plotWidth) */}
             {avgY >= padding.top && avgY <= padding.top + plotHeight && (
               <g>
                 <line
@@ -645,26 +809,29 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   y2={avgY}
                   stroke="#6366F1"
                   strokeWidth="1.5"
-                  strokeDasharray="5 5"
+                  strokeDasharray="4 4"
                   opacity="0.85"
                 />
-                <g filter="url(#pillShadow)">
+                {/* Benchmark Tag in Right Scale Gutter (NEVER intersects curve) */}
+                <g filter="url(#tagShadow)">
+                  <polygon
+                    points={`${padding.left + plotWidth + 1},${avgY} ${padding.left + plotWidth + 6},${avgY - 4} ${padding.left + plotWidth + 6},${avgY + 4}`}
+                    fill="#4F46E5"
+                  />
                   <rect
-                    x={padding.left + plotWidth - 110}
-                    y={avgY - 11}
-                    width="106"
-                    height="22"
-                    rx="11"
-                    fill="#EEF2FF"
-                    stroke="#C7D2FE"
-                    strokeWidth="1"
+                    x={padding.left + plotWidth + 6}
+                    y={avgY - 10}
+                    width="66"
+                    height="20"
+                    rx="5"
+                    fill="#4F46E5"
                   />
                   <text
-                    x={padding.left + plotWidth - 57}
+                    x={padding.left + plotWidth + 39}
                     y={avgY + 3.5}
                     textAnchor="middle"
-                    fontSize="10"
-                    fill="#4338CA"
+                    fontSize="9.5"
+                    fill="#FFFFFF"
                     fontFamily="Poppins, sans-serif"
                     fontWeight="800"
                   >
@@ -677,7 +844,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
             {/* Area Fill */}
             {areaPath && <path d={areaPath} fill="url(#priceAreaGrad)" />}
 
-            {/* Smooth Glowing Line Path */}
+            {/* Glowing Price Line (Monotone Spline or Stepped) */}
             {linePath && (
               <path
                 d={linePath}
@@ -690,51 +857,72 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               />
             )}
 
-            {/* Pinned Lowest Price Dot & Badge (With NO broken CSS animate-ping) */}
+            {/* All-Time Low Marker & Vertical Guideline (Cleanly Elevated) */}
             {coords[lowestIdx] && (
               <g>
-                {/* Concentric Soft Halo */}
+                {/* Vertical hairline to date axis */}
+                <line
+                  x1={coords[lowestIdx].x}
+                  y1={coords[lowestIdx].y + 6}
+                  x2={coords[lowestIdx].x}
+                  y2={padding.top + plotHeight}
+                  stroke="#10B981"
+                  strokeWidth="1.2"
+                  strokeDasharray="3 3"
+                  opacity="0.65"
+                />
+                {/* Concentric Point Halo */}
                 <circle
                   cx={coords[lowestIdx].x}
                   cy={coords[lowestIdx].y}
-                  r="9"
+                  r="8.5"
                   fill="#10B981"
                   fillOpacity="0.25"
                 />
                 <circle
                   cx={coords[lowestIdx].x}
                   cy={coords[lowestIdx].y}
-                  r="5.5"
+                  r="5"
                   fill="#059669"
                   stroke="#FFFFFF"
                   strokeWidth="2.5"
                 />
-                {/* Floating Lowest Price Pill */}
-                <g filter="url(#pillShadow)">
+                {/* Connecting Pin Stem & Elevated Pill Badge */}
+                <line
+                  x1={coords[lowestIdx].x}
+                  y1={coords[lowestIdx].y - 5}
+                  x2={coords[lowestIdx].x}
+                  y2={coords[lowestIdx].y - 18}
+                  stroke="#059669"
+                  strokeWidth="1.5"
+                />
+                <g filter="url(#tagShadow)">
                   <rect
-                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 45, padding.left + plotWidth - 90))}
-                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 28)}
-                    width="90"
-                    height="22"
-                    rx="11"
+                    x={Math.max(padding.left + 5, Math.min(coords[lowestIdx].x - 46, padding.left + plotWidth - 98))}
+                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 36)}
+                    width="92"
+                    height="20"
+                    rx="10"
                     fill="#065F46"
+                    stroke="#047857"
+                    strokeWidth="1"
                   />
                   <text
-                    x={Math.max(padding.left, Math.min(coords[lowestIdx].x - 45, padding.left + plotWidth - 90)) + 45}
-                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 28) + 14.5}
+                    x={Math.max(padding.left + 5, Math.min(coords[lowestIdx].x - 46, padding.left + plotWidth - 98)) + 46}
+                    y={Math.max(padding.top + 4, coords[lowestIdx].y - 36) + 13.5}
                     textAnchor="middle"
                     fill="#FFFFFF"
-                    fontSize="10"
+                    fontSize="9.5"
                     fontFamily="Poppins, sans-serif"
                     fontWeight="800"
                   >
-                    Low: {formatINR(activeStats.lowestPrice)}
+                    ★ Low: {formatINR(activeStats.lowestPrice)}
                   </text>
                 </g>
               </g>
             )}
 
-            {/* Pinned Highest Price Dot */}
+            {/* Highest Price Dot */}
             {coords[highestIdx] && highestIdx !== lowestIdx && (
               <g>
                 <circle
@@ -755,20 +943,20 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               </g>
             )}
 
-            {/* Current Price Dot (Last point on the curve) */}
+            {/* Current Price Dot (Rightmost point) */}
             {coords[coords.length - 1] && (
               <g>
                 <circle
                   cx={coords[coords.length - 1].x}
                   cy={coords[coords.length - 1].y}
-                  r="9"
+                  r="8.5"
                   fill="#2563EB"
                   fillOpacity="0.25"
                 />
                 <circle
                   cx={coords[coords.length - 1].x}
                   cy={coords[coords.length - 1].y}
-                  r="5.5"
+                  r="5"
                   fill="#2563EB"
                   stroke="#FFFFFF"
                   strokeWidth="2.5"
@@ -776,7 +964,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
               </g>
             )}
 
-            {/* Interactive Scrubber & Hover Guideline */}
+            {/* Interactive Scrubber & Hover Crosshair */}
             {activePoint && (
               <g>
                 <line
@@ -787,7 +975,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                   stroke="#475569"
                   strokeWidth="1.5"
                   strokeDasharray="4 4"
-                  opacity="0.75"
+                  opacity="0.8"
                 />
                 <circle
                   cx={activePoint.x}
@@ -843,7 +1031,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                 transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "14px"}, -60%)`,
               }}
             >
-              <div className="bg-slate-950/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-slate-800 text-xs min-w-[170px] space-y-1.5">
+              <div className="bg-slate-950/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-2xl border border-slate-800 text-xs min-w-[175px] space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1.5">
                   <span>{activePoint.pt.displayDate}</span>
                   {activePoint.pt.isSaleEvent && (
@@ -866,10 +1054,12 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
                     <span className="text-emerald-400 font-bold">
                       ↓ {formatINR(activeStats.averagePrice - activePoint.pt.price)} below avg
                     </span>
-                  ) : (
+                  ) : activePoint.pt.price > activeStats.averagePrice ? (
                     <span className="text-slate-300">
                       ↑ {formatINR(activePoint.pt.price - activeStats.averagePrice)} above avg
                     </span>
+                  ) : (
+                    <span className="text-blue-300">Exact 90-day average</span>
                   )}
                 </div>
               </div>
@@ -877,15 +1067,66 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
           )}
         </div>
 
+        {/* Milestone Quick Stats Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 mt-3 border-t border-slate-100 text-center">
+          <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              All-Time Low
+            </span>
+            <span className="text-xs sm:text-sm font-black text-emerald-700 block mt-0.5">
+              {formatINR(activeStats.lowestPrice)}
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              {activeStats.lowestDate}
+            </span>
+          </div>
+
+          <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              90-Day Average
+            </span>
+            <span className="text-xs sm:text-sm font-black text-slate-900 block mt-0.5">
+              {formatINR(activeStats.averagePrice)}
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block">
+              Stable Benchmark
+            </span>
+          </div>
+
+          <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Peak Price
+            </span>
+            <span className="text-xs sm:text-sm font-black text-amber-950 block mt-0.5">
+              {formatINR(activeStats.highestPrice)}
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              {activeStats.highestDate}
+            </span>
+          </div>
+
+          <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Drop Volatility
+            </span>
+            <span className="text-xs sm:text-sm font-black text-blue-700 block mt-0.5">
+              Low (±6.8%)
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block">
+              Predictable Deals
+            </span>
+          </div>
+        </div>
+
         {/* Bottom Legend */}
-        <div className="flex items-center justify-center gap-5 sm:gap-8 pt-4 mt-3 border-t border-slate-100 text-[11px] text-slate-500 font-medium flex-wrap">
+        <div className="flex items-center justify-center gap-5 sm:gap-8 pt-3 mt-2 text-[11px] text-slate-500 font-medium flex-wrap">
           <div className="flex items-center gap-2">
             <span className="w-3.5 h-1 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full" />
             <span>Price Trend</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3.5 h-0.5 border-t-2 border-dashed border-indigo-600" />
-            <span>Average ({formatINR(activeStats.averagePrice)})</span>
+            <span>90-Day Average ({formatINR(activeStats.averagePrice)})</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-emerald-200" />
@@ -893,7 +1134,7 @@ export default function PriceHistoryTracker({ product }: PriceHistoryTrackerProp
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 ring-2 ring-blue-200" />
-            <span>Current Price</span>
+            <span>Current Deal ({formatINR(activeStats.currentPrice)})</span>
           </div>
         </div>
       </div>
