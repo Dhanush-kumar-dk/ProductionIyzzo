@@ -584,97 +584,8 @@ export function parseAmazonHtml(
   };
 }
 
-export interface AmazonScraperRawProduct {
-  asin?: string;
-  title?: string;
-  price?: {
-    amount?: number | string;
-    list_price?: number | string;
-    currency?: string;
-  };
-  rating?: {
-    average?: number | string;
-    count?: number | string;
-  };
-  brand?: {
-    name?: string;
-    store_link?: string;
-  };
-  details?: { [key: string]: string };
-  images?: Array<{ link?: string; large?: string; thumbnail?: string; variant?: string }>;
-  customers_say?: {
-    summary?: string;
-  };
-}
-
 /**
- * Maps response from local omkarcloud/amazon-scraper API (http://localhost:8000)
- */
-export function mapAmazonScraperResponse(
-  json: AmazonScraperRawProduct,
-  originalUrl: string = ""
-): ExtractedProductData | null {
-  if (!json || (!json.title && !json.asin)) return null;
-
-  const asin = json.asin || extractAsinFromUrl(originalUrl) || "";
-  const name = cleanTitleString(json.title || "");
-  const priceVal = json.price?.amount != null ? json.price.amount.toString() : "";
-  const mrpVal = json.price?.list_price != null ? json.price.list_price.toString() : "";
-  const ratingVal = json.rating?.average != null ? json.rating.average.toString() : "4.5";
-  const ratingCountVal = json.rating?.count != null ? json.rating.count.toString() : "1200";
-
-  const imgList = (json.images || []).map((img) => img.link || img.large).filter((u): u is string => Boolean(u));
-  const primaryCdnImg = asin ? `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_SX800_.jpg` : "";
-  const image = imgList[0] || primaryCdnImg;
-  const image1 = imgList[1];
-  const image2 = imgList[2];
-
-  const specs: { [key: string]: string } =
-    typeof json.details === "object" && json.details ? { ...json.details } : {};
-  const brand = json.brand?.name || specs["Brand"] || inferBrand(`${name} ${originalUrl}`);
-  if (brand && !specs["Brand"]) specs["Brand"] = brand;
-  if (asin && !specs["ASIN"]) specs["ASIN"] = asin;
-
-  const category = inferCategory(`${name} ${originalUrl}`);
-  const affiliateUrl = asin ? buildAffiliateUrl(asin, DEFAULT_PARTNER_TAG) : originalUrl;
-
-  const summary =
-    json.customers_say?.summary ||
-    `Comprehensive buyer review and independent performance evaluation of ${name}. Includes authentic specs, verified customer feedback, and pricing insights.`;
-
-  return {
-    asin,
-    name,
-    category,
-    price: priceVal || "1,499",
-    mrp: mrpVal || (priceVal ? Math.round(parseFloat(priceVal.replace(/,/g, "")) * 1.35).toString() : "2,999"),
-    rating: ratingVal,
-    ratingCount: ratingCountVal,
-    image,
-    image1,
-    image2,
-    url: affiliateUrl,
-    editorBadge: "Editor's Choice",
-    shortDetail: `Official ${brand || "Brand"} • Verified Specifications • Fast Shipping`,
-    summary,
-    pros: [
-      `Official ${brand || "brand"} product with authentic warranty`,
-      "Direct Amazon storefront dispatch with buyer protection",
-      "High quality materials with durable construction",
-    ],
-    cons: [
-      "Pricing and discount may vary depending on active seller promotions",
-    ],
-    whoItsFor: `Shoppers seeking verified authentic ${brand || "quality"} gear with tested features.`,
-    specs,
-    confidence: "full",
-    sourceMessage: "Successfully extracted live product data via Amazon Scraper API (localhost:8000)!",
-  };
-}
-
-/**
- * 6-tier scraper pipeline guarded against 503 / Service Unavailable errors:
- * 0. Local omkarcloud/amazon-scraper API (http://localhost:8000)
+ * 5-tier scraper pipeline guarded against 503 / Service Unavailable errors:
  * 1. App Serverless API (/api/scrape) - Handles short links, canonical resolution, live prices
  * 2. Public CORS Proxy (AllOrigins)
  * 3. Jina AI Web Reader (r.jina.ai)
@@ -684,28 +595,6 @@ export function mapAmazonScraperResponse(
 export async function fetchProductDataFromUrl(inputUrl: string): Promise<ExtractedProductData> {
   const trimmed = inputUrl.trim();
   const asin = extractAsinFromUrl(trimmed) || "";
-
-  // 0. Tier 0: Check if local omkarcloud/amazon-scraper API is running at localhost:8000
-  for (const host of ["http://127.0.0.1:8000", "http://localhost:8000"]) {
-    try {
-      const localCtrl = new AbortController();
-      const localTimer = setTimeout(() => localCtrl.abort(), 2500);
-      const localRes = await fetch(
-        `${host}/products/details?product=${encodeURIComponent(trimmed)}`,
-        { signal: localCtrl.signal }
-      );
-      clearTimeout(localTimer);
-      if (localRes.ok) {
-        const localData = await localRes.json();
-        const mapped = mapAmazonScraperResponse(localData, trimmed);
-        if (mapped && !isInvalidTitle(mapped.name)) {
-          return mapped;
-        }
-      }
-    } catch {
-      // Continue to next host or fallback
-    }
-  }
 
   // 1. Tier 1: Try /api/scrape serverless scraper endpoint
   try {
