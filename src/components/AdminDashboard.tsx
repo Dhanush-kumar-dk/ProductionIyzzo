@@ -414,7 +414,7 @@ const AdminDashboard = () => {
               )}
               <button
                 type="button"
-                onClick={() => navigate("/admin/products")}
+                onClick={() => navigate("/admin/products?add=true", { state: { openAdd: true } })}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-950 font-bold text-xs rounded-xl shadow-xs transition"
               >
                 <PlusIcon className="w-4 h-4" />

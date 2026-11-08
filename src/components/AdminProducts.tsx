@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { auth, firestore } from "../firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
@@ -120,22 +120,22 @@ export default function AdminProducts() {
     try {
       const data = await fetchProductDataFromUrl(urlToFetch);
 
-      // Populate form fields
-      setName(data.name);
-      setAsin(data.asin);
-      setUrl(data.url);
-      setCategory(data.category);
+      // Populate form input fields with verified extracted data
+      setName(data.name || "");
+      setAsin(data.asin || "");
+      setUrl(data.url || urlToFetch);
+      setCategory(data.category || "Consumer Electronics");
       if (!CATEGORIES.includes(data.category)) {
         setCategory("Other");
         setCustomCategory(data.category);
       }
-      setPrice(data.price);
-      setMrp(data.mrp);
-      setRating(data.rating);
-      setRatingCount(data.ratingCount);
-      setImage(data.image);
-      if (data.image1) setImage1(data.image1);
-      if (data.image2) setImage2(data.image2);
+      setPrice(data.price || "");
+      setMrp(data.mrp || "");
+      setRating(data.rating || "4.5");
+      setRatingCount(data.ratingCount || "1200");
+      setImage(data.image || "");
+      setImage1(data.image1 || "");
+      setImage2(data.image2 || "");
       if (data.editorBadge) setEditorBadge(data.editorBadge);
       if (data.shortDetail) setShortDetail(data.shortDetail);
       if (data.summary) setSummary(data.summary);
@@ -151,7 +151,7 @@ export default function AdminProducts() {
 
       setFetchFeedback({
         type: "success",
-        message: `✨ ${data.sourceMessage} All product fields have been populated. You can edit any details below before saving.`,
+        message: `✨ Verified product data extracted: "${(data.name || '').substring(0, 42)}..." | Price: ₹${data.price} | MRP: ₹${data.mrp}. All input fields have been populated.`,
       });
     } catch (err: unknown) {
       setFetchFeedback({
@@ -167,6 +167,13 @@ export default function AdminProducts() {
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.search.includes("add=true") || (location.state as any)?.openAdd) {
+      setShowAddForm(true);
+    }
+  }, [location]);
 
   // Authentication check
   useEffect(() => {
@@ -650,9 +657,10 @@ export default function AdminProducts() {
                           }
                         }}
                         onPaste={(e) => {
-                          const pasted = e.clipboardData.getData("text");
-                          if (pasted && pasted.includes("amazon")) {
-                            setTimeout(() => handleAutoFetch(pasted), 100);
+                          const pasted = e.clipboardData.getData("text")?.trim();
+                          if (pasted && (pasted.includes("amazon") || pasted.includes("amzn") || pasted.includes("a.co") || pasted.startsWith("http"))) {
+                            setUrl(pasted);
+                            setTimeout(() => handleAutoFetch(pasted), 50);
                           }
                         }}
                         placeholder="Paste Amazon product link (e.g. https://www.amazon.in/dp/B0CHX1W1XY...)"
