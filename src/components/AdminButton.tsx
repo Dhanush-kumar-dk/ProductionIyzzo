@@ -19,7 +19,7 @@ const AdminButton = () => {
       }
     };
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       checkStatus(user);
     });
 
@@ -39,20 +39,21 @@ const AdminButton = () => {
       onClick={() => navigate("/admin/dashboard")}
       className="
         inline-flex items-center gap-1.5
-        px-3.5 py-1.5
+        px-3.5 py-2
         text-xs font-bold
         text-white
         rounded-xl
-        bg-gradient-to-r from-purple-600 to-indigo-600
-        hover:from-purple-700 hover:to-indigo-700
+        bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600
+        hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500
         shadow-sm hover:shadow-md
         border border-purple-400/30
-        transform hover:scale-105 active:scale-95
+        transform hover:scale-[1.02] active:scale-95
         transition-all duration-200
+        flex-shrink-0
       "
       title="Open Admin Management Console"
     >
-      <ShieldCheckIcon className="w-4 h-4 text-amber-300" />
+      <ShieldCheckIcon className="w-4 h-4 text-amber-300 flex-shrink-0" />
       <span>Admin Console</span>
     </button>
   );
