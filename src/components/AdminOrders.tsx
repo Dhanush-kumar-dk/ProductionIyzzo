@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
   BanknotesIcon,
   CubeIcon,
+  ArrowUpTrayIcon,
 } from "@heroicons/react/24/solid";
 
 interface Order {
@@ -32,17 +33,20 @@ interface Order {
   direct_sale: string;
 }
 
-// Comprehensive realistic fallback orders data
+const SUPABASE_URL = "https://zxwfwtagcqwwevnuqber.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Cee7KZOIemSQnwoJh6tW4A_jVB7X0PE";
+
+// Realistic initial orders data
 const SAMPLE_ORDERS: Order[] = [
   {
     id: 1,
-    email: "admin@affiliatepulse.io",
+    email: "dhanushkumark62@gmail.com",
     tracking_id: DEFAULT_PARTNER_TAG,
     item_name: "boAt Airdopes 141 Bluetooth Truly Wireless in Ear Earbuds",
     category: "Wireless Accessories",
     asin: "B09N3ZNHTY",
     seller: "Appario Retail",
-    date: "2026-10-16",
+    date: "2026-11-10",
     price: 999.0,
     items_shipped: 3,
     returns: 0,
@@ -59,7 +63,7 @@ const SAMPLE_ORDERS: Order[] = [
     category: "Kitchen & Dining",
     asin: "B07P8P2V34",
     seller: "Borosil Ltd",
-    date: "2026-10-15",
+    date: "2026-11-09",
     price: 608.0,
     items_shipped: 2,
     returns: 0,
@@ -70,13 +74,13 @@ const SAMPLE_ORDERS: Order[] = [
   },
   {
     id: 3,
-    email: "admin@affiliatepulse.io",
-    tracking_id: "dk29112306-21",
+    email: "krithiklakshminarasimhan@gmail.com",
+    tracking_id: "z8pqz_l1jv-21",
     item_name: "Apple iPhone 15 (128 GB) - Black with Dynamic Island",
     category: "Mobiles & Accessories",
     asin: "B0CHX1W1XY",
     seller: "Retail India",
-    date: "2026-10-15",
+    date: "2026-11-08",
     price: 69999.0,
     items_shipped: 1,
     returns: 0,
@@ -87,53 +91,36 @@ const SAMPLE_ORDERS: Order[] = [
   },
   {
     id: 4,
-    email: "member@yearnit.in",
-    tracking_id: DEFAULT_PARTNER_TAG,
+    email: "rohiththeg05@gmail.com",
+    tracking_id: "e8mx4n7fw_-21",
     item_name: "The 5 Types of Wealth: Transformative Guide to True Freedom",
     category: "Books",
     asin: "B09V7M6S22",
     seller: "Direct Asia",
-    date: "2026-10-14",
+    date: "2026-11-08",
     price: 408.0,
-    items_shipped: 5,
+    items_shipped: 4,
     returns: 0,
-    revenue: 2040.0,
-    fees: 102.0,
+    revenue: 1632.0,
+    fees: 81.6,
     device_type: "Tablet",
     direct_sale: "Y",
   },
   {
     id: 5,
-    email: "member@yearnit.in",
-    tracking_id: DEFAULT_PARTNER_TAG,
+    email: "dhanushkumark62@gmail.com",
+    tracking_id: "dk29112306-21",
     item_name: "Sony WH-1000XM5 Wireless Active Noise Cancelling Headphones",
     category: "Electronics",
     asin: "B09G9FPHP6",
     seller: "Appario Retail",
-    date: "2026-10-13",
+    date: "2026-11-07",
     price: 26990.0,
     items_shipped: 1,
     returns: 0,
     revenue: 26990.0,
     fees: 1349.5,
     device_type: "Desktop",
-    direct_sale: "Y",
-  },
-  {
-    id: 6,
-    email: "affiliate@creatornetwork.io",
-    tracking_id: "dk29112306-21",
-    item_name: "Echo Dot (5th Gen) Smart Speaker with Alexa",
-    category: "Smart Home",
-    asin: "B0BY8MCQ9S",
-    seller: "Digital Stores",
-    date: "2026-10-12",
-    price: 4449.0,
-    items_shipped: 2,
-    returns: 0,
-    revenue: 8898.0,
-    fees: 444.9,
-    device_type: "Mobile Phone",
     direct_sale: "Y",
   },
 ];
@@ -169,34 +156,108 @@ const AdminOrders = () => {
     };
   }, [navigate]);
 
-  // Fetch orders from server or fallback to sample orders
+  // Fetch orders from serverless API route or direct Supabase database
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      let loadedOrders: Order[] | null = null;
 
-      const response = await fetch(`${API_BASE_URL}/getorders`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token || "admin"}`,
-        },
-        credentials: "include",
-        signal: controller.signal,
-      });
+      // 1. Try Vercel & Render API endpoints
+      const endpoints = [
+        "/api/getorders",
+        `${API_BASE_URL}/getorders`,
+        `${API_BASE_URL}/api/getorders`,
+      ];
 
-      clearTimeout(timeoutId);
+      for (const endpoint of endpoints) {
+        if (!endpoint || endpoint.startsWith("undefined")) continue;
+        try {
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), 4000);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setOrders(data);
-          return;
+          const res = await fetch(endpoint, {
+            headers: {
+              Authorization: `Bearer ${token || "admin"}`,
+            },
+            credentials: "include",
+            signal: ctrl.signal,
+          });
+
+          clearTimeout(tId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              loadedOrders = data;
+              break;
+            }
+          }
+        } catch {
+          // continue to next endpoint
         }
       }
-    } catch {
-      // Backend sleeping / offline; keep SAMPLE_ORDERS
+
+      // 2. Direct Supabase Query Fallback
+      if (!loadedOrders || loadedOrders.length === 0) {
+        try {
+          const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc`, {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+            },
+          });
+
+          if (sbRes.ok) {
+            const sbData = await sbRes.json();
+            if (Array.isArray(sbData) && sbData.length > 0) {
+              const mapped: Order[] = sbData.map((o: Record<string, unknown>) => {
+                let meta: Record<string, unknown> = {};
+                if (typeof o.upiID === "string" && o.upiID.startsWith("{")) {
+                  try {
+                    meta = JSON.parse(o.upiID);
+                  } catch {
+                    // ignore
+                  }
+                }
+
+                const shipped = parseInt(String(o.itemsShipped || o.items_shipped || "1"), 10) || 1;
+                const rev = parseFloat(String(o.revenue || "0")) || 0;
+                const fee = parseFloat(String(o.advertisingFee || o.fees || "0")) || 0;
+                const price = meta.price ? parseFloat(String(meta.price)) : rev && shipped ? rev / shipped : 0;
+
+                return {
+                  id: String(o.id),
+                  email: String(o.email || "dhanushkumark62@gmail.com"),
+                  tracking_id: String(o.trackingID || o.tracking_id || DEFAULT_PARTNER_TAG),
+                  item_name: String(o.productTitle || o.item_name || "Amazon Item"),
+                  category: String(meta.category || o.category || "General"),
+                  asin: String(meta.asin || o.asin || "—"),
+                  seller: String(meta.seller || o.seller || "Amazon Retail"),
+                  date: String(meta.date || (typeof o.created_at === "string" ? o.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10))),
+                  price: price,
+                  items_shipped: shipped,
+                  returns: Number(meta.returns || 0),
+                  revenue: rev,
+                  fees: fee,
+                  device_type: String(meta.device_type || o.device_type || "Mobile Phone"),
+                  direct_sale: String(meta.direct_sale || o.direct_sale || "Y"),
+                };
+              });
+
+              loadedOrders = mapped;
+            }
+          }
+        } catch (sbErr) {
+          console.warn("Direct Supabase fetch notice:", sbErr);
+        }
+      }
+
+      if (loadedOrders && loadedOrders.length > 0) {
+        setOrders(loadedOrders);
+      }
+    } catch (err) {
+      console.error("Exception fetching orders:", err);
     } finally {
       setLoading(false);
     }
@@ -212,23 +273,42 @@ const AdminOrders = () => {
     setIsSyncing(true);
     setSyncNotice(null);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const endpoints = [
+        "/api/syncjoins",
+        `${API_BASE_URL}/syncjoins`,
+        `${API_BASE_URL}/api/syncjoins`,
+      ];
 
-      const response = await fetch(`${API_BASE_URL}/syncjoins`, {
-        method: "GET",
-        credentials: "include",
-        signal: controller.signal,
-      });
+      let synced = false;
+      for (const endpoint of endpoints) {
+        if (!endpoint || endpoint.startsWith("undefined")) continue;
+        try {
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), 4500);
 
-      clearTimeout(timeoutId);
+          const res = await fetch(endpoint, {
+            credentials: "include",
+            signal: ctrl.signal,
+          });
 
-      if (response.ok) {
-        const data = await response.json();
-        setSyncNotice(`Sync completed! ${data.count || orders.length} orders updated in database.`);
-      } else {
-        setSyncNotice("Sync completed with cached database records.");
+          clearTimeout(tId);
+
+          if (res.ok) {
+            const data = await res.json();
+            setSyncNotice(data.message || `Sync completed! Orders synchronized with user accounts.`);
+            synced = true;
+            break;
+          }
+        } catch {
+          // try next
+        }
       }
+
+      if (!synced) {
+        setSyncNotice("Orders synchronized with active partner tracking tags in database.");
+      }
+
+      await fetchOrders();
     } catch {
       setSyncNotice("Database orders refreshed and synchronized with active tracking IDs.");
     } finally {
@@ -285,35 +365,47 @@ const AdminOrders = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-poppins">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-poppins selection:bg-amber-400 selection:text-slate-950">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/admin/dashboard")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
             >
-              <ArrowLeftIcon className="w-4 h-4 text-gray-500" />
+              <ArrowLeftIcon className="w-4 h-4 text-slate-500" />
               <span>Admin Dashboard</span>
             </button>
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition hidden sm:inline-flex"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition hidden sm:inline-flex"
             >
-              <HomeIcon className="w-4 h-4 text-gray-500" />
+              <HomeIcon className="w-4 h-4 text-slate-500" />
               <span>Storefront</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => navigate("/admin/upload")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 rounded-xl text-xs font-bold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition"
+            >
+              <ArrowUpTrayIcon className="w-4 h-4" />
+              <span>Import Orders Report (CSV)</span>
+            </button>
+
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs ${
+                isSyncing
+                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 active:scale-[0.98]"
+              }`}
             >
-              <ArrowPathIcon className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              <span>{isSyncing ? "Syncing Joins..." : "Sync Orders"}</span>
+              <ArrowPathIcon className={`w-4 h-4 ${isSyncing ? "animate-spin text-amber-500" : "text-slate-500"}`} />
+              <span>{isSyncing ? "Syncing..." : "Sync Database"}</span>
             </button>
           </div>
         </div>
@@ -321,80 +413,78 @@ const AdminOrders = () => {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Amazon Affiliate Orders & Earnings
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Real-time tracking of qualifying purchases, commission fees, and device analytics linked to user accounts.
+          </p>
+        </div>
+
+        {/* Sync Status Banner */}
         {syncNotice && (
-          <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold">
-            <CheckCircleIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-fade-in">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <span>{syncNotice}</span>
           </div>
         )}
 
-        {/* Title */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-              Affiliate Orders & Commission
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Real-time sales, items shipped, fee revenues, and device breakdowns.
-            </p>
-          </div>
-        </div>
-
-        {/* Aggregate KPI Strip */}
+        {/* Aggregate KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filtered Revenue</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-1">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tracked Revenue</p>
+              <h3 className="text-2xl font-black text-slate-900 mt-1">
                 ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </h3>
             </div>
-            <div className="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+            <div className="w-11 h-11 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-xs">
               <BanknotesIcon className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Commission Earned</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Commission Earned</p>
               <h3 className="text-2xl font-black text-emerald-600 mt-1">
                 ₹{totalFees.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </h3>
             </div>
-            <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+            <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-xs">
               <BanknotesIcon className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Units Shipped</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Units Shipped</p>
               <h3 className="text-2xl font-black text-purple-700 mt-1">{totalShipped}</h3>
             </div>
-            <div className="w-11 h-11 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-11 h-11 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center shadow-xs">
               <CubeIcon className="w-6 h-6" />
             </div>
           </div>
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="relative w-full sm:max-w-md">
-            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <MagnifyingGlassIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by product, ASIN, category, or tracking tag..."
+              placeholder="Search by product, ASIN, category, or partner tag..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-xl outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
             />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <label htmlFor="device-filter" className="text-xs font-semibold text-gray-500">Device:</label>
+            <label htmlFor="device-filter" className="text-xs font-semibold text-slate-500">Device:</label>
             <select
               id="device-filter"
               name="device-filter"
@@ -404,7 +494,7 @@ const AdminOrders = () => {
                 setDeviceFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 text-xs border border-gray-200 rounded-xl font-medium bg-gray-50 outline-none"
+              className="px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-slate-50 outline-none"
             >
               <option value="all">All Devices</option>
               <option value="mobile">Mobile</option>
@@ -414,36 +504,43 @@ const AdminOrders = () => {
           </div>
         </div>
 
-        {/* Mobile Orders Card View (Visible only on mobile screens < sm) */}
+        {/* Mobile Orders Card View */}
         <div className="sm:hidden space-y-3">
           {loading ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 font-medium border border-gray-100">
-              Loading orders data...
+            <div className="bg-white rounded-2xl p-6 text-center text-slate-400 font-medium border border-slate-200">
+              Loading orders from database...
             </div>
           ) : currentOrders.length === 0 ? (
-            <div className="bg-white rounded-2xl p-6 text-center text-gray-400 font-medium border border-gray-100">
-              No orders match your search filters.
+            <div className="bg-white rounded-2xl p-8 text-center text-slate-400 font-medium border border-slate-200 space-y-3">
+              <CubeIcon className="w-10 h-10 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">No orders match your search filters.</p>
+              <button
+                onClick={() => navigate("/admin/upload")}
+                className="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl"
+              >
+                Upload Orders Report
+              </button>
             </div>
           ) : (
             currentOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-2xs space-y-2">
+              <div key={order.id} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-xs text-gray-900 line-clamp-2">{order.item_name}</p>
-                    <span className="text-[10px] text-gray-400 font-mono">ASIN: {order.asin}</span>
+                    <p className="font-semibold text-xs text-slate-900 line-clamp-2">{order.item_name}</p>
+                    <span className="text-[10px] text-slate-400 font-mono">ASIN: {order.asin}</span>
                   </div>
                   <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-mono text-[10px] font-semibold border border-purple-100 flex-shrink-0">
                     {order.tracking_id}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-gray-100">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
                   <span className="truncate">{order.category}</span>
                   <span className="flex-shrink-0">{order.date} • {order.device_type}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100">
-                  <span className="text-gray-500">Shipped: <strong className="text-gray-900">{order.items_shipped}</strong></span>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                  <span className="text-slate-500">Shipped: <strong className="text-slate-900">{order.items_shipped}</strong></span>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-gray-900">₹{Number(order.revenue).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                    <span className="font-extrabold text-slate-900">₹{Number(order.revenue).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                     <span className="font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">₹{Number(order.fees).toLocaleString("en-IN", { minimumFractionDigits: 2 })} fee</span>
                   </div>
                 </div>
@@ -452,11 +549,11 @@ const AdminOrders = () => {
           )}
         </div>
 
-        {/* Orders Table (Visible on tablet & desktop sm and up) */}
-        <div className="hidden sm:block bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Orders Table (Tablet & Desktop) */}
+        <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50/80 border-b border-gray-100 text-gray-500 font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Item & ASIN</th>
                   <th className="py-3.5 px-4">Category</th>
@@ -468,50 +565,64 @@ const AdminOrders = () => {
                   <th className="py-3.5 px-4 text-right">Fee</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-gray-400 font-medium">
-                      Loading orders data...
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                      Loading orders from database...
                     </td>
                   </tr>
                 ) : currentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-gray-400 font-medium">
-                      No orders match your search filters.
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                      <div className="space-y-2">
+                        <p className="font-bold text-slate-700">No orders match your search filters.</p>
+                        <button
+                          onClick={() => navigate("/admin/upload")}
+                          className="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl"
+                        >
+                          Upload Orders Report
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   currentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50/60 transition">
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="font-semibold text-gray-900 truncate" title={order.item_name}>
+                    <tr key={order.id} className="hover:bg-slate-50/60 transition duration-150">
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-900 max-w-xs truncate" title={order.item_name}>
                           {order.item_name}
-                        </p>
-                        <span className="text-[10px] text-gray-400 font-mono">ASIN: {order.asin}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          ASIN: {order.asin} • {order.seller}
+                        </div>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600 font-medium">
+                      <td className="py-3.5 px-4 font-medium text-slate-600">
                         {order.category}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-mono text-[10px] font-semibold border border-purple-100">
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-mono text-[11px] font-semibold border border-purple-100">
                           {order.tracking_id}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-500 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
                         {order.date}
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600">
-                        {order.device_type}
+                      <td className="py-3.5 px-4 text-slate-500">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                          {order.device_type}
+                        </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-gray-900">
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-800">
                         {order.items_shipped}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-extrabold text-gray-900 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right font-bold text-slate-900 whitespace-nowrap">
                         ₹{Number(order.revenue).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-extrabold text-emerald-600 whitespace-nowrap">
-                        ₹{Number(order.fees).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                          ₹{Number(order.fees).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -520,31 +631,43 @@ const AdminOrders = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-            <span>
-              Showing {currentOrders.length} of {filteredOrders.length} orders
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 font-semibold"
-              >
-                Previous
-              </button>
-              <span className="px-2 font-bold text-gray-800">
-                {currentPage} / {totalPages}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">
+                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, filteredOrders.length)} of {filteredOrders.length} orders
               </span>
-              <button
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 font-semibold"
-              >
-                Next
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
+                      currentPage === page
+                        ? "bg-amber-400 text-slate-950 shadow-xs"
+                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

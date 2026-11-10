@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/sendorderdata",
+      "destination": "/api/sendorderdata"
+    },
+    {
+      "source": "/getorders",
+      "destination": "/api/getorders"
+    },
+    {
+      "source": "/syncjoins",
+      "destination": "/api/syncjoins"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
