@@ -1,3 +1,5 @@
+import { supabase, supabaseUrl, supabaseKey } from "../supabase";
+
 export type CustomerReview = {
   id: string;
   author: string;
@@ -607,3 +609,92 @@ export function getProductById(id: string): Product | undefined {
 export function getRelatedProducts(productId: string, category?: string, limit: number = 4): Product[] {
   return getAllCatalogProducts().filter((p) => p.id !== productId && (!category || p.category === category)).slice(0, limit);
 }
+
+interface SupabaseProductRow {
+  id?: string;
+  name?: string;
+  price?: string | null;
+  image?: string;
+  image1?: string | null;
+  image2?: string | null;
+  url?: string;
+}
+
+/**
+ * Synchronize custom products from Supabase database into local catalog cache
+ */
+export async function syncProductsFromSupabase(): Promise<Product[]> {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    let rows: SupabaseProductRow[] | null = data;
+
+    // Fallback to direct REST endpoint if SDK call returns error or null
+    if (error || !rows) {
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/products?select=*&order=created_at.desc`, {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        });
+        if (res.ok) {
+          rows = (await res.json()) as SupabaseProductRow[];
+        }
+      } catch (restErr) {
+        console.warn("Direct REST fallback failed:", restErr);
+      }
+    }
+
+    if (Array.isArray(rows) && rows.length > 0) {
+      const existing = getCustomProducts();
+      const existingMap = new Map(existing.map((p) => [p.id.toUpperCase(), p]));
+      const deletedIds = new Set(getDeletedProductIds());
+
+      rows.forEach((r: SupabaseProductRow) => {
+        if (!r.id || !r.name) return;
+        const key = String(r.id).trim().toUpperCase();
+        if (deletedIds.has(key)) return;
+
+        const prev = existingMap.get(key);
+        existingMap.set(key, {
+          id: String(r.id).trim(),
+          name: String(r.name).trim(),
+          price: r.price ? String(r.price).trim() : (prev?.price || undefined),
+          image: String(r.image || prev?.image || "").trim(),
+          image1: r.image1 ? String(r.image1).trim() : (prev?.image1 || undefined),
+          image2: r.image2 ? String(r.image2).trim() : (prev?.image2 || undefined),
+          url: r.url ? String(r.url).trim() : (prev?.url || "https://www.amazon.in"),
+          category: prev?.category || "Consumer Electronics",
+          editorBadge: prev?.editorBadge,
+          shortDetail: prev?.shortDetail,
+          summary: prev?.summary,
+          pros: prev?.pros,
+          cons: prev?.cons,
+          whoItsFor: prev?.whoItsFor,
+          specs: prev?.specs,
+        });
+      });
+
+      const merged = Array.from(existingMap.values());
+      try {
+        localStorage.setItem("yearnit_custom_products", JSON.stringify(merged));
+      } catch (e) {
+        console.warn("Failed to persist synced products to localStorage:", e);
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("catalogUpdated"));
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.warn("Notice: Supabase product sync skipped:", err);
+  }
+
+  return getCustomProducts();
+}
+

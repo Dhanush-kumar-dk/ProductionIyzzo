@@ -7,7 +7,7 @@ import {
   TagIcon,
 } from "@heroicons/react/24/outline";
 
-import { getAllCatalogProducts } from "../data/products";
+import { getAllCatalogProducts, syncProductsFromSupabase } from "../data/products";
 
 interface CarouselProps {
   selectedCategory?: string;
@@ -36,6 +36,7 @@ export default function Carousel({
 
   useEffect(() => {
     loadProducts();
+    syncProductsFromSupabase();
     const handleUpdate = () => loadProducts();
     window.addEventListener("catalogUpdated", handleUpdate);
     return () => window.removeEventListener("catalogUpdated", handleUpdate);

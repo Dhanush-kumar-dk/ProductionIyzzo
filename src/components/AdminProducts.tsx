@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { auth, firestore } from "../firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
-import { supabase } from "../supabase";
+import { supabase, supabaseUrl, supabaseKey } from "../supabase";
 import { verifyIsAdmin } from "../utils/admin";
-import { buildAffiliateUrl } from "../utils/affiliate";
+import { buildAffiliateUrl, extractAsin } from "../utils/affiliate";
 import {
   Product,
   getAllCatalogProducts,
@@ -15,6 +15,7 @@ import {
   deleteProduct,
   restoreProduct,
   resetCatalogToDefaults,
+  syncProductsFromSupabase,
 } from "../data/products";
 import ProductCard from "./ProductCard";
 import {
@@ -205,6 +206,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     refreshCatalog();
+    syncProductsFromSupabase();
     const handleUpdate = () => refreshCatalog();
     window.addEventListener("catalogUpdated", handleUpdate);
     return () => window.removeEventListener("catalogUpdated", handleUpdate);
@@ -318,7 +320,12 @@ export default function AdminProducts() {
     setStatusMessage(null);
 
     try {
-      const finalId = asin.trim().toUpperCase() || `PROD-${Date.now().toString(36).toUpperCase()}`;
+      const extractedAsin = extractAsin(url.trim());
+      const finalId =
+        asin.trim().toUpperCase() ||
+        extractedAsin ||
+        `PROD-${Date.now().toString(36).toUpperCase()}`;
+
       const finalCategory = customCategory.trim() || category;
       const pros = prosText.split("\n").map((s) => s.trim()).filter(Boolean);
       const cons = consText.split("\n").map((s) => s.trim()).filter(Boolean);
@@ -353,31 +360,81 @@ export default function AdminProducts() {
       // 1. Save locally and emit event
       saveCustomProduct(newProduct);
 
-      // 2. Sync to Supabase & Cloud Database
+      // 2. Prepare sanitized Supabase payload (with explicit nulls for optional columns)
+      const supabasePayload = {
+        id: finalId,
+        name: newProduct.name,
+        price: newProduct.price ? String(newProduct.price).trim() : null,
+        image: newProduct.image.trim(),
+        image1: newProduct.image1 ? String(newProduct.image1).trim() : null,
+        image2: newProduct.image2 ? String(newProduct.image2).trim() : null,
+        url: newProduct.url,
+      };
+
+      // 3. Multi-tier Sync to Supabase (SDK with onConflict + Direct REST Fallback)
+      let supabaseSynced = false;
+      let supabaseErrorMsg = "";
+
       try {
-        await supabase.from("products").upsert({
-          id: finalId,
-          name: newProduct.name,
-          price: newProduct.price,
-          image: newProduct.image,
-          image1: newProduct.image1,
-          image2: newProduct.image2,
-          url: newProduct.url,
+        const { error: sbError } = await supabase.from("products").upsert(supabasePayload, {
+          onConflict: "id",
         });
-      } catch (sbErr) {
-        console.warn("Supabase sync notice:", sbErr);
+        if (!sbError) {
+          supabaseSynced = true;
+        } else {
+          console.warn("Supabase SDK upsert error:", sbError);
+          supabaseErrorMsg = sbError.message;
+        }
+      } catch (sdkErr) {
+        console.warn("Supabase SDK exception:", sdkErr);
+        supabaseErrorMsg = sdkErr instanceof Error ? sdkErr.message : String(sdkErr);
       }
 
+      // If SDK sync failed or threw, execute direct REST fallback
+      if (!supabaseSynced) {
+        try {
+          const restRes = await fetch(`${supabaseUrl}/rest/v1/products?on_conflict=id`, {
+            method: "POST",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              Prefer: "resolution=merge-duplicates,return=minimal",
+            },
+            body: JSON.stringify(supabasePayload),
+          });
+          if (restRes.ok || restRes.status === 201 || restRes.status === 200 || restRes.status === 204) {
+            supabaseSynced = true;
+            supabaseErrorMsg = "";
+          } else {
+            const errText = await restRes.text();
+            console.error("Supabase REST fallback failed:", restRes.status, errText);
+            supabaseErrorMsg = errText || `HTTP ${restRes.status}`;
+          }
+        } catch (restErr) {
+          console.error("Supabase REST network error:", restErr);
+          supabaseErrorMsg = restErr instanceof Error ? restErr.message : String(restErr);
+        }
+      }
+
+      // 4. Firestore Sync (optional)
       try {
         await setDoc(doc(firestore, "products", finalId), newProduct);
       } catch (err) {
         console.warn("Firestore sync skipped:", err);
       }
 
-      setStatusMessage({
-        type: "success",
-        text: `Product "${newProduct.name}" successfully added to catalog! 🎉`,
-      });
+      if (supabaseSynced) {
+        setStatusMessage({
+          type: "success",
+          text: `Product "${newProduct.name}" successfully added to Supabase database & catalog! 🎉`,
+        });
+      } else {
+        setStatusMessage({
+          type: "error",
+          text: `Product was saved locally, but Supabase sync reported an issue: ${supabaseErrorMsg}. Please check network.`,
+        });
+      }
 
       // Reset form
       setName("");
@@ -414,7 +471,16 @@ export default function AdminProducts() {
     try {
       deleteProduct(prod.id);
       try {
-        await supabase.from("products").delete().eq("id", prod.id);
+        const { error: sbErr } = await supabase.from("products").delete().eq("id", prod.id);
+        if (sbErr) {
+          await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(prod.id)}`, {
+            method: "DELETE",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+          });
+        }
       } catch (sbErr) {
         console.warn("Supabase delete notice:", sbErr);
       }

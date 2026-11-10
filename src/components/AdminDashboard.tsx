@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, firestore } from "../firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
-import { supabase } from "../supabase";
+import { supabase, supabaseUrl, supabaseKey } from "../supabase";
 import { verifyIsAdmin } from "../utils/admin";
 import { DEFAULT_PARTNER_TAG } from "../config/api";
 import { getViewerSummary } from "../utils/visitorAnalytics";
@@ -16,6 +16,7 @@ import {
   deleteProduct,
   restoreProduct,
   resetCatalogToDefaults,
+  syncProductsFromSupabase,
 } from "../data/products";
 import {
   ArrowUpTrayIcon,
@@ -90,6 +91,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     refreshCatalog();
+    syncProductsFromSupabase();
     const handleUpdate = () => refreshCatalog();
     const handleViewerUpdate = () => setViewerSummary(getViewerSummary(30));
 
@@ -123,7 +125,16 @@ const AdminDashboard = () => {
 
       // 2. Cloud DB sync (Supabase & Firestore)
       try {
-        await supabase.from("products").delete().eq("id", prod.id);
+        const { error: sbErr } = await supabase.from("products").delete().eq("id", prod.id);
+        if (sbErr) {
+          await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(prod.id)}`, {
+            method: "DELETE",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+          });
+        }
       } catch (sbErr) {
         console.warn("Supabase delete notice:", sbErr);
       }
