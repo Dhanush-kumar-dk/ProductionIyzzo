@@ -67,13 +67,13 @@ function SignIn({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     getRedirectResult(auth)
-      .then(async (result) => {
+      .then(async (result: any) => {
         if (result && result.user) {
           setIsSigningIn(true);
           await handleAuthSuccess(result.user);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("Error with redirect sign-in:", err);
       })
       .finally(() => {

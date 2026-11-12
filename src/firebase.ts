@@ -35,7 +35,7 @@ export const firestore = getFirestore(app);
 export const analyticsPromise =
   typeof window !== "undefined"
     ? isSupported()
-        .then((supported) => (supported ? getAnalytics(app) : null))
+        .then((supported: boolean) => (supported ? getAnalytics(app) : null))
         .catch(() => null)
     : Promise.resolve(null);
 

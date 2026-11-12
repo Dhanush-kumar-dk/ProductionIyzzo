@@ -24,3 +24,10 @@ declare module "*.webp" {
   const src: string;
   export default src;
 }
+
+declare module "*.css" {
+  const content: Record<string, string>;
+  export default content;
+}
+
+declare module "bootstrap/dist/js/bootstrap.bundle.min.js";

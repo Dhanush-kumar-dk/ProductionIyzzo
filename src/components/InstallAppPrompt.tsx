@@ -47,7 +47,7 @@ export const InstallAppPrompt: FC = () => {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // For iOS users, show a gentle prompt after 4 seconds if not dismissed
-    let timer: NodeJS.Timeout | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (isIOSDevice && isSafari) {
       timer = setTimeout(() => {
         setShowPrompt(true);
