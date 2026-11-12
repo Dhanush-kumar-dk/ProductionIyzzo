@@ -15,6 +15,7 @@ import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
 import CookieConsent from "./components/CookieConsent";
+import InstallAppPrompt from "./components/InstallAppPrompt";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -231,6 +232,7 @@ function App() {
         <RouteTracker />
         <AnimatedRoutes />
         <CookieConsent />
+        <InstallAppPrompt />
       </Router>
       <Analytics />
       <SpeedInsights />

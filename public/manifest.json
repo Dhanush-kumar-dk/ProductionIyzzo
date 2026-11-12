@@ -1,0 +1,48 @@
+{
+  "name": "Yearnit - Independent Product Reviews & Deals",
+  "short_name": "Yearnit",
+  "description": "Independent product reviews, verified buyer guides, and curated deals across electronics, gadgets, and lifestyle essentials in India.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#F25C05",
+  "categories": ["shopping", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Electronics Deals",
+      "short_name": "Electronics",
+      "description": "Explore curated electronics and smartphone guides",
+      "url": "/",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Under ₹999 Budget Deals",
+      "short_name": "Budget",
+      "description": "Handpicked deals under ₹999",
+      "url": "/",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
