@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth, firestore } from "../firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -36,6 +36,10 @@ import {
 } from "@heroicons/react/24/solid";
 import { fetchProductDataFromUrl } from "../utils/amazonUrlParser";
 
+// ==========================================
+// CONSTANTS & TYPES
+// ==========================================
+
 const CATEGORIES = [
   "Audio & Wearables",
   "Consumer Electronics",
@@ -46,7 +50,7 @@ const CATEGORIES = [
   "Fitness & Sports",
   "Books & Learning",
   "Other",
-];
+] as const;
 
 const BADGES = [
   "Top Value Pick",
@@ -56,7 +60,179 @@ const BADGES = [
   "Trending Now",
   "Premium Pick",
   "Budget Hero",
-];
+] as const;
+
+interface SpecRow {
+  key: string;
+  value: string;
+}
+
+interface ProductFormState {
+  name: string;
+  asin: string;
+  category: string;
+  customCategory: string;
+  url: string;
+  price: string;
+  mrp: string;
+  editorBadge: string;
+  image: string;
+  image1: string;
+  image2: string;
+  shortDetail: string;
+  summary: string;
+  prosText: string;
+  consText: string;
+  whoItsFor: string;
+  rating: string;
+  ratingCount: string;
+  specRows: SpecRow[];
+}
+
+const INITIAL_FORM_STATE: ProductFormState = {
+  name: "",
+  asin: "",
+  category: CATEGORIES[0],
+  customCategory: "",
+  url: "",
+  price: "",
+  mrp: "",
+  editorBadge: BADGES[0],
+  image: "",
+  image1: "",
+  image2: "",
+  shortDetail: "",
+  summary: "",
+  prosText: "",
+  consText: "",
+  whoItsFor: "",
+  rating: "4.5",
+  ratingCount: "1420",
+  specRows: [
+    { key: "Brand", value: "" },
+    { key: "Warranty", value: "1 Year Official Warranty" },
+  ],
+};
+
+interface StatusMessageState {
+  type: "success" | "error";
+  text: string;
+  undoId?: string;
+}
+
+interface FetchFeedbackState {
+  type: "success" | "error" | "info";
+  message: string;
+}
+
+// ==========================================
+// DATABASE PERSISTENCE SERVICES (EXTRACTED)
+// ==========================================
+
+interface DatabaseSyncResult {
+  synced: boolean;
+  error?: string;
+}
+
+/**
+ * Persist product to Supabase (SDK with REST fallback) and Firestore
+ */
+async function persistProductToDatabase(
+  finalId: string,
+  product: Product
+): Promise<DatabaseSyncResult> {
+  const supabasePayload = {
+    id: finalId,
+    name: product.name,
+    price: product.price ? String(product.price).trim() : null,
+    image: product.image.trim(),
+    image1: product.image1 ? String(product.image1).trim() : null,
+    image2: product.image2 ? String(product.image2).trim() : null,
+    url: product.url,
+  };
+
+  let supabaseSynced = false;
+  let supabaseErrorMsg = "";
+
+  // 1. Primary: Supabase SDK upsert with onConflict
+  try {
+    const { error: sbError } = await supabase.from("products").upsert(supabasePayload, {
+      onConflict: "id",
+    });
+    if (!sbError) {
+      supabaseSynced = true;
+    } else {
+      supabaseErrorMsg = sbError.message;
+    }
+  } catch (sdkErr) {
+    supabaseErrorMsg = sdkErr instanceof Error ? sdkErr.message : String(sdkErr);
+  }
+
+  // 2. Secondary: Supabase Direct REST Fallback
+  if (!supabaseSynced) {
+    try {
+      const restRes = await fetch(`${supabaseUrl}/rest/v1/products?on_conflict=id`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal",
+        },
+        body: JSON.stringify(supabasePayload),
+      });
+
+      if (restRes.ok || restRes.status === 201 || restRes.status === 200 || restRes.status === 204) {
+        supabaseSynced = true;
+        supabaseErrorMsg = "";
+      } else {
+        const errText = await restRes.text();
+        supabaseErrorMsg = errText || `HTTP ${restRes.status}`;
+      }
+    } catch (restErr) {
+      supabaseErrorMsg = restErr instanceof Error ? restErr.message : String(restErr);
+    }
+  }
+
+  // 3. Firestore Sync (non-blocking)
+  try {
+    await setDoc(doc(firestore, "products", finalId), product);
+  } catch (err) {
+    console.warn("Firestore sync skipped:", err);
+  }
+
+  return { synced: supabaseSynced, error: supabaseErrorMsg };
+}
+
+/**
+ * Remove product from remote Supabase & Firestore databases
+ */
+async function removeProductFromDatabase(productId: string): Promise<void> {
+  try {
+    const { error: sbErr } = await supabase.from("products").delete().eq("id", productId);
+    if (sbErr) {
+      await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(productId)}`, {
+        method: "DELETE",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      });
+    }
+  } catch (sbErr) {
+    console.warn("Supabase delete notice:", sbErr);
+  }
+
+  try {
+    await deleteDoc(doc(firestore, "products", productId));
+  } catch (err) {
+    console.warn("Firestore delete skipped:", err);
+  }
+}
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 
 export default function AdminProducts() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -67,43 +243,35 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string; undoId?: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<StatusMessageState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Form Fields
-  const [name, setName] = useState("");
-  const [asin, setAsin] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [customCategory, setCustomCategory] = useState("");
-  const [url, setUrl] = useState("");
-  const [price, setPrice] = useState("");
-  const [mrp, setMrp] = useState("");
-  const [editorBadge, setEditorBadge] = useState(BADGES[0]);
-  const [image, setImage] = useState("");
-  const [image1, setImage1] = useState("");
-  const [image2, setImage2] = useState("");
-  const [shortDetail, setShortDetail] = useState("");
-  const [summary, setSummary] = useState("");
-  const [prosText, setProsText] = useState("");
-  const [consText, setConsText] = useState("");
-  const [whoItsFor, setWhoItsFor] = useState("");
-  const [rating, setRating] = useState("4.5");
-  const [ratingCount, setRatingCount] = useState("1420");
-  const [specRows, setSpecRows] = useState<{ key: string; value: string }[]>([
-    { key: "Brand", value: "" },
-    { key: "Warranty", value: "1 Year Official Warranty" },
-  ]);
+  // Consolidated Form State
+  const [form, setForm] = useState<ProductFormState>(INITIAL_FORM_STATE);
 
   // URL Auto-Fetch feature state
   const [isFetchingUrlData, setIsFetchingUrlData] = useState(false);
-  const [fetchFeedback, setFetchFeedback] = useState<{
-    type: "success" | "error" | "info";
-    message: string;
-  } | null>(null);
+  const [fetchFeedback, setFetchFeedback] = useState<FetchFeedbackState | null>(null);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Helper to update specific form field
+  const updateFormField = useCallback(<K extends keyof ProductFormState>(
+    field: K,
+    value: ProductFormState[K]
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setForm(INITIAL_FORM_STATE);
+  }, []);
+
+  // Auto-Fetch data from Amazon URL
   const handleAutoFetch = async (targetUrl?: string) => {
-    const urlToFetch = (targetUrl !== undefined ? targetUrl : url).trim();
+    const urlToFetch = (targetUrl !== undefined ? targetUrl : form.url).trim();
     if (!urlToFetch) {
       setFetchFeedback({
         type: "error",
@@ -121,34 +289,33 @@ export default function AdminProducts() {
     try {
       const data = await fetchProductDataFromUrl(urlToFetch);
 
-      // Populate form input fields with verified extracted data
-      setName(data.name || "");
-      setAsin(data.asin || "");
-      setUrl(data.url || urlToFetch);
-      setCategory(data.category || "Consumer Electronics");
-      if (!CATEGORIES.includes(data.category)) {
-        setCategory("Other");
-        setCustomCategory(data.category);
-      }
-      setPrice(data.price || "");
-      setMrp(data.mrp || "");
-      setRating(data.rating || "4.5");
-      setRatingCount(data.ratingCount || "1200");
-      setImage(data.image || "");
-      setImage1(data.image1 || "");
-      setImage2(data.image2 || "");
-      if (data.editorBadge) setEditorBadge(data.editorBadge);
-      if (data.shortDetail) setShortDetail(data.shortDetail);
-      if (data.summary) setSummary(data.summary);
-      if (data.pros && data.pros.length > 0) setProsText(data.pros.join("\n"));
-      if (data.cons && data.cons.length > 0) setConsText(data.cons.join("\n"));
-      if (data.whoItsFor) setWhoItsFor(data.whoItsFor);
+      const hasCategory = (CATEGORIES as readonly string[]).includes(data.category);
+      const isOther = !hasCategory && Boolean(data.category);
 
-      if (data.specs && Object.keys(data.specs).length > 0) {
-        setSpecRows(
-          Object.entries(data.specs).map(([key, value]) => ({ key, value }))
-        );
-      }
+      setForm((prev) => ({
+        ...prev,
+        name: data.name || "",
+        asin: data.asin || "",
+        url: data.url || urlToFetch,
+        category: isOther ? "Other" : data.category || prev.category,
+        customCategory: isOther ? data.category : prev.customCategory,
+        price: data.price || "",
+        mrp: data.mrp || "",
+        rating: data.rating || "4.5",
+        ratingCount: data.ratingCount || "1200",
+        image: data.image || "",
+        image1: data.image1 || "",
+        image2: data.image2 || "",
+        editorBadge: data.editorBadge || prev.editorBadge,
+        shortDetail: data.shortDetail || prev.shortDetail,
+        summary: data.summary || prev.summary,
+        prosText: data.pros?.length ? data.pros.join("\n") : prev.prosText,
+        consText: data.cons?.length ? data.cons.join("\n") : prev.consText,
+        whoItsFor: data.whoItsFor || prev.whoItsFor,
+        specRows: data.specs && Object.keys(data.specs).length > 0
+          ? Object.entries(data.specs).map(([key, value]) => ({ key, value }))
+          : prev.specRows,
+      }));
 
       setFetchFeedback({
         type: "success",
@@ -167,9 +334,7 @@ export default function AdminProducts() {
     }
   };
 
-  const navigate = useNavigate();
-  const location = useLocation();
-
+  // Synchronize route query with add form toggle
   useEffect(() => {
     const locState = location.state as { openAdd?: boolean } | null;
     if (location.search.includes("add=true") || locState?.openAdd) {
@@ -198,11 +363,11 @@ export default function AdminProducts() {
   }, [navigate]);
 
   // Load catalog
-  const refreshCatalog = () => {
+  const refreshCatalog = useCallback(() => {
     setProducts(getAllCatalogProducts());
     setCustomProducts(getCustomProducts());
     setDeletedIds(getDeletedProductIds());
-  };
+  }, []);
 
   useEffect(() => {
     refreshCatalog();
@@ -210,20 +375,23 @@ export default function AdminProducts() {
     const handleUpdate = () => refreshCatalog();
     window.addEventListener("catalogUpdated", handleUpdate);
     return () => window.removeEventListener("catalogUpdated", handleUpdate);
-  }, []);
+  }, [refreshCatalog]);
 
-  // Filter products
+  // Filter products by search and category
   const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const catFilter = selectedCategoryFilter.toLowerCase();
+
     return products.filter((p) => {
       const matchesSearch =
-        searchQuery.trim().length === 0 ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.category || "").toLowerCase().includes(searchQuery.toLowerCase());
+        q.length === 0 ||
+        p.name.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q);
 
       const matchesCat =
-        selectedCategoryFilter === "all" ||
-        (p.category || "").toLowerCase() === selectedCategoryFilter.toLowerCase();
+        catFilter === "all" ||
+        (p.category || "").toLowerCase() === catFilter;
 
       return matchesSearch && matchesCat;
     });
@@ -231,87 +399,70 @@ export default function AdminProducts() {
 
   // Live preview product object
   const previewProduct: Product = useMemo(() => {
-    const finalCategory = customCategory.trim() || category;
-    const pros = prosText.split("\n").map((s) => s.trim()).filter(Boolean);
-    const cons = consText.split("\n").map((s) => s.trim()).filter(Boolean);
+    const finalCategory = form.customCategory.trim() || form.category;
+    const pros = form.prosText.split("\n").map((s) => s.trim()).filter(Boolean);
+    const cons = form.consText.split("\n").map((s) => s.trim()).filter(Boolean);
     const specsMap: { [key: string]: string } = {};
-    specRows.forEach((r) => {
+    form.specRows.forEach((r) => {
       if (r.key.trim() && r.value.trim()) {
         specsMap[r.key.trim()] = r.value.trim();
       }
     });
 
     return {
-      id: asin.trim().toUpperCase() || "B0_PREVIEW",
-      name: name.trim() || "Sample Product Title - High Performance Specifications",
+      id: form.asin.trim().toUpperCase() || "B0_PREVIEW",
+      name: form.name.trim() || "Sample Product Title - High Performance Specifications",
       category: finalCategory,
-      price: price.trim() || "1,999",
-      mrp: mrp.trim() || "3,999",
-      rating: parseFloat(rating) || 4.5,
-      ratingCount: parseInt(ratingCount, 10) || 1200,
-      image: image.trim() || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=60",
-      image1: image1.trim() || undefined,
-      image2: image2.trim() || undefined,
-      url: url.trim() || "https://www.amazon.in",
-      editorBadge: editorBadge.trim() || undefined,
-      shortDetail: shortDetail.trim() || "Active Noise Cancellation • 30-Hour Battery Life • Fast USB-C Charging",
-      summary: summary.trim() || "An in-depth review evaluating design, durability, daily convenience, and audio fidelity.",
+      price: form.price.trim() || "1,999",
+      mrp: form.mrp.trim() || "3,999",
+      rating: parseFloat(form.rating) || 4.5,
+      ratingCount: parseInt(form.ratingCount, 10) || 1200,
+      image: form.image.trim() || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=60",
+      image1: form.image1.trim() || undefined,
+      image2: form.image2.trim() || undefined,
+      url: form.url.trim() || "https://www.amazon.in",
+      editorBadge: form.editorBadge.trim() || undefined,
+      shortDetail: form.shortDetail.trim() || "Active Noise Cancellation • 30-Hour Battery Life • Fast USB-C Charging",
+      summary: form.summary.trim() || "An in-depth review evaluating design, durability, daily convenience, and audio fidelity.",
       pros: pros.length > 0 ? pros : ["Premium sound profile", "Fast charging capability"],
       cons: cons.length > 0 ? cons : ["Carrying pouch not included"],
-      whoItsFor: whoItsFor.trim() || "Commuters, students, and professionals.",
+      whoItsFor: form.whoItsFor.trim() || "Commuters, students, and professionals.",
       specs: Object.keys(specsMap).length > 0 ? specsMap : { Warranty: "1 Year Official Brand Warranty" },
     };
-  }, [
-    asin,
-    name,
-    category,
-    customCategory,
-    price,
-    mrp,
-    rating,
-    ratingCount,
-    image,
-    image1,
-    image2,
-    url,
-    editorBadge,
-    shortDetail,
-    summary,
-    prosText,
-    consText,
-    whoItsFor,
-    specRows,
-  ]);
+  }, [form]);
 
+  // Spec row helpers
   const handleAddSpecRow = () => {
-    setSpecRows((prev) => [...prev, { key: "", value: "" }]);
+    updateFormField("specRows", [...form.specRows, { key: "", value: "" }]);
   };
 
   const handleRemoveSpecRow = (idx: number) => {
-    setSpecRows((prev) => prev.filter((_, i) => i !== idx));
+    updateFormField("specRows", form.specRows.filter((_, i) => i !== idx));
   };
 
   const handleSpecChange = (idx: number, field: "key" | "value", val: string) => {
-    setSpecRows((prev) =>
-      prev.map((row, i) => (i === idx ? { ...row, [field]: val } : row))
+    updateFormField(
+      "specRows",
+      form.specRows.map((row, i) => (i === idx ? { ...row, [field]: val } : row))
     );
   };
 
+  // Form Submit Handler
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!name.trim()) {
+    if (!form.name.trim()) {
       setStatusMessage({ type: "error", text: "Product title is required." });
       return;
     }
 
-    if (!image.trim()) {
+    if (!form.image.trim()) {
       setStatusMessage({ type: "error", text: "Primary image URL is required." });
       return;
     }
 
-    if (!url.trim()) {
+    if (!form.url.trim()) {
       setStatusMessage({ type: "error", text: "Amazon Product URL is required." });
       return;
     }
@@ -320,17 +471,17 @@ export default function AdminProducts() {
     setStatusMessage(null);
 
     try {
-      const extractedAsin = extractAsin(url.trim());
+      const extractedAsin = extractAsin(form.url.trim());
       const finalId =
-        asin.trim().toUpperCase() ||
+        form.asin.trim().toUpperCase() ||
         extractedAsin ||
         `PROD-${Date.now().toString(36).toUpperCase()}`;
 
-      const finalCategory = customCategory.trim() || category;
-      const pros = prosText.split("\n").map((s) => s.trim()).filter(Boolean);
-      const cons = consText.split("\n").map((s) => s.trim()).filter(Boolean);
+      const finalCategory = form.customCategory.trim() || form.category;
+      const pros = form.prosText.split("\n").map((s) => s.trim()).filter(Boolean);
+      const cons = form.consText.split("\n").map((s) => s.trim()).filter(Boolean);
       const specsMap: { [key: string]: string } = {};
-      specRows.forEach((r) => {
+      form.specRows.forEach((r) => {
         if (r.key.trim() && r.value.trim()) {
           specsMap[r.key.trim()] = r.value.trim();
         }
@@ -338,93 +489,32 @@ export default function AdminProducts() {
 
       const newProduct: Product = {
         id: finalId,
-        name: name.trim(),
+        name: form.name.trim(),
         category: finalCategory,
-        price: price.trim() || undefined,
-        mrp: mrp.trim() || undefined,
-        rating: parseFloat(rating) || 4.5,
-        ratingCount: parseInt(ratingCount, 10) || 1200,
-        image: image.trim(),
-        image1: image1.trim() || undefined,
-        image2: image2.trim() || undefined,
-        url: buildAffiliateUrl(url.trim()),
-        editorBadge: editorBadge.trim() || undefined,
-        shortDetail: shortDetail.trim() || undefined,
-        summary: summary.trim() || undefined,
+        price: form.price.trim() || undefined,
+        mrp: form.mrp.trim() || undefined,
+        rating: parseFloat(form.rating) || 4.5,
+        ratingCount: parseInt(form.ratingCount, 10) || 1200,
+        image: form.image.trim(),
+        image1: form.image1.trim() || undefined,
+        image2: form.image2.trim() || undefined,
+        url: buildAffiliateUrl(form.url.trim()),
+        editorBadge: form.editorBadge.trim() || undefined,
+        shortDetail: form.shortDetail.trim() || undefined,
+        summary: form.summary.trim() || undefined,
         pros: pros.length > 0 ? pros : undefined,
         cons: cons.length > 0 ? cons : undefined,
-        whoItsFor: whoItsFor.trim() || undefined,
+        whoItsFor: form.whoItsFor.trim() || undefined,
         specs: Object.keys(specsMap).length > 0 ? specsMap : undefined,
       };
 
-      // 1. Save locally and emit event
+      // 1. Save locally and emit broadcast event
       saveCustomProduct(newProduct);
 
-      // 2. Prepare sanitized Supabase payload (with explicit nulls for optional columns)
-      const supabasePayload = {
-        id: finalId,
-        name: newProduct.name,
-        price: newProduct.price ? String(newProduct.price).trim() : null,
-        image: newProduct.image.trim(),
-        image1: newProduct.image1 ? String(newProduct.image1).trim() : null,
-        image2: newProduct.image2 ? String(newProduct.image2).trim() : null,
-        url: newProduct.url,
-      };
+      // 2. Persist to Supabase & Firestore
+      const syncResult = await persistProductToDatabase(finalId, newProduct);
 
-      // 3. Multi-tier Sync to Supabase (SDK with onConflict + Direct REST Fallback)
-      let supabaseSynced = false;
-      let supabaseErrorMsg = "";
-
-      try {
-        const { error: sbError } = await supabase.from("products").upsert(supabasePayload, {
-          onConflict: "id",
-        });
-        if (!sbError) {
-          supabaseSynced = true;
-        } else {
-          console.warn("Supabase SDK upsert error:", sbError);
-          supabaseErrorMsg = sbError.message;
-        }
-      } catch (sdkErr) {
-        console.warn("Supabase SDK exception:", sdkErr);
-        supabaseErrorMsg = sdkErr instanceof Error ? sdkErr.message : String(sdkErr);
-      }
-
-      // If SDK sync failed or threw, execute direct REST fallback
-      if (!supabaseSynced) {
-        try {
-          const restRes = await fetch(`${supabaseUrl}/rest/v1/products?on_conflict=id`, {
-            method: "POST",
-            headers: {
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-              "Content-Type": "application/json",
-              Prefer: "resolution=merge-duplicates,return=minimal",
-            },
-            body: JSON.stringify(supabasePayload),
-          });
-          if (restRes.ok || restRes.status === 201 || restRes.status === 200 || restRes.status === 204) {
-            supabaseSynced = true;
-            supabaseErrorMsg = "";
-          } else {
-            const errText = await restRes.text();
-            console.error("Supabase REST fallback failed:", restRes.status, errText);
-            supabaseErrorMsg = errText || `HTTP ${restRes.status}`;
-          }
-        } catch (restErr) {
-          console.error("Supabase REST network error:", restErr);
-          supabaseErrorMsg = restErr instanceof Error ? restErr.message : String(restErr);
-        }
-      }
-
-      // 4. Firestore Sync (optional)
-      try {
-        await setDoc(doc(firestore, "products", finalId), newProduct);
-      } catch (err) {
-        console.warn("Firestore sync skipped:", err);
-      }
-
-      if (supabaseSynced) {
+      if (syncResult.synced) {
         setStatusMessage({
           type: "success",
           text: `Product "${newProduct.name}" successfully added to Supabase database & catalog! 🎉`,
@@ -432,24 +522,11 @@ export default function AdminProducts() {
       } else {
         setStatusMessage({
           type: "error",
-          text: `Product was saved locally, but Supabase sync reported an issue: ${supabaseErrorMsg}. Please check network.`,
+          text: `Product was saved locally, but Supabase sync reported an issue: ${syncResult.error}. Please check network.`,
         });
       }
 
-      // Reset form
-      setName("");
-      setAsin("");
-      setPrice("");
-      setMrp("");
-      setImage("");
-      setImage1("");
-      setImage2("");
-      setUrl("");
-      setShortDetail("");
-      setSummary("");
-      setProsText("");
-      setConsText("");
-      setWhoItsFor("");
+      resetForm();
       setShowAddForm(false);
       refreshCatalog();
     } catch (err) {
@@ -463,6 +540,7 @@ export default function AdminProducts() {
     }
   };
 
+  // Delete product handler
   const confirmDelete = async () => {
     if (!productToDelete) return;
     setIsDeleting(true);
@@ -470,26 +548,8 @@ export default function AdminProducts() {
 
     try {
       deleteProduct(prod.id);
-      try {
-        const { error: sbErr } = await supabase.from("products").delete().eq("id", prod.id);
-        if (sbErr) {
-          await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(prod.id)}`, {
-            method: "DELETE",
-            headers: {
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-            },
-          });
-        }
-      } catch (sbErr) {
-        console.warn("Supabase delete notice:", sbErr);
-      }
+      await removeProductFromDatabase(prod.id);
 
-      try {
-        await deleteDoc(doc(firestore, "products", prod.id));
-      } catch (err) {
-        console.warn("Firestore delete skipped:", err);
-      }
       setStatusMessage({
         type: "success",
         text: `Product "${prod.name}" was removed from the store catalog.`,
@@ -715,8 +775,8 @@ export default function AdminProducts() {
                     <div className="relative flex-1">
                       <input
                         type="url"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
+                        value={form.url}
+                        onChange={(e) => updateFormField("url", e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -726,17 +786,17 @@ export default function AdminProducts() {
                         onPaste={(e) => {
                           const pasted = e.clipboardData.getData("text")?.trim();
                           if (pasted && (pasted.includes("amazon") || pasted.includes("amzn") || pasted.includes("a.co") || pasted.startsWith("http"))) {
-                            setUrl(pasted);
+                            updateFormField("url", pasted);
                             setTimeout(() => handleAutoFetch(pasted), 50);
                           }
                         }}
                         placeholder="Paste Amazon product link (e.g. https://www.amazon.in/dp/B0CHX1W1XY...)"
                         className="w-full pl-3.5 pr-8 py-2.5 text-xs sm:text-sm bg-white border border-amber-300/80 rounded-xl outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 text-gray-900 placeholder-gray-400 font-medium"
                       />
-                      {url && (
+                      {form.url && (
                         <button
                           type="button"
-                          onClick={() => setUrl("")}
+                          onClick={() => updateFormField("url", "")}
                           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                         >
                           <XMarkIcon className="w-3.5 h-3.5" />
@@ -805,8 +865,8 @@ export default function AdminProducts() {
                   <input
                     type="text"
                     required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={form.name}
+                    onChange={(e) => updateFormField("name", e.target.value)}
                     placeholder="e.g. Sony WH-1000XM5 Wireless Noise Canceling Headphones"
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
@@ -820,8 +880,8 @@ export default function AdminProducts() {
                     </label>
                     <input
                       type="text"
-                      value={asin}
-                      onChange={(e) => setAsin(e.target.value.toUpperCase())}
+                      value={form.asin}
+                      onChange={(e) => updateFormField("asin", e.target.value.toUpperCase())}
                       placeholder="e.g. B09XS7JWHH (Auto-generated if empty)"
                       className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-mono border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -832,19 +892,19 @@ export default function AdminProducts() {
                       Department / Category
                     </label>
                     <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      value={form.category}
+                      onChange={(e) => updateFormField("category", e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none bg-gray-50 focus:border-blue-500 cursor-pointer"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
-                    {category === "Other" && (
+                    {form.category === "Other" && (
                       <input
                         type="text"
-                        value={customCategory}
-                        onChange={(e) => setCustomCategory(e.target.value)}
+                        value={form.customCategory}
+                        onChange={(e) => updateFormField("customCategory", e.target.value)}
                         placeholder="Enter custom category name..."
                         className="mt-2 w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                       />
@@ -859,7 +919,7 @@ export default function AdminProducts() {
                       <label className="block text-xs font-bold text-gray-700">
                         Amazon Product URL <span className="text-red-500">*</span>
                       </label>
-                      {url && (
+                      {form.url && (
                         <button
                           type="button"
                           onClick={() => handleAutoFetch()}
@@ -874,15 +934,15 @@ export default function AdminProducts() {
                       <input
                         type="url"
                         required
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
+                        value={form.url}
+                        onChange={(e) => updateFormField("url", e.target.value)}
                         placeholder="https://www.amazon.in/dp/..."
                         className="w-full pr-16 px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                       />
                       <button
                         type="button"
                         onClick={() => handleAutoFetch()}
-                        disabled={isFetchingUrlData || !url.trim()}
+                        disabled={isFetchingUrlData || !form.url.trim()}
                         className="absolute right-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 transition disabled:opacity-40 cursor-pointer shadow-xs"
                       >
                         {isFetchingUrlData ? "..." : "Fetch"}
@@ -896,8 +956,8 @@ export default function AdminProducts() {
                     </label>
                     <input
                       type="text"
-                      value={editorBadge}
-                      onChange={(e) => setEditorBadge(e.target.value)}
+                      value={form.editorBadge}
+                      onChange={(e) => updateFormField("editorBadge", e.target.value)}
                       placeholder="e.g. Top Value Pick, Editor's Choice"
                       className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -910,8 +970,8 @@ export default function AdminProducts() {
                     <label className="block text-xs font-bold text-gray-700 mb-1">Price (₹)</label>
                     <input
                       type="text"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
+                      value={form.price}
+                      onChange={(e) => updateFormField("price", e.target.value)}
                       placeholder="e.g. 1,499"
                       className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500 font-bold"
                     />
@@ -921,8 +981,8 @@ export default function AdminProducts() {
                     <label className="block text-xs font-bold text-gray-700 mb-1">M.R.P. (₹)</label>
                     <input
                       type="text"
-                      value={mrp}
-                      onChange={(e) => setMrp(e.target.value)}
+                      value={form.mrp}
+                      onChange={(e) => updateFormField("mrp", e.target.value)}
                       placeholder="e.g. 3,999"
                       className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -935,8 +995,8 @@ export default function AdminProducts() {
                       step="0.1"
                       min="1"
                       max="5"
-                      value={rating}
-                      onChange={(e) => setRating(e.target.value)}
+                      value={form.rating}
+                      onChange={(e) => updateFormField("rating", e.target.value)}
                       className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
                   </div>
@@ -945,8 +1005,8 @@ export default function AdminProducts() {
                     <label className="block text-xs font-bold text-gray-700 mb-1">Review Count</label>
                     <input
                       type="number"
-                      value={ratingCount}
-                      onChange={(e) => setRatingCount(e.target.value)}
+                      value={form.ratingCount}
+                      onChange={(e) => updateFormField("ratingCount", e.target.value)}
                       className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
                   </div>
@@ -960,23 +1020,23 @@ export default function AdminProducts() {
                   <input
                     type="url"
                     required
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
+                    value={form.image}
+                    onChange={(e) => updateFormField("image", e.target.value)}
                     placeholder="Primary Image URL: https://m.media-amazon.com/images/I/..."
                     className="w-full px-3.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="url"
-                      value={image1}
-                      onChange={(e) => setImage1(e.target.value)}
+                      value={form.image1}
+                      onChange={(e) => updateFormField("image1", e.target.value)}
                       placeholder="Additional Image 1 (Optional)"
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
                     <input
                       type="url"
-                      value={image2}
-                      onChange={(e) => setImage2(e.target.value)}
+                      value={form.image2}
+                      onChange={(e) => updateFormField("image2", e.target.value)}
                       placeholder="Additional Image 2 (Optional)"
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -991,8 +1051,8 @@ export default function AdminProducts() {
                     </label>
                     <input
                       type="text"
-                      value={shortDetail}
-                      onChange={(e) => setShortDetail(e.target.value)}
+                      value={form.shortDetail}
+                      onChange={(e) => updateFormField("shortDetail", e.target.value)}
                       placeholder="e.g. 40mm Drivers • 40H Playback • Active Noise Cancellation"
                       className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -1004,8 +1064,8 @@ export default function AdminProducts() {
                     </label>
                     <textarea
                       rows={3}
-                      value={summary}
-                      onChange={(e) => setSummary(e.target.value)}
+                      value={form.summary}
+                      onChange={(e) => updateFormField("summary", e.target.value)}
                       placeholder="Detailed evaluation of product performance, ergonomics, build quality, and value..."
                       className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                     />
@@ -1020,8 +1080,8 @@ export default function AdminProducts() {
                     </label>
                     <textarea
                       rows={3}
-                      value={prosText}
-                      onChange={(e) => setProsText(e.target.value)}
+                      value={form.prosText}
+                      onChange={(e) => updateFormField("prosText", e.target.value)}
                       placeholder="Rich, detailed bass&#10;All-day comfort with plush earcups&#10;Fast USB-C charging"
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-emerald-500 bg-emerald-50/20"
                     />
@@ -1033,8 +1093,8 @@ export default function AdminProducts() {
                     </label>
                     <textarea
                       rows={3}
-                      value={consText}
-                      onChange={(e) => setConsText(e.target.value)}
+                      value={form.consText}
+                      onChange={(e) => updateFormField("consText", e.target.value)}
                       placeholder="No multipoint Bluetooth pairing&#10;Earcups do not fold completely flat"
                       className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-amber-500 bg-amber-50/20"
                     />
@@ -1048,8 +1108,8 @@ export default function AdminProducts() {
                   </label>
                   <input
                     type="text"
-                    value={whoItsFor}
-                    onChange={(e) => setWhoItsFor(e.target.value)}
+                    value={form.whoItsFor}
+                    onChange={(e) => updateFormField("whoItsFor", e.target.value)}
                     placeholder="e.g. Commuters, remote workers, and audiophiles seeking high fidelity."
                     className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500"
                   />
@@ -1070,7 +1130,7 @@ export default function AdminProducts() {
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {specRows.map((row, idx) => (
+                    {form.specRows.map((row, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <input
                           type="text"
@@ -1086,7 +1146,7 @@ export default function AdminProducts() {
                           placeholder="Value (e.g. 40 Hours)"
                           className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none"
                         />
-                        {specRows.length > 1 && (
+                        {form.specRows.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveSpecRow(idx)}

@@ -13,27 +13,21 @@ export const marksMapping: Record<string, MarkCallback> = {
   "({index})=>index%2===0": ({ index }) => index % 2 === 0,
 };
 
-// Fallback weather dataset matching official MUI X-Charts documentation
-export const defaultWeatherDataset = [
-  { month: "Jan", london: 59, paris: 57 },
-  { month: "Feb", london: 50, paris: 52 },
-  { month: "Mar", london: 47, paris: 53 },
-  { month: "Apr", london: 54, paris: 56 },
-  { month: "May", london: 57, paris: 61 },
-  { month: "Jun", london: 60, paris: 63 },
-  { month: "Jul", london: 59, paris: 65 },
-  { month: "Aug", london: 65, paris: 64 },
-  { month: "Sept", london: 51, paris: 60 },
-  { month: "Oct", london: 60, paris: 65 },
-  { month: "Nov", london: 67, paris: 64 },
-  { month: "Dec", london: 61, paris: 62 },
+// Fallback price dataset (clean domain-appropriate fallback)
+export const defaultPriceDataset = [
+  { month: "Sep", price: 1999 },
+  { month: "Oct", price: 1799 },
+  { month: "Nov", price: 1899 },
 ];
+
+// Preserved alias for complete backward compatibility
+export const defaultWeatherDataset = defaultPriceDataset;
 
 /**
  * Natural Cubic Spline (D3 curveNatural as used in MUI X-Charts curve: 'natural')
  * Solves tridiagonal matrix system with zero second-derivatives at boundaries
  */
-function getNaturalSplinePath(points: { x: number; y: number }[]): string {
+function getNaturalSplinePath(points: readonly { x: number; y: number }[]): string {
   const n = points.length;
   if (n === 0) return "";
   if (n === 1) return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
@@ -41,11 +35,12 @@ function getNaturalSplinePath(points: { x: number; y: number }[]): string {
     return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)} ${points[1].y.toFixed(1)}`;
   }
 
-  const a = new Array(n - 1);
-  const b = new Array(n - 1);
-  const c = new Array(n - 1);
-  const rX = new Array(n - 1);
-  const rY = new Array(n - 1);
+  const nm1 = n - 1;
+  const a = new Float64Array(nm1);
+  const b = new Float64Array(nm1);
+  const c = new Float64Array(nm1);
+  const rX = new Float64Array(nm1);
+  const rY = new Float64Array(nm1);
 
   a[0] = 0;
   b[0] = 2;
@@ -67,15 +62,15 @@ function getNaturalSplinePath(points: { x: number; y: number }[]): string {
   rX[n - 2] = 8 * points[n - 2].x + points[n - 1].x;
   rY[n - 2] = 8 * points[n - 2].y + points[n - 1].y;
 
-  for (let i = 1; i < n - 1; i++) {
+  for (let i = 1; i < nm1; i++) {
     const m = a[i] / b[i - 1];
     b[i] -= m * c[i - 1];
     rX[i] -= m * rX[i - 1];
     rY[i] -= m * rY[i - 1];
   }
 
-  const p1X = new Array(n - 1);
-  const p1Y = new Array(n - 1);
+  const p1X = new Float64Array(nm1);
+  const p1Y = new Float64Array(nm1);
   p1X[n - 2] = rX[n - 2] / b[n - 2];
   p1Y[n - 2] = rY[n - 2] / b[n - 2];
   for (let i = n - 3; i >= 0; i--) {
@@ -83,8 +78,8 @@ function getNaturalSplinePath(points: { x: number; y: number }[]): string {
     p1Y[i] = (rY[i] - c[i] * p1Y[i + 1]) / b[i];
   }
 
-  const p2X = new Array(n - 1);
-  const p2Y = new Array(n - 1);
+  const p2X = new Float64Array(nm1);
+  const p2Y = new Float64Array(nm1);
   for (let i = 0; i < n - 2; i++) {
     p2X[i] = 2 * points[i + 1].x - p1X[i + 1];
     p2Y[i] = 2 * points[i + 1].y - p1Y[i + 1];
@@ -93,14 +88,14 @@ function getNaturalSplinePath(points: { x: number; y: number }[]): string {
   p2Y[n - 2] = (points[n - 1].y + p1Y[n - 2]) / 2;
 
   let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
-  for (let i = 0; i < n - 1; i++) {
+  for (let i = 0; i < nm1; i++) {
     path += ` C ${p1X[i].toFixed(1)} ${p1Y[i].toFixed(1)}, ${p2X[i].toFixed(1)} ${p2Y[i].toFixed(1)}, ${points[i + 1].x.toFixed(1)} ${points[i + 1].y.toFixed(1)}`;
   }
   return path;
 }
 
 /**
- * Render individual SVG mark based on MUI X-Charts shape type
+ * Render individual SVG mark based on shape type
  */
 function renderMark(x: number, y: number, shape: Shape, key: string | number) {
   const color = "#0288D1";
@@ -182,7 +177,7 @@ function renderMark(x: number, y: number, shape: Shape, key: string | number) {
 }
 
 interface LineMarkShapeProps {
-  dataset?: Array<{ month: string; price?: number; london?: number; [key: string]: string | number | undefined }>;
+  dataset?: Array<{ month: string; price?: number; [key: string]: string | number | undefined }>;
   seriesLabel?: string;
   dataKey?: string;
   height?: number;
@@ -192,7 +187,7 @@ interface LineMarkShapeProps {
 }
 
 export default function LineMarkShape({
-  dataset = defaultWeatherDataset,
+  dataset = defaultPriceDataset,
   seriesLabel = "Price History (₹)",
   dataKey = "price",
   height = 280,
@@ -203,35 +198,52 @@ export default function LineMarkShape({
   const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
   const svgRef = React.useRef<SVGSVGElement | null>(null);
 
-  // SVG Geometry - Clean Full Width
+  // SVG Geometry Constants
   const chartWidth = 860;
   const chartHeight = height;
-  const padding = { top: 30, right: 35, bottom: 45, left: 65 };
+  const padding = React.useMemo(() => ({ top: 30, right: 35, bottom: 45, left: 65 }), []);
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
-  // Resolve values
-  const values = dataset.map((d) => (typeof d[dataKey] === "number" ? d[dataKey] : d.london ?? 0));
-  const minVal = Math.min(...values);
-  const maxVal = Math.max(...values);
-  const range = maxVal - minVal || 100;
+  // Resolve values in a single pass
+  const { values, minVal, maxVal } = React.useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    const vals: number[] = new Array(dataset.length);
 
+    for (let i = 0; i < dataset.length; i++) {
+      const row = dataset[i];
+      const rawVal = row[dataKey];
+      const v = typeof rawVal === "number" ? rawVal : 0;
+      vals[i] = v;
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+
+    if (min === Infinity) min = 0;
+    if (max === -Infinity) max = 100;
+
+    return { values: vals, minVal: min, maxVal: max };
+  }, [dataset, dataKey]);
+
+  const range = maxVal - minVal || 100;
   const yMin = Math.max(0, Math.floor((minVal - range * 0.12) / 10) * 10);
   const yMax = Math.ceil((maxVal + range * 0.12) / 10) * 10;
   const yDomain = yMax - yMin || 1;
 
-  // Calculate coordinates
+  // Calculate coordinates with memoization
   const coords = React.useMemo(() => {
     const total = dataset.length;
+    const denominator = Math.max(1, total - 1);
     return dataset.map((item, idx) => {
-      const val = typeof item[dataKey] === "number" ? item[dataKey] : item.london ?? 0;
-      const x = padding.left + (idx / Math.max(1, total - 1)) * plotWidth;
+      const val = values[idx];
+      const x = padding.left + (idx / denominator) * plotWidth;
       const y = padding.top + ((yMax - val) / yDomain) * plotHeight;
       return { x, y, val, item, idx };
     });
-  }, [dataset, dataKey, padding.left, padding.top, plotWidth, plotHeight, yMax, yDomain]);
+  }, [dataset, values, padding.left, padding.top, plotWidth, plotHeight, yMax, yDomain]);
 
-  // Generate D3 natural spline path (MUI curve: 'natural')
+  // Generate D3 natural spline path
   const splinePath = React.useMemo(() => {
     return getNaturalSplinePath(coords);
   }, [coords]);
@@ -264,13 +276,13 @@ export default function LineMarkShape({
 
     let closest = 0;
     let minD = Infinity;
-    coords.forEach((c, idx) => {
-      const dist = Math.abs(c.x - svgX);
+    for (let i = 0; i < coords.length; i++) {
+      const dist = Math.abs(coords[i].x - svgX);
       if (dist < minD) {
         minD = dist;
-        closest = idx;
+        closest = i;
       }
-    });
+    }
     setHoveredIdx(closest);
   };
 
@@ -282,7 +294,7 @@ export default function LineMarkShape({
 
   return (
     <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/90 shadow-xs font-poppins text-slate-900 w-full">
-      {/* MUI Legend Row */}
+      {/* Legend Row */}
       <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <span className="w-3.5 h-3.5 rounded-xs bg-[#0288D1] shrink-0 shadow-2xs" />
@@ -294,7 +306,7 @@ export default function LineMarkShape({
           <div className="text-xs sm:text-sm font-bold text-[#0288D1]">
             <span>{activePoint.item.month}: </span>
             <span className="text-slate-950 font-black">
-              {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
+              {isCurrency ? formatINR(activePoint.val) : `${activePoint.val}`}
             </span>
           </div>
         )}
@@ -309,7 +321,7 @@ export default function LineMarkShape({
           onPointerMove={handlePointerMove}
           onPointerLeave={handlePointerLeave}
         >
-          {/* Grid: Vertical = true */}
+          {/* Grid: Vertical */}
           {coords.map((c, i) => (
             <line
               key={`vert-${i}`}
@@ -324,7 +336,7 @@ export default function LineMarkShape({
             />
           ))}
 
-          {/* Grid: Horizontal = true */}
+          {/* Grid: Horizontal */}
           {yTicks.map((t, i) => (
             <g key={`horiz-${i}`}>
               <line
@@ -351,116 +363,100 @@ export default function LineMarkShape({
             </g>
           ))}
 
-          {/* X Axis Baseline Line */}
+          {/* Bottom X-Axis Line */}
           <line
             x1={padding.left}
             y1={padding.top + plotHeight}
             x2={padding.left + plotWidth}
             y2={padding.top + plotHeight}
             stroke="#94A3B8"
-            strokeWidth="1.2"
+            strokeWidth="1.5"
           />
 
-          {/* Y Axis Baseline Line */}
+          {/* Left Y-Axis Line */}
           <line
             x1={padding.left}
             y1={padding.top}
             x2={padding.left}
             y2={padding.top + plotHeight}
             stroke="#94A3B8"
-            strokeWidth="1.2"
+            strokeWidth="1.5"
           />
 
-          {/* Natural Spline Line (MUI curve: 'natural') */}
-          {splinePath && (
+          {/* Area Fill Gradient under Spline */}
+          <defs>
+            <linearGradient id="areaGlowGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#0288D1" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#0288D1" stopOpacity="0.00" />
+            </linearGradient>
+          </defs>
+
+          {coords.length > 1 && (
             <path
-              d={splinePath}
-              fill="none"
-              stroke="#0288D1"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              d={`${splinePath} L ${coords[coords.length - 1].x} ${padding.top + plotHeight} L ${coords[0].x} ${
+                padding.top + plotHeight
+              } Z`}
+              fill="url(#areaGlowGradient)"
             />
           )}
 
-          {/* Series Marks rendering according to showMark function and shape */}
-          {coords.map((c) => {
-            const markFn = marksMapping[marks] || marksMapping.true;
-            const shouldShow = markFn({
-              index: c.idx,
-              total: coords.length,
-            });
+          {/* Spline Path */}
+          <path
+            d={splinePath}
+            fill="none"
+            stroke="#0288D1"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
-            if (!shouldShow) return null;
-            return renderMark(c.x, c.y, shape, c.idx);
+          {/* Marks */}
+          {coords.map((c, i) => {
+            const shouldRender = marksMapping[marks]({ index: i, total: coords.length });
+            if (!shouldRender) return null;
+            return renderMark(c.x, c.y, shape, `mark-${i}`);
           })}
 
-          {/* Active Crosshair & Highlight Mark on Hover */}
+          {/* Hover Crosshair and Tooltip */}
           {activePoint && (
-            <g>
+            <g pointerEvents="none">
               <line
                 x1={activePoint.x}
                 y1={padding.top}
                 x2={activePoint.x}
                 y2={padding.top + plotHeight}
                 stroke="#0288D1"
-                strokeWidth="1.2"
+                strokeWidth="1.5"
                 strokeDasharray="4 4"
-                opacity="0.85"
               />
               <circle
                 cx={activePoint.x}
                 cy={activePoint.y}
-                r="7.5"
+                r={7}
                 fill="#0288D1"
-                fillOpacity="0.25"
+                stroke="#FFFFFF"
+                strokeWidth={3}
+                className="drop-shadow-sm"
               />
-              {renderMark(activePoint.x, activePoint.y, shape, "active-mark")}
             </g>
           )}
 
-          {/* X Axis Point Labels */}
+          {/* X-Axis Ticks & Month Labels */}
           {coords.map((c, i) => (
             <text
-              key={`xlabel-${i}`}
+              key={`x-label-${i}`}
               x={c.x}
-              y={padding.top + plotHeight + 22}
+              y={padding.top + plotHeight + 20}
               textAnchor="middle"
               fontSize="11"
-              fill="#64748B"
+              fill={activePoint?.idx === i ? "#0288D1" : "#64748B"}
               fontFamily="Poppins, Roboto, sans-serif"
-              fontWeight="500"
+              fontWeight={activePoint?.idx === i ? "700" : "500"}
             >
               {c.item.month}
             </text>
           ))}
         </svg>
-
-        {/* Interactive Tooltip Card on Hover */}
-        {activePoint && (
-          <div
-            className="absolute pointer-events-none z-30 transition-transform duration-75"
-            style={{
-              left: `${(activePoint.x / chartWidth) * 100}%`,
-              top: `${(activePoint.y / chartHeight) * 100}%`,
-              transform: `translate(${activePoint.x > chartWidth * 0.7 ? "-105%" : "14px"}, -60%)`,
-            }}
-          >
-            <div className="bg-slate-900/95 backdrop-blur-md text-white px-3.5 py-2.5 rounded-xl shadow-xl border border-slate-700 text-xs min-w-[140px] space-y-1">
-              <div className="text-[10px] text-slate-400 border-b border-slate-800 pb-1">
-                {activePoint.item.date || `${activePoint.item.month}`}
-              </div>
-              <div className="text-sm font-black text-amber-300">
-                {isCurrency ? formatINR(activePoint.val) : `${activePoint.val} mm`}
-              </div>
-              {activePoint.item.label && (
-                <div className="text-[10px] text-emerald-400 font-semibold truncate">
-                  {activePoint.item.label}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

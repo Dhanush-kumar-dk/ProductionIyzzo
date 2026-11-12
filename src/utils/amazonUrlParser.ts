@@ -25,6 +25,123 @@ export interface ExtractedProductData {
   sourceMessage: string;
 }
 
+// ==========================================
+// PRE-COMPILED REGEX PATTERNS (MODULE SCOPE)
+// ==========================================
+
+const ASIN_DIRECT_REGEX = /^[A-Z0-9]{10}$/i;
+const ASIN_URL_PATTERNS: readonly RegExp[] = [
+  /\/dp\/([A-Z0-9]{10})/i,
+  /\/gp\/product\/([A-Z0-9]{10})/i,
+  /\/gp\/aw\/d\/([A-Z0-9]{10})/i,
+  /\/product\/([A-Z0-9]{10})/i,
+  /\/d\/([A-Z0-9]{10})/i,
+  /[?&]asin=([A-Z0-9]{10})/i,
+  /[?&]ASIN=([A-Z0-9]{10})/i,
+  /\/([A-Z0-9]{10})(?:[/?#\\]|$)/i,
+];
+
+const ASIN_HTML_PATTERNS: readonly RegExp[] = [
+  /data-asin=["']([A-Z0-9]{10})["']/i,
+  /name=["']ASIN["'][^>]*value=["']([A-Z0-9]{10})["']/i,
+  /data-csa-c-item-id=["']([A-Z0-9]{10})["']/i,
+  /\/dp\/([A-Z0-9]{10})/i,
+];
+
+const CANONICAL_REGEX = /<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i;
+const OG_URL_REGEX = /<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i;
+
+const TITLE_PATTERNS: readonly RegExp[] = [
+  /id="productTitle"[^>]*>([\s\S]*?)<\/span>/i,
+  /<meta[^>]*name=["']title["'][^>]*content=["']([^"']+)["']/i,
+  /<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i,
+  /<meta[^>]*name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i,
+  /<h1[^>]*>([\s\S]*?)<\/h1>/i,
+  /<title>([^<]+)<\/title>/i,
+];
+
+const PRICE_PATTERNS: readonly RegExp[] = [
+  /class="[^"]*(?:priceToPay|apexPriceToPay|apex-pricetopay-value)[^"]*"[\s\S]*?<span[^>]*class="[^"]*a-price-whole[^"]*"[^>]*>([0-9,]+)/i,
+  /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)\s*with\s*[0-9]+(?:\.[0-9]+)?\s*percent savings/i,
+  /<span[^>]*class="[^"]*(?:apexPriceToPay|priceToPay)[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /<span[^>]*id="(?:priceblock_ourprice|priceblock_dealprice)"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /<span[^>]*class="[^"]*a-price-whole"[^>]*>([0-9,]+)/i,
+  /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
+  /"price":\s*"?([0-9,.]+)"?/i,
+  /<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+];
+
+const MRP_PATTERNS: readonly RegExp[] = [
+  /apex-basisprice-offscreen-label">M\.R\.P\.[:\s]*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /M\.R\.P\.[:\s]*(?:<[^>]+>)*\s*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /basisPrice[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /<span[^>]*class="[^"]*apex-basisprice-value[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /(?:data-a-strike="true"|class="[^"]*a-text-strike[^"]*")[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /<span[^>]*class="[^"]*a-text-price[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
+  /"highPrice":\s*"?([0-9,.]+)"?/i,
+];
+
+const SHORT_LINK_REGEX = /link\.amazon|amzn\.to|amzn\.in|a\.co/i;
+const IMAGE_MEDIA_REGEX = /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na)\.ssl-images-amazon\.com)\/images\/I\/[^"'<>\s\\)]+\.(?:jpg|jpeg|png|webp)/gi;
+const IMAGE_ID_REGEX = /\/images\/I\/([A-Za-z0-9%_-]+?)(?:\._[A-Za-z0-9,_]+_)?\.(jpg|png|jpeg|webp)/i;
+
+// ==========================================
+// PRE-COMPILED BRAND & CATEGORY DICTIONARIES
+// ==========================================
+
+const RAW_BRANDS = [
+  "PATPAT", "Apple", "Sony", "Samsung", "OnePlus", "Noise", "Boat", "boAt", "Lenovo",
+  "Dell", "HP", "Asus", "Acer", "JBL", "Sennheiser", "Xiaomi", "Realme",
+  "Motorola", "Amazon", "Echo", "Kindle", "Fire TV", "Logitech", "Boult",
+  "Pigeon", "Prestige", "Philips", "Dyson", "LG", "Whirlpool", "Zebronics",
+  "Anker", "SanDisk", "Crucial", "Seagate", "Cosmic Byte", "Portronics"
+] as const;
+
+const BRAND_LOOKUP = RAW_BRANDS.map((b) => ({
+  brand: b,
+  lower: b.toLowerCase(),
+}));
+
+interface CategoryRule {
+  readonly category: string;
+  readonly keywords: readonly string[];
+}
+
+const CATEGORY_RULES: readonly CategoryRule[] = [
+  {
+    category: "Mobiles & Tech",
+    keywords: ["phone", "mobile", "smartphone", "iphone", "oneplus", "samsung galaxy", "5g", "tablet", "ipad"],
+  },
+  {
+    category: "Audio & Wearables",
+    keywords: ["earbud", "headphone", "audio", "tws", "speaker", "soundbar", "noise cancelling"],
+  },
+  {
+    category: "Fashion & Apparel",
+    keywords: ["shirt", "t-shirt", "shoe", "sneaker", "jeans", "dress", "jacket", "watch", "costume", "cosplay", "mask", "apparel", "cloth"],
+  },
+  {
+    category: "Home & Kitchen",
+    keywords: ["cooker", "blender", "kitchen", "pan", "air fryer", "kettle", "bottle", "home", "decoration", "decor"],
+  },
+  {
+    category: "Fitness & Sports",
+    keywords: ["fitness", "smartwatch", "band", "cycle", "dumbbell", "yoga", "sport"],
+  },
+  {
+    category: "Gadgets",
+    keywords: ["gadget", "charger", "cable", "power bank", "led"],
+  },
+];
+
+// Session In-Memory Cache for Parsed Product URLs
+const parsedUrlCache = new Map<string, ExtractedProductData>();
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
 /**
  * Clean HTML and encoded entities to plain text
  */
@@ -86,7 +203,7 @@ export function isBlockedHtml(html?: string): boolean {
  */
 export function isAmazonShortLink(inputUrl: string): boolean {
   if (!inputUrl) return false;
-  return /link\.amazon|amzn\.to|amzn\.in|a\.co/i.test(inputUrl);
+  return SHORT_LINK_REGEX.test(inputUrl);
 }
 
 /**
@@ -107,22 +224,11 @@ export function cleanSlugToTitle(slug: string): string {
 export function extractAsinFromUrl(inputUrl: string, html: string = ""): string | null {
   if (inputUrl) {
     const trimmed = inputUrl.trim();
-    if (/^[A-Z0-9]{10}$/i.test(trimmed)) {
+    if (ASIN_DIRECT_REGEX.test(trimmed)) {
       return trimmed.toUpperCase();
     }
 
-    const patterns = [
-      /\/dp\/([A-Z0-9]{10})/i,
-      /\/gp\/product\/([A-Z0-9]{10})/i,
-      /\/gp\/aw\/d\/([A-Z0-9]{10})/i,
-      /\/product\/([A-Z0-9]{10})/i,
-      /\/d\/([A-Z0-9]{10})/i,
-      /[?&]asin=([A-Z0-9]{10})/i,
-      /[?&]ASIN=([A-Z0-9]{10})/i,
-      /\/([A-Z0-9]{10})(?:[/?#\\]|$)/i,
-    ];
-
-    for (const regex of patterns) {
+    for (const regex of ASIN_URL_PATTERNS) {
       const match = trimmed.match(regex);
       if (match && match[1]) {
         return match[1].toUpperCase();
@@ -131,26 +237,19 @@ export function extractAsinFromUrl(inputUrl: string, html: string = ""): string 
   }
 
   if (html) {
-    const canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
+    const canonicalMatch = html.match(CANONICAL_REGEX);
     if (canonicalMatch && canonicalMatch[1]) {
       const asinFromCanonical = extractAsinFromUrl(canonicalMatch[1]);
       if (asinFromCanonical) return asinFromCanonical;
     }
 
-    const ogMatch = html.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+    const ogMatch = html.match(OG_URL_REGEX);
     if (ogMatch && ogMatch[1]) {
       const asinFromOg = extractAsinFromUrl(ogMatch[1]);
       if (asinFromOg) return asinFromOg;
     }
 
-    const htmlPatterns = [
-      /data-asin=["']([A-Z0-9]{10})["']/i,
-      /name=["']ASIN["'][^>]*value=["']([A-Z0-9]{10})["']/i,
-      /data-csa-c-item-id=["']([A-Z0-9]{10})["']/i,
-      /\/dp\/([A-Z0-9]{10})/i,
-    ];
-
-    for (const pat of htmlPatterns) {
+    for (const pat of ASIN_HTML_PATTERNS) {
       const m = html.match(pat);
       if (m && m[1]) {
         return m[1].toUpperCase();
@@ -201,18 +300,11 @@ export function extractTitleFromAmazonUrl(inputUrl: string): string | null {
  * Infer Brand from product title or text
  */
 export function inferBrand(text: string): string {
-  const brands = [
-    "PATPAT", "Apple", "Sony", "Samsung", "OnePlus", "Noise", "Boat", "boAt", "Lenovo",
-    "Dell", "HP", "Asus", "Acer", "JBL", "Sennheiser", "Xiaomi", "Realme",
-    "Motorola", "Amazon", "Echo", "Kindle", "Fire TV", "Logitech", "Boult",
-    "Pigeon", "Prestige", "Philips", "Dyson", "LG", "Whirlpool", "Zebronics",
-    "Anker", "SanDisk", "Crucial", "Seagate", "Cosmic Byte", "Portronics"
-  ];
-
+  if (!text) return "";
   const lower = text.toLowerCase();
-  for (const b of brands) {
-    if (lower.includes(b.toLowerCase())) {
-      return b;
+  for (const item of BRAND_LOOKUP) {
+    if (lower.includes(item.lower)) {
+      return item.brand;
     }
   }
   return "";
@@ -222,87 +314,15 @@ export function inferBrand(text: string): string {
  * Infer best matching catalog category from text
  */
 export function inferCategory(text: string): string {
+  if (!text) return "Consumer Electronics";
   const lower = text.toLowerCase();
 
-  if (
-    lower.includes("phone") ||
-    lower.includes("mobile") ||
-    lower.includes("smartphone") ||
-    lower.includes("iphone") ||
-    lower.includes("oneplus") ||
-    lower.includes("samsung galaxy") ||
-    lower.includes("5g") ||
-    lower.includes("tablet") ||
-    lower.includes("ipad")
-  ) {
-    return "Mobiles & Tech";
-  }
-
-  if (
-    lower.includes("earbud") ||
-    lower.includes("headphone") ||
-    lower.includes("audio") ||
-    lower.includes("tws") ||
-    lower.includes("speaker") ||
-    lower.includes("soundbar") ||
-    lower.includes("noise cancelling")
-  ) {
-    return "Audio & Wearables";
-  }
-
-  if (
-    lower.includes("shirt") ||
-    lower.includes("t-shirt") ||
-    lower.includes("shoe") ||
-    lower.includes("sneaker") ||
-    lower.includes("jeans") ||
-    lower.includes("dress") ||
-    lower.includes("jacket") ||
-    lower.includes("watch") ||
-    lower.includes("costume") ||
-    lower.includes("cosplay") ||
-    lower.includes("mask") ||
-    lower.includes("apparel") ||
-    lower.includes("cloth")
-  ) {
-    return "Fashion & Apparel";
-  }
-
-  if (
-    lower.includes("cooker") ||
-    lower.includes("blender") ||
-    lower.includes("kitchen") ||
-    lower.includes("pan") ||
-    lower.includes("air fryer") ||
-    lower.includes("kettle") ||
-    lower.includes("bottle") ||
-    lower.includes("home") ||
-    lower.includes("decoration") ||
-    lower.includes("decor")
-  ) {
-    return "Home & Kitchen";
-  }
-
-  if (
-    lower.includes("fitness") ||
-    lower.includes("smartwatch") ||
-    lower.includes("band") ||
-    lower.includes("cycle") ||
-    lower.includes("dumbbell") ||
-    lower.includes("yoga") ||
-    lower.includes("sport")
-  ) {
-    return "Fitness & Sports";
-  }
-
-  if (
-    lower.includes("gadget") ||
-    lower.includes("charger") ||
-    lower.includes("cable") ||
-    lower.includes("power bank") ||
-    lower.includes("led")
-  ) {
-    return "Gadgets";
+  for (const rule of CATEGORY_RULES) {
+    for (const kw of rule.keywords) {
+      if (lower.includes(kw)) {
+        return rule.category;
+      }
+    }
   }
 
   return "Consumer Electronics";
@@ -338,7 +358,7 @@ export function parseAmazonHtml(
   // 1. Canonical Link
   let canonicalUrl = "";
   if (!blocked && html) {
-    const cMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
+    const cMatch = html.match(CANONICAL_REGEX);
     if (cMatch) canonicalUrl = cMatch[1];
   }
 
@@ -356,15 +376,7 @@ export function parseAmazonHtml(
   // 3. Title
   let name = "";
   if (!blocked && html) {
-    const titlePatterns = [
-      /id="productTitle"[^>]*>([\s\S]*?)<\/span>/i,
-      /<meta[^>]*name=["']title["'][^>]*content=["']([^"']+)["']/i,
-      /<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i,
-      /<meta[^>]*name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i,
-      /<h1[^>]*>([\s\S]*?)<\/h1>/i,
-      /<title>([^<]+)<\/title>/i,
-    ];
-    for (const pat of titlePatterns) {
+    for (const pat of TITLE_PATTERNS) {
       const m = html.match(pat);
       if (m && m[1]) {
         const cleaned = cleanTitleString(m[1]);
@@ -389,19 +401,7 @@ export function parseAmazonHtml(
   // 4. Selling Price (clean INR whole rupees)
   let price = "";
   if (!blocked && html) {
-    const pricePatterns = [
-      /class="[^"]*(?:priceToPay|apexPriceToPay|apex-pricetopay-value)[^"]*"[\s\S]*?<span[^>]*class="[^"]*a-price-whole[^"]*"[^>]*>([0-9,]+)/i,
-      /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)\s*with\s*[0-9]+(?:\.[0-9]+)?\s*percent savings/i,
-      /<span[^>]*class="[^"]*(?:apexPriceToPay|priceToPay)[^"]*"[^>]*>[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*id="(?:priceblock_ourprice|priceblock_dealprice)"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*class="[^"]*a-price-whole"[^>]*>([0-9,]+)/i,
-      /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
-      /"price":\s*"?([0-9,.]+)"?/i,
-      /<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-    ];
-
-    for (const pat of pricePatterns) {
+    for (const pat of PRICE_PATTERNS) {
       const m = html.match(pat);
       if (m && m[1]) {
         const cleaned = m[1].replace(/[^0-9,.]/g, "").replace(/\.00$/, "").trim().replace(/\.$/, "");
@@ -416,17 +416,7 @@ export function parseAmazonHtml(
   // 5. MRP (clean INR whole rupees)
   let mrp = "";
   if (!blocked && html) {
-    const mrpPatterns = [
-      /apex-basisprice-offscreen-label">M\.R\.P\.[:\s]*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /M\.R\.P\.[:\s]*(?:<[^>]+>)*\s*(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /basisPrice[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*class="[^"]*apex-basisprice-value[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /(?:data-a-strike="true"|class="[^"]*a-text-strike[^"]*")[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /<span[^>]*class="[^"]*a-text-price[^"]*"[\s\S]*?<span[^>]*class="a-offscreen"[^>]*>(?:₹|INR|Rs\.?)\s*([0-9,]+(?:\.[0-9]{2})?)/i,
-      /"highPrice":\s*"?([0-9,.]+)"?/i,
-    ];
-
-    for (const pat of mrpPatterns) {
+    for (const pat of MRP_PATTERNS) {
       const m = html.match(pat);
       if (m && m[1]) {
         const cleaned = m[1].replace(/[^0-9,.]/g, "").replace(/\.00$/, "").trim().replace(/\.$/, "");
@@ -525,7 +515,9 @@ export function parseAmazonHtml(
         for (const k of Object.keys(obj)) {
           if (k.includes("/images/I/")) rawImages.push(k);
         }
-      } catch (e) {}
+      } catch {
+        // ignore malformed JSON in dynamic image attribute
+      }
     }
 
     // C. large in page JSON
@@ -544,9 +536,7 @@ export function parseAmazonHtml(
 
     // E. General media-amazon images fallback
     if (rawImages.length === 0) {
-      const imgRegex =
-        /https:\/\/(?:m\.media-amazon\.com|images-(?:eu|na).ssl-images-amazon\.com)\/images\/I\/[^"'<>\s\\)]+\.(?:jpg|jpeg|png|webp)/gi;
-      const allImgs = Array.from(new Set(html.match(imgRegex) || []));
+      const allImgs = Array.from(new Set(html.match(IMAGE_MEDIA_REGEX) || []));
       for (const u of allImgs) {
         if (
           !u.includes("SS40") &&
@@ -566,7 +556,7 @@ export function parseAmazonHtml(
   // Deduplicate by Image ID and normalize all to 1024px High-Res
   const idMap = new Map<string, string>();
   for (const img of rawImages) {
-    const match = img.match(/\/images\/I\/([A-Za-z0-9%_-]+?)(?:\._[A-Za-z0-9,_]+_)?\.(jpg|png|jpeg|webp)/i);
+    const match = img.match(IMAGE_ID_REGEX);
     if (match && match[1]) {
       const imgId = match[1];
       if (!idMap.has(imgId)) {
@@ -644,12 +634,24 @@ export function parseAmazonHtml(
   };
 }
 
+/**
+ * Fetch and parse product data across tiered scrapers with in-memory caching
+ */
 export async function fetchProductDataFromUrl(inputUrl: string): Promise<ExtractedProductData> {
   const trimmed = inputUrl.trim();
+  if (parsedUrlCache.has(trimmed)) {
+    return parsedUrlCache.get(trimmed)!;
+  }
+
   const asin = extractAsinFromUrl(trimmed) || "";
 
-  // 0. Tier 0: Local mcp-url-converter server (optional — fast when running)
-  // Start it with: node ../mcp-url-converter/build/index.js  (or start.bat)
+  // Helper to commit to cache and return
+  const cacheAndReturn = (result: ExtractedProductData): ExtractedProductData => {
+    parsedUrlCache.set(trimmed, result);
+    return result;
+  };
+
+  // 0. Tier 0: Local mcp-url-converter server (fast when running)
   for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
     try {
       const mcpCtrl = new AbortController();
@@ -665,17 +667,17 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
         const ct = mcpRes.headers.get("content-type") || "";
         if (ct.includes("application/json")) {
           const json = await mcpRes.json();
-          if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
-            return {
+          if (json?.success && json.data && !isInvalidTitle(json.data.name)) {
+            return cacheAndReturn({
               ...json.data,
               sourceMessage: `[mcp-url-converter] ${json.data.sourceMessage || "Extracted from local server."}`,
-            } as ExtractedProductData;
+            } as ExtractedProductData);
           }
         }
       }
-      break; // Host responded (success or failure) — stop trying alternates
+      break;
     } catch {
-      // Server not running on this host — silently continue
+      // Continue to next tier
     }
   }
 
@@ -694,8 +696,8 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
       const contentType = apiRes.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
         const json = await apiRes.json();
-        if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
-          return json.data;
+        if (json?.success && json.data && !isInvalidTitle(json.data.name)) {
+          return cacheAndReturn(json.data);
         }
       }
     }
@@ -721,7 +723,7 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
         if (proxyData?.contents && proxyData.contents.length > 500 && !isBlockedHtml(proxyData.contents)) {
           const parsed = parseAmazonHtml(proxyData.contents, trimmed, asin, trimmed);
           if (!isInvalidTitle(parsed.name)) {
-            return parsed;
+            return cacheAndReturn(parsed);
           }
         }
       }
@@ -748,10 +750,10 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
       if (!isBlockedHtml(content) && !isInvalidTitle(jinaTitle)) {
         const parsed = parseAmazonHtml(content, trimmed, asin, trimmed);
         if (!isInvalidTitle(parsed.name)) {
-          return {
+          return cacheAndReturn({
             ...parsed,
             sourceMessage: "Extracted live product details via Reader Scraper API.",
-          };
+          });
         }
       }
     }
@@ -770,7 +772,7 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
 
     if (foundInCatalog) {
       const brand = inferBrand(foundInCatalog.name) || "Official Brand";
-      return {
+      return cacheAndReturn({
         asin,
         name: foundInCatalog.name,
         category: foundInCatalog.category || "Consumer Electronics",
@@ -806,12 +808,11 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
         },
         confidence: "catalog",
         sourceMessage: `Matched from verified product catalog database (ASIN: ${asin}).`,
-      };
+      });
     }
   }
 
   // 5. Tier 5: Safe URL Slug + High-Res CDN Fallback (Always succeeds, never 503)
-  // If no 10-char ASIN was found yet (e.g. short link without direct ASIN token), synthesize or extract token
   const effectiveAsin = asin || (trimmed.match(/([A-Z0-9]{9,12})/i)?.[1].toUpperCase() ?? "");
   const slugTitle = extractTitleFromAmazonUrl(trimmed) || "";
   const brand = inferBrand(`${slugTitle} ${trimmed}`) || "Official";
@@ -823,7 +824,7 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
     ? `https://m.media-amazon.com/images/P/${effectiveAsin}.01._SCLZZZZZZZ_SX800_.jpg`
     : `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80`;
 
-  return {
+  return cacheAndReturn({
     asin: effectiveAsin,
     name: slugTitle || (brand ? `${brand} Store Product` : `Amazon Product`),
     category,
@@ -853,5 +854,5 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
     },
     confidence: "heuristic",
     sourceMessage: `Extracted product details and specifications from URL.`,
-  };
+  });
 }

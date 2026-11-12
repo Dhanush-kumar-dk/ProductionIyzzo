@@ -125,12 +125,13 @@ const SAMPLE_ORDERS: Order[] = [
   },
 ];
 
+const ORDERS_PER_PAGE = 6;
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>(SAMPLE_ORDERS);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(6);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -335,24 +336,27 @@ const AdminOrders = () => {
     });
   }, [orders, searchQuery, deviceFilter]);
 
-  // Aggregate Metrics
-  const totalRevenue = useMemo(() => {
-    return filteredOrders.reduce((sum, o) => sum + (Number(o.revenue) || 0), 0);
-  }, [filteredOrders]);
+  // Single-Pass Aggregate Metrics
+  const { totalRevenue, totalFees, totalShipped } = useMemo(() => {
+    let rev = 0;
+    let fees = 0;
+    let shipped = 0;
 
-  const totalFees = useMemo(() => {
-    return filteredOrders.reduce((sum, o) => sum + (Number(o.fees) || 0), 0);
-  }, [filteredOrders]);
+    for (let i = 0; i < filteredOrders.length; i++) {
+      const o = filteredOrders[i];
+      rev += Number(o.revenue) || 0;
+      fees += Number(o.fees) || 0;
+      shipped += Number(o.items_shipped) || 0;
+    }
 
-  const totalShipped = useMemo(() => {
-    return filteredOrders.reduce((sum, o) => sum + (Number(o.items_shipped) || 0), 0);
+    return { totalRevenue: rev, totalFees: fees, totalShipped: shipped };
   }, [filteredOrders]);
 
   // Pagination
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const indexOfLastOrder = currentPage * ORDERS_PER_PAGE;
+  const indexOfFirstOrder = indexOfLastOrder - ORDERS_PER_PAGE;
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ordersPerPage));
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
 
   if (isAdmin === null) {
     return (
