@@ -140,8 +140,15 @@ export default function Carousel({
   selectedCategory = "",
   onSelectCategory,
 }: CarouselProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Synchronously initialize with cached catalog to avoid blank/spinner on initial render
+  const [products, setProducts] = useState<Product[]>(() => {
+    const all = getAllCatalogProducts();
+    return all.map((p) => ({
+      ...p,
+      url: buildAffiliateUrl(p.url),
+    }));
+  });
+  const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState<string>("featured");
   const [localSearch, setLocalSearch] = useState<string>("");
 
@@ -262,8 +269,27 @@ export default function Carousel({
 
       {/* Products Grid */}
       {loading ? (
-        <div className="flex justify-center items-center py-16 sm:py-20">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 md:gap-6">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-2xs flex flex-col justify-between animate-pulse min-h-[320px]"
+            >
+              <div>
+                <div className="w-full aspect-square bg-slate-100 rounded-xl mb-3" />
+                <div className="h-3 w-16 bg-slate-200 rounded mb-2" />
+                <div className="h-4 w-full bg-slate-200 rounded mb-1.5" />
+                <div className="h-4 w-3/4 bg-slate-200 rounded mb-3" />
+              </div>
+              <div className="pt-2 border-t border-slate-100 mt-2">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="h-5 w-20 bg-slate-200 rounded" />
+                  <div className="h-3 w-12 bg-slate-100 rounded" />
+                </div>
+                <div className="h-8 w-full bg-slate-200 rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="text-center py-12 sm:py-16 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
