@@ -7,12 +7,12 @@ interface Category {
 
 const categories: Category[] = [
   { id: "all", name: "All Deals", icon: "🔥", badge: "Hot" },
-  { id: "electronics", name: "Electronics", icon: "💻", badge: "-40%" },
-  { id: "clothing", name: "Fashion", icon: "👕", badge: "Trend" },
+  { id: "electronics", name: "Electronics", icon: "⚡", badge: "-40%" },
+  { id: "audio", name: "Audio & Wearables", icon: "🎧", badge: "Popular" },
+  { id: "mobiles", name: "Mobiles & Tech", icon: "📱", badge: "Trending" },
+  { id: "computers", name: "Computers & Tech", icon: "💻" },
   { id: "home", name: "Home & Kitchen", icon: "🏠" },
-  { id: "gadgets", name: "Gadgets & Audio", icon: "🎧", badge: "New" },
-  { id: "footwear", name: "Footwear", icon: "👟" },
-  { id: "beauty", name: "Beauty & Care", icon: "✨" },
+  { id: "books", name: "Books & Mindset", icon: "📚" },
   { id: "budget", name: "Under ₹999", icon: "🏷️", badge: "Budget" },
 ];
 
@@ -50,7 +50,7 @@ export default function CategoryStrip({
         {selectedCategory && (
           <button
             onClick={() => onSelectCategory("")}
-            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-semibold flex items-center gap-1 transition"
+            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-semibold flex items-center gap-1 transition cursor-pointer"
           >
             <span>Reset to All Deals</span>
             <span>✕</span>
@@ -61,7 +61,10 @@ export default function CategoryStrip({
       <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none touch-scroll pr-4">
         {categories.map((cat) => {
           const isSelected =
-            (cat.id === "all" && (!selectedCategory || currentCategoryClean === "all" || currentCategoryClean === "all deals")) ||
+            (cat.id === "all" &&
+              (!selectedCategory ||
+                currentCategoryClean === "all" ||
+                currentCategoryClean === "all deals")) ||
             (Boolean(selectedCategory) &&
               (currentCategoryClean === cat.name.toLowerCase() ||
                 currentCategoryClean === cat.id.toLowerCase()));

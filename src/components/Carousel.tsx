@@ -5,6 +5,7 @@ import {
   SparklesIcon,
   MagnifyingGlassIcon,
   TagIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 import { getAllCatalogProducts, syncProductsFromSupabase } from "../data/products";
@@ -12,6 +13,127 @@ import { getAllCatalogProducts, syncProductsFromSupabase } from "../data/product
 interface CarouselProps {
   selectedCategory?: string;
   onSelectCategory?: (category: string) => void;
+}
+
+/**
+ * Intelligent category matching helper that maps user category selections
+ * (broad categories, sub-categories, price constraints) to catalog products.
+ */
+function matchesCategoryFilter(product: Product, filterCat: string): boolean {
+  if (!filterCat || filterCat.trim() === "") return true;
+
+  const filter = filterCat.trim().toLowerCase();
+  if (filter === "all" || filter === "all deals") return true;
+
+  const itemCat = (product.category || "").toLowerCase();
+  const itemName = (product.name || "").toLowerCase();
+  const itemSummary = (product.summary || "").toLowerCase();
+  const itemWho = (product.whoItsFor || "").toLowerCase();
+
+  // Price budget filter ("Under ₹999", "budget")
+  if (filter.includes("999") || filter.includes("budget") || filter.includes("under")) {
+    const rawPrice = (product.price || "").replace(/[^0-9.]/g, "");
+    const numericPrice = parseFloat(rawPrice);
+    return !isNaN(numericPrice) && numericPrice <= 999;
+  }
+
+  // Broad Electronics filter
+  if (filter.includes("electronic")) {
+    return (
+      itemCat.includes("electronic") ||
+      itemCat.includes("tech") ||
+      itemCat.includes("audio") ||
+      itemCat.includes("mobile") ||
+      itemCat.includes("computer") ||
+      itemName.includes("phone") ||
+      itemName.includes("laptop") ||
+      itemName.includes("earbuds") ||
+      itemName.includes("headphone") ||
+      itemName.includes("watch")
+    );
+  }
+
+  // Audio / Wearables / Gadgets
+  if (
+    filter.includes("audio") ||
+    filter.includes("gadget") ||
+    filter.includes("wearable") ||
+    filter.includes("headphone") ||
+    filter.includes("earbud")
+  ) {
+    return (
+      itemCat.includes("audio") ||
+      itemCat.includes("wearable") ||
+      itemName.includes("airdope") ||
+      itemName.includes("earbud") ||
+      itemName.includes("headphone") ||
+      itemName.includes("watch") ||
+      itemName.includes("audio")
+    );
+  }
+
+  // Mobiles & Tech / Smartphones
+  if (filter.includes("mobile") || filter.includes("phone") || filter.includes("smartphone")) {
+    return (
+      itemCat.includes("mobile") ||
+      itemName.includes("iphone") ||
+      itemName.includes("oneplus") ||
+      itemName.includes("samsung") ||
+      itemName.includes("phone")
+    );
+  }
+
+  // Computers & Tech / Laptops
+  if (filter.includes("computer") || filter.includes("laptop") || filter.includes("pc")) {
+    return (
+      itemCat.includes("computer") ||
+      itemName.includes("laptop") ||
+      itemName.includes("ideapad") ||
+      itemName.includes("macbook") ||
+      itemName.includes("intel")
+    );
+  }
+
+  // Home & Kitchen
+  if (filter.includes("home") || filter.includes("kitchen") || filter.includes("living")) {
+    return (
+      itemCat.includes("home") ||
+      itemCat.includes("kitchen") ||
+      itemName.includes("flask") ||
+      itemName.includes("borosil") ||
+      itemName.includes("bottle")
+    );
+  }
+
+  // Books & Mindset
+  if (filter.includes("book") || filter.includes("mindset") || filter.includes("read")) {
+    return (
+      itemCat.includes("book") ||
+      itemCat.includes("mindset") ||
+      itemName.includes("wealth") ||
+      itemName.includes("guide")
+    );
+  }
+
+  // Fashion / Clothing / Apparel / Footwear
+  if (filter.includes("fashion") || filter.includes("clothing") || filter.includes("apparel") || filter.includes("footwear")) {
+    return (
+      itemCat.includes("fashion") ||
+      itemCat.includes("clothing") ||
+      itemCat.includes("apparel") ||
+      itemCat.includes("footwear") ||
+      itemName.includes("shirt") ||
+      itemName.includes("shoe")
+    );
+  }
+
+  // Direct substring fallback
+  return (
+    itemCat.includes(filter) ||
+    itemName.includes(filter) ||
+    itemSummary.includes(filter) ||
+    itemWho.includes(filter)
+  );
 }
 
 export default function Carousel({
@@ -48,20 +170,19 @@ export default function Carousel({
       .filter((item) => {
         // Category filter
         if (selectedCategory && selectedCategory.trim().length > 0) {
-          const cat = selectedCategory.toLowerCase();
-          const name = item.name.toLowerCase();
-          const itemCat = (item.category || "").toLowerCase();
-          const matches = name.includes(cat) || itemCat.includes(cat);
-          if (!matches) return false;
+          if (!matchesCategoryFilter(item, selectedCategory)) {
+            return false;
+          }
         }
 
         // Local search filter
         if (localSearch.trim().length > 0) {
-          const query = localSearch.toLowerCase();
+          const query = localSearch.toLowerCase().trim();
           const matches =
             item.name.toLowerCase().includes(query) ||
             (item.summary || "").toLowerCase().includes(query) ||
-            (item.whoItsFor || "").toLowerCase().includes(query);
+            (item.whoItsFor || "").toLowerCase().includes(query) ||
+            (item.category || "").toLowerCase().includes(query);
           if (!matches) return false;
         }
 
@@ -89,6 +210,24 @@ export default function Carousel({
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
             Honest evaluations with key strengths, limitations, and audience suitability. All product links connect directly to official Amazon India product listings with transparent affiliate disclosure.
           </p>
+
+          {/* Active Filter Notification Badge */}
+          {selectedCategory && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 border border-orange-200 text-xs font-medium">
+                <span>Filter: <strong>{selectedCategory}</strong></span>
+                <span className="text-slate-400">({filteredProducts.length} results)</span>
+                <button
+                  type="button"
+                  onClick={() => onSelectCategory && onSelectCategory("")}
+                  className="ml-1 p-0.5 hover:bg-orange-200/60 rounded text-orange-700 cursor-pointer"
+                  title="Remove category filter"
+                >
+                  <XMarkIcon className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Toolbar: Sort & Search */}
@@ -140,7 +279,7 @@ export default function Carousel({
               setLocalSearch("");
               if (onSelectCategory) onSelectCategory("");
             }}
-            className="mt-3 sm:mt-4 px-4 py-2 bg-gradient-to-r from-[#FF6B20] to-[#F15000] hover:from-orange-600 hover:to-orange-700 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+            className="mt-3 sm:mt-4 px-4 py-2 bg-gradient-to-r from-[#FF6B20] to-[#F15000] hover:from-orange-600 hover:to-orange-700 text-white rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             Reset Filters
           </button>
