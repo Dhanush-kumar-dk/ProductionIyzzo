@@ -341,10 +341,30 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
     }
   }
 
-  if (!price) price = "1,499";
-  if (!mrp) {
-    const numPrice = parseFloat(price.replace(/,/g, "")) || 1499;
-    mrp = Math.round(numPrice * 1.35).toLocaleString("en-IN");
+  const isOutOfStock =
+    !price &&
+    Boolean(
+      /id="outOfStock"/i.test(html) ||
+      /id="outOfStockBuyBox"/i.test(html) ||
+      /primary-availability-message[^>]*>\s*Currently unavailable/i.test(html) ||
+      /<span[^>]*class="[^"]*a-color-base[^"]*a-text-bold[^"]*"[^>]*>\s*Currently unavailable/i.test(html) ||
+      /id="availability"[\s\S]*?Currently unavailable/i.test(html) ||
+      /id="availability"[\s\S]*?We don't know when or if this item will be back in stock/i.test(html)
+    );
+
+  if (isOutOfStock) {
+    price = "Currently unavailable";
+  } else if (!price && asin) {
+    price = "";
+  } else if (!price) {
+    price = "1,499";
+  }
+
+  if (!mrp && price && price !== "Currently unavailable") {
+    const numPrice = parseFloat(price.replace(/,/g, "")) || 0;
+    if (numPrice > 0) {
+      mrp = Math.round(numPrice * 1.3).toLocaleString("en-IN");
+    }
   }
 
   // 6. Rating & Count
@@ -465,11 +485,14 @@ export function parseProductHtml(html, effectiveUrl = "", originalInputUrl = "")
   }
 
   const uniqueImgs = Array.from(idMap.values());
-  const defaultFallbackImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1024&auto=format&fit=crop&q=80";
+  const officialAsinImage = asin
+    ? `https://images-eu.ssl-images-amazon.com/images/P/${asin}.01.MAIN._SCLZZZZZZZ_SX1024_.jpg`
+    : "";
+  const defaultFallbackImage = officialAsinImage || "https://images-eu.ssl-images-amazon.com/images/G/31/social_share/amazon_logo._CB633266945_.png";
 
   let image = uniqueImgs[0] || defaultFallbackImage;
-  let image1 = uniqueImgs[1] || uniqueImgs[0] || "";
-  let image2 = uniqueImgs[2] || uniqueImgs[0] || "";
+  let image1 = uniqueImgs[1] || uniqueImgs[0] || officialAsinImage || "";
+  let image2 = uniqueImgs[2] || uniqueImgs[0] || officialAsinImage || "";
 
   // 10. Brand & Category
   let brand = specs["Brand"] || specs["Brand Name"] || inferBrand(name + " " + effectiveUrl);

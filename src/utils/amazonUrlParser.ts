@@ -442,10 +442,31 @@ export function parseAmazonHtml(
     }
   }
 
-  if (!price) price = "1,499";
-  if (!mrp) {
-    const numPrice = parseFloat(price.replace(/,/g, "")) || 1499;
-    mrp = Math.round(numPrice * 1.35).toLocaleString("en-IN");
+  const isOutOfStock =
+    !price &&
+    Boolean(
+      /id="outOfStock"/i.test(html) ||
+      /id="outOfStockBuyBox"/i.test(html) ||
+      /primary-availability-message[^>]*>\s*Currently unavailable/i.test(html) ||
+      /<span[^>]*class="[^"]*a-color-base[^"]*a-text-bold[^"]*"[^>]*>\s*Currently unavailable/i.test(html) ||
+      /id="availability"[\s\S]*?Currently unavailable/i.test(html) ||
+      /id="availability"[\s\S]*?We don't know when or if this item will be back in stock/i.test(html)
+    );
+
+  if (isOutOfStock) {
+    price = "Currently unavailable";
+  } else if (!price && asin) {
+    // Leave blank for admin manual entry if scraper could not detect live price
+    price = "";
+  } else if (!price) {
+    price = "1,499";
+  }
+
+  if (!mrp && price && price !== "Currently unavailable") {
+    const numPrice = parseFloat(price.replace(/,/g, "")) || 0;
+    if (numPrice > 0) {
+      mrp = Math.round(numPrice * 1.3).toLocaleString("en-IN");
+    }
   }
 
   // 6. Star Rating
@@ -566,11 +587,14 @@ export function parseAmazonHtml(
   }
 
   const uniqueImgs = Array.from(idMap.values());
-  const defaultFallbackImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1024&auto=format&fit=crop&q=80";
+  const officialAsinImage = asin
+    ? `https://images-eu.ssl-images-amazon.com/images/P/${asin}.01.MAIN._SCLZZZZZZZ_SX1024_.jpg`
+    : "";
+  const defaultFallbackImage = officialAsinImage || "https://images-eu.ssl-images-amazon.com/images/G/31/social_share/amazon_logo._CB633266945_.png";
 
   const image = uniqueImgs[0] || defaultFallbackImage;
-  const image1 = uniqueImgs[1] || uniqueImgs[0] || undefined;
-  const image2 = uniqueImgs[2] || uniqueImgs[0] || undefined;
+  const image1 = uniqueImgs[1] || uniqueImgs[0] || officialAsinImage || undefined;
+  const image2 = uniqueImgs[2] || uniqueImgs[0] || officialAsinImage || undefined;
 
   // 10. Brand
   let brand = specs["Brand"] || specs["Brand Name"] || inferBrand(name + " " + originalUrl);
@@ -651,14 +675,27 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
     return result;
   };
 
-  // 0. Tier 0: Local mcp-url-converter server (fast when running)
-  for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
+  // 0. Tier 0: Local mcp-url-converter / affiliate server endpoints
+  const apiBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) || "";
+  const endpoints = [
+    "http://127.0.0.1:8001/extract-product",
+    "http://localhost:8001/extract-product",
+    "http://127.0.0.1:3000/api/extract-product",
+    "http://localhost:3000/api/extract-product",
+    "http://127.0.0.1:3000/extract-product",
+  ];
+  if (apiBase) {
+    endpoints.push(`${apiBase.replace(/\/$/, "")}/api/extract-product`);
+    endpoints.push(`${apiBase.replace(/\/$/, "")}/extract-product`);
+  }
+
+  for (const endpoint of endpoints) {
     try {
       const mcpCtrl = new AbortController();
-      const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 3000);
+      const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 3500);
 
       const mcpRes = await fetch(
-        `${host}/extract-product?url=${encodeURIComponent(trimmed)}`,
+        `${endpoint}?url=${encodeURIComponent(trimmed)}`,
         { method: "GET", signal: mcpCtrl.signal }
       );
       clearTimeout(mcpTimeout);
@@ -670,14 +707,13 @@ export async function fetchProductDataFromUrl(inputUrl: string): Promise<Extract
           if (json?.success && json.data && !isInvalidTitle(json.data.name)) {
             return cacheAndReturn({
               ...json.data,
-              sourceMessage: `[mcp-url-converter] ${json.data.sourceMessage || "Extracted from local server."}`,
+              sourceMessage: `[url-converter] ${json.data.sourceMessage || "Extracted live product data."}`,
             } as ExtractedProductData);
           }
         }
       }
-      break;
     } catch {
-      // Continue to next tier
+      // Continue to next endpoint / tier
     }
   }
 
