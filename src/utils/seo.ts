@@ -21,10 +21,9 @@ const DOMAIN = "https://yearnit.in";
 
 /**
  * Fallback preview image (used when a page has no image of its own).
- * To use a wider branded banner, upload e.g. /public/og-default.jpg (1200x630)
- * and change this one line to `${DOMAIN}/og-default.jpg`.
+ * Uses the official high-resolution 1200x630 Yearnit branded OG preview.
  */
-export const DEFAULT_OG_IMAGE = `${DOMAIN}/logo.png`;
+export const DEFAULT_OG_IMAGE = `${DOMAIN}/og-image.jpg`;
 
 /** Turn "/img.jpg" or "//cdn..." into an absolute https URL; leave absolute URLs alone. */
 function toAbsoluteUrl(src: string | undefined): string {
@@ -94,13 +93,17 @@ export function updateSEO({
   setMetaTag("property", "og:image:secure_url", ogImage);
   setMetaTag("property", "og:image:alt", title);
   setMetaTag("property", "og:locale", "en_IN");
-  // Dimensions/type belong to a specific file, so drop stale values from other pages
-  removeMetaTag("property", "og:image:width");
-  removeMetaTag("property", "og:image:height");
-  removeMetaTag("property", "og:image:type");
+  setMetaTag("property", "og:image:type", ogImage.endsWith(".png") ? "image/png" : "image/jpeg");
+  if (isDefaultImage) {
+    setMetaTag("property", "og:image:width", "1200");
+    setMetaTag("property", "og:image:height", "630");
+  } else {
+    setMetaTag("property", "og:image:width", "1024");
+    setMetaTag("property", "og:image:height", "1024");
+  }
 
-  // 4. Twitter Card (square logo -> small card, product photos -> large card)
-  setMetaTag("name", "twitter:card", isDefaultImage ? "summary" : "summary_large_image");
+  // 4. Twitter Card (large banner for maximum engagement across WhatsApp, Telegram & Twitter)
+  setMetaTag("name", "twitter:card", "summary_large_image");
   setMetaTag("name", "twitter:title", title);
   setMetaTag("name", "twitter:description", description);
   setMetaTag("name", "twitter:image", ogImage);

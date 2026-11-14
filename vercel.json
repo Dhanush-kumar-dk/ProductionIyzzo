@@ -7,7 +7,29 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|Pinterest|SkypeUriPreview|Applebot|redditbot).*"
+          "value": ".*(?i)(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|skypeuripreview|applebot|redditbot|google|bingbot|viber|linespider|bot|crawler|spider).*"
+        }
+      ],
+      "destination": "/api/og?id=:id"
+    },
+    {
+      "source": "/product/:id/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(?i)(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|skypeuripreview|applebot|redditbot|google|bingbot|viber|linespider|bot|crawler|spider).*"
+        }
+      ],
+      "destination": "/api/og?id=:id"
+    },
+    {
+      "source": "/p/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(?i)(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|pinterest|skypeuripreview|applebot|redditbot|google|bingbot|viber|linespider|bot|crawler|spider).*"
         }
       ],
       "destination": "/api/og?id=:id"
