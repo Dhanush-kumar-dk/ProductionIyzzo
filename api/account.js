@@ -19,10 +19,32 @@ const SUPABASE_KEY =
   process.env.VITE_SUPABASE_KEY ||
   "sb_publishable_Cee7KZOIemSQnwoJh6tW4A_jVB7X0PE";
 
+const PRIMARY_TABLE = "user_profiles";
+const FALLBACK_TABLE = "profiles";
+
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
+}
+
+async function fetchFromSupabase(path, options = {}) {
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  let targetUrl = `${SUPABASE_URL}/rest/v1/${PRIMARY_TABLE}${path}`;
+  let response = await fetch(targetUrl, { ...options, headers });
+
+  if (response.status === 404) {
+    targetUrl = `${SUPABASE_URL}/rest/v1/${FALLBACK_TABLE}${path}`;
+    response = await fetch(targetUrl, { ...options, headers });
+  }
+
+  return response;
 }
 
 export default async function handler(req, res) {
@@ -55,7 +77,7 @@ export default async function handler(req, res) {
   if (action === "export") {
     try {
       const filter = id ? `id=eq.${encodeURIComponent(id)}` : `email=eq.${encodeURIComponent(email)}`;
-      const pRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?${filter}&limit=1`, { headers });
+      const pRes = await fetchFromSupabase(`?${filter}&limit=1`);
       const profiles = pRes.ok ? await pRes.json() : [];
       const profile = Array.isArray(profiles) && profiles.length > 0 ? profiles[0] : null;
 
@@ -104,9 +126,8 @@ export default async function handler(req, res) {
   if (action === "delete") {
     try {
       const filter = id ? `id=eq.${encodeURIComponent(id)}` : `email=eq.${encodeURIComponent(email)}`;
-      const delRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?${filter}`, {
+      const delRes = await fetchFromSupabase(`?${filter}`, {
         method: "DELETE",
-        headers,
       });
 
       if (!delRes.ok) {

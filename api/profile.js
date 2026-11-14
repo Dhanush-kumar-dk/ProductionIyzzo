@@ -1,6 +1,6 @@
 /**
  * Vercel Serverless Function: /api/profile
- * Handles fetching, validating, and mutating user profile metadata
+ * Manages user profile metadata stored in the dedicated Supabase 'user_profiles' table.
  * Supported Methods: GET (lookup / username uniqueness check), PATCH (update profile)
  */
 
@@ -19,10 +19,33 @@ const SUPABASE_KEY =
   process.env.VITE_SUPABASE_KEY ||
   "sb_publishable_Cee7KZOIemSQnwoJh6tW4A_jVB7X0PE";
 
+const PRIMARY_TABLE = "user_profiles";
+const FALLBACK_TABLE = "profiles";
+
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
+}
+
+async function fetchFromSupabase(path, options = {}) {
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  // Try user_profiles first, fallback to profiles if 404
+  let targetUrl = `${SUPABASE_URL}/rest/v1/${PRIMARY_TABLE}${path}`;
+  let response = await fetch(targetUrl, { ...options, headers });
+
+  if (response.status === 404) {
+    targetUrl = `${SUPABASE_URL}/rest/v1/${FALLBACK_TABLE}${path}`;
+    response = await fetch(targetUrl, { ...options, headers });
+  }
+
+  return response;
 }
 
 export default async function handler(req, res) {
@@ -31,12 +54,6 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
-
-  const headers = {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-    "Content-Type": "application/json",
-  };
 
   // -------------------------------------------------------------
   // GET: Fetch profile OR Check username availability
@@ -55,10 +72,9 @@ export default async function handler(req, res) {
       }
 
       try {
-        const queryUrl = `${SUPABASE_URL}/rest/v1/profiles?select=id,username&username=ilike.${encodeURIComponent(cleanUser)}&limit=1`;
-        const r = await fetch(queryUrl, { headers });
+        const queryPath = `?select=id,username&username=ilike.${encodeURIComponent(cleanUser)}&limit=1`;
+        const r = await fetchFromSupabase(queryPath);
         if (!r.ok) {
-          // If profiles table isn't created yet, allow username
           return res.status(200).json({ available: true });
         }
         const data = await r.json();
@@ -87,7 +103,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&${filter}&limit=1`, { headers });
+      const r = await fetchFromSupabase(`?select=*&${filter}&limit=1`);
       if (!r.ok) {
         return res.status(200).json({ profile: null });
       }
@@ -95,12 +111,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ profile: Array.isArray(rows) && rows.length > 0 ? rows[0] : null });
     } catch (err) {
       console.warn("Profile fetch error:", err);
-      return res.status(500).json({ error: "Failed to query database." });
+      return res.status(500).json({ error: "Failed to query user_profiles database table." });
     }
   }
 
   // -------------------------------------------------------------
-  // PATCH: Update Profile Fields
+  // PATCH: Update Profile Fields in user_profiles
   // -------------------------------------------------------------
   if (req.method === "PATCH") {
     const {
@@ -160,12 +176,11 @@ export default async function handler(req, res) {
     if (id && !payload.id) payload.id = String(id).trim();
 
     try {
-      // Upsert profile record into Supabase
-      const upsertUrl = `${SUPABASE_URL}/rest/v1/profiles?on_conflict=email`;
-      const r = await fetch(upsertUrl, {
+      // Upsert profile record into Supabase user_profiles table
+      const upsertPath = `?on_conflict=email`;
+      const r = await fetchFromSupabase(upsertPath, {
         method: "POST",
         headers: {
-          ...headers,
           Prefer: "resolution=merge-duplicates,return=representation",
         },
         body: JSON.stringify(payload),
@@ -179,11 +194,12 @@ export default async function handler(req, res) {
       const updated = await r.json();
       return res.status(200).json({
         success: true,
+        table: PRIMARY_TABLE,
         profile: Array.isArray(updated) && updated.length > 0 ? updated[0] : payload,
       });
     } catch (err) {
       console.warn("Profile update error:", err);
-      return res.status(500).json({ error: "Failed to persist profile updates." });
+      return res.status(500).json({ error: "Failed to persist profile updates to user_profiles table." });
     }
   }
 

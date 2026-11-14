@@ -1,6 +1,6 @@
 /**
  * Vercel Serverless Function: /api/avatar
- * Handles uploading cropped avatar data and persisting avatar URL
+ * Handles uploading cropped avatar data and persisting avatar URL into 'user_profiles' table
  * Supported Methods: POST
  */
 
@@ -18,6 +18,9 @@ const SUPABASE_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   process.env.VITE_SUPABASE_KEY ||
   "sb_publishable_Cee7KZOIemSQnwoJh6tW4A_jVB7X0PE";
+
+const PRIMARY_TABLE = "user_profiles";
+const FALLBACK_TABLE = "profiles";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -51,10 +54,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Image file exceeds maximum upload size (3MB limit)." });
   }
 
-  // Direct avatar URL returned / updated
   const avatarUrl = image_data;
 
-  // Persist directly to profile if identifier provided
+  // Persist directly to user_profiles table if identifier provided
   if (id || email) {
     try {
       const headers = {
@@ -71,11 +73,19 @@ export default async function handler(req, res) {
       if (id) payload.id = id;
       if (email) payload.email = email;
 
-      await fetch(`${SUPABASE_URL}/rest/v1/profiles?on_conflict=email`, {
+      let r = await fetch(`${SUPABASE_URL}/rest/v1/${PRIMARY_TABLE}?on_conflict=email`, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
       });
+
+      if (r.status === 404) {
+        await fetch(`${SUPABASE_URL}/rest/v1/${FALLBACK_TABLE}?on_conflict=email`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+      }
     } catch (err) {
       console.warn("Avatar DB sync warning:", err);
     }
@@ -84,6 +94,6 @@ export default async function handler(req, res) {
   return res.status(200).json({
     success: true,
     avatar_url: avatarUrl,
-    message: "Avatar uploaded and saved successfully.",
+    message: "Avatar saved to user_profiles table successfully.",
   });
 }
