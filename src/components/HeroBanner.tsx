@@ -1,95 +1,82 @@
-import { useState, useEffect, useRef } from "react";
-import Image1 from "../assets/image1.jpg";
-import Image2 from "../assets/image2.jpg";
-import Image3 from "../assets/image3.jpg";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Image1 from "../assets/banner_1.png";
+import Image2 from "../assets/banner_2.png";
+import Image3 from "../assets/banner_3.png";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 
 interface Slide {
   id: number;
-  title: string;
   image: string;
   alt: string;
 }
 
 const slides: Slide[] = [
-  {
-    id: 1,
-    title: "Top-Rated Electronics — Mobile, TV & Appliances",
-    image: Image1,
-    alt: "Top-Rated Electronics: Mobile, TV & Appliances — Discover the latest smartphones, smart TVs, and home appliances. Shop the latest deals.",
-  },
-  {
-    id: 2,
-    title: "Curated Fashion Picks — Trends & Styles",
-    image: Image2,
-    alt: "Curated Fashion Picks: Trends & Styles — Discover the latest in apparel, footwear, and accessories. Shop the latest collection.",
-  },
-  {
-    id: 3,
-    title: "Essential Accessories — Bags, Watches & More",
-    image: Image3,
-    alt: "Essential Accessories: Bags, Watches & More — Complete your look with premium accessories and everyday essentials.",
-  },
+  { id: 1, image: Image1, alt: "Top-rated electronics: mobiles, TVs and appliances" },
+  { id: 2, image: Image2, alt: "Curated fashion picks: trends and styles" },
+  { id: 3, image: Image3, alt: "Essential accessories: bags, watches and more" },
 ];
+
+const AUTOPLAY_MS = 5500;
+const SWIPE_THRESHOLD = 40;
 
 export default function HeroBanner({ onExploreClick }: { onExploreClick: () => void }) {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const touchStartXRef = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
-  // Preload all slides in background for zero-latency switching
+  const next = useCallback(() => setCurrent((p) => (p + 1) % slides.length), []);
+  const prev = useCallback(
+    () => setCurrent((p) => (p === 0 ? slides.length - 1 : p - 1)),
+    []
+  );
+
+  // Preload every slide so switching is instant
   useEffect(() => {
-    slides.forEach((slide) => {
+    slides.forEach((s) => {
       const img = new Image();
-      img.src = slide.image;
+      img.src = s.image;
     });
   }, []);
 
-  // Auto-advance every 5.5 seconds, paused when user hovers
+  // Autoplay (pauses on hover / touch)
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 5500);
+    const timer = setInterval(next, AUTOPLAY_MS);
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, next, current]);
 
-  const prevSlide = () => {
-    setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    setIsPaused(true);
   };
 
-  const nextSlide = () => {
-    setCurrent((prev) => (prev + 1) % slides.length);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) {
-        nextSlide();
-      } else {
-        prevSlide();
-      }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current !== null) {
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > SWIPE_THRESHOLD) diff > 0 ? next() : prev();
     }
-    touchStartXRef.current = null;
+    touchStartX.current = null;
+    setIsPaused(false);
   };
+
+  const arrowClass =
+    "absolute top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/70 " +
+    "text-white backdrop-blur-md transition-all duration-300 shadow-lg " +
+    "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 " +
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80";
 
   return (
-    <section 
-      aria-label="Promotional Carousel" 
-      className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4 font-poppins"
+    <section
+      aria-roledescription="carousel"
+      aria-label="Promotional banners"
+      className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4"
     >
       <div
-        className="relative w-full aspect-[1024/260] min-h-[120px] sm:min-h-[180px] md:min-h-[220px] lg:min-h-[260px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl bg-slate-950 cursor-pointer group select-none"
+        className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-950 shadow-xl cursor-pointer select-none"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         onClick={onExploreClick}
         role="button"
         tabIndex={0}
@@ -100,76 +87,77 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
           }
         }}
       >
-        {/* Slides */}
-        {slides.map((slide, idx) => (
-          <div
-            key={slide.id}
-            aria-hidden={idx !== current}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
-          >
-            <img
-              src={slide.image}
-              alt={slide.alt}
-              className="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-500 ease-out"
-              loading={idx === 0 ? "eager" : "lazy"}
-              decoding="async"
-              style={{
-                imageRendering: "-webkit-optimize-contrast",
-                WebkitBackfaceVisibility: "hidden",
-                backfaceVisibility: "hidden",
-                WebkitTransform: "translateZ(0)",
-                transform: "translateZ(0)",
-              }}
-            />
-          </div>
-        ))}
+        {/*
+          All slides share one grid cell. The container's height is set by the
+          images themselves (w-full h-auto), so any banner is shown in full,
+          never cropped, and scales fluidly at every screen width.
+        */}
+        <div className="grid">
+          {slides.map((slide, idx) => (
+            <div
+              key={slide.id}
+              aria-hidden={idx !== current}
+              className={`col-start-1 row-start-1 flex items-center justify-center transition-opacity duration-700 ease-in-out ${
+                idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                draggable={false}
+                loading={idx === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="block w-full h-auto"
+              />
+            </div>
+          ))}
+        </div>
 
-        {/* Carousel Navigation Arrows */}
+        {/* Arrows */}
         <button
           type="button"
+          aria-label="Previous slide"
           onClick={(e) => {
             e.stopPropagation();
-            prevSlide();
+            prev();
           }}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-105 active:scale-95 focus:opacity-100 focus:outline-none"
-          aria-label="Previous Slide"
+          className={`${arrowClass} left-2 sm:left-4`}
         >
           <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
           type="button"
+          aria-label="Next slide"
           onClick={(e) => {
             e.stopPropagation();
-            nextSlide();
+            next();
           }}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 shadow-lg hover:scale-105 active:scale-95 focus:opacity-100 focus:outline-none"
-          aria-label="Next Slide"
+          className={`${arrowClass} right-2 sm:right-4`}
         >
           <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
-        {/* Dots Indicator */}
-        <div 
-          className="absolute bottom-2 sm:bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 bg-black/25 backdrop-blur-sm rounded-full"
+        {/* Dots */}
+        <div
+          className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-sm"
           onClick={(e) => e.stopPropagation()}
         >
           {slides.map((_, idx) => (
             <button
               type="button"
               key={idx}
+              aria-label={`Go to slide ${idx + 1}`}
+              aria-current={idx === current}
               onClick={(e) => {
                 e.stopPropagation();
                 setCurrent(idx);
               }}
               className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                idx === current 
-                  ? "w-6 sm:w-8 bg-[#FFD814] shadow" 
+                idx === current
+                  ? "w-6 sm:w-8 bg-[#FFD814]"
                   : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/90"
               }`}
-              aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
         </div>

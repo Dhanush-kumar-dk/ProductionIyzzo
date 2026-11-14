@@ -9,7 +9,7 @@ import Carousel from "./components/Carousel";
 import HeroBanner from "./components/HeroBanner";
 import CategoryStrip from "./components/CategoryStrip";
 import CashbackSteps from "./components/CashbackSteps";
-import FlashDealsBar from "./components/FlashDealsBar";
+// import FlashDealsBar from "./components/FlashDealsBar";
 import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
@@ -164,7 +164,7 @@ function HomePage() {
         />
 
         {/* Editorial Spotlight Banner */}
-        <FlashDealsBar />
+        {/* <FlashDealsBar /> */}
 
         {/* Products Grid with Filter Toolbar */}
         <Carousel

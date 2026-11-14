@@ -8,6 +8,7 @@ import { getActiveTrackingId } from "../utils/affiliate";
 import { verifyIsAdmin, isEmailAdmin } from "../utils/admin";
 import { getSavedDeals } from "../utils/wishlist";
 import { ShieldCheckIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
+import YearnitLogo from "../assets/yearnit_logo-bg.png";
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
@@ -25,6 +26,25 @@ interface TopBarProps {
   onOpenWishlist?: () => void;
   onCategorySelect?: (category: string) => void;
 }
+
+// Sub-nav (desktop strip) categories
+const SUB_NAV_CATEGORIES = [
+  { label: "Electronics", cat: "Electronics" },
+  { label: "Fashion & Apparel", cat: "Clothing" },
+  { label: "Audio & Wearables", cat: "Audio" },
+  { label: "Home & Kitchen", cat: "Home" },
+  { label: "Gadgets", cat: "Gadgets" },
+];
+
+// Mobile drawer categories
+const DRAWER_CATEGORIES = [
+  { label: "All Product Guides", cat: "All" },
+  { label: "Electronics & Smart Devices", cat: "Electronics" },
+  { label: "Fashion & Trending Apparel", cat: "Clothing" },
+  { label: "Audio & Wearables", cat: "Audio" },
+  { label: "Home & Kitchen Appliances", cat: "Home" },
+  { label: "Gadgets & Daily Tech", cat: "Gadgets" },
+];
 
 export default function TopBar({
   openLogIn,
@@ -83,6 +103,21 @@ export default function TopBar({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Lock body scroll + close on Escape while the mobile drawer is open
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobileMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -147,22 +182,21 @@ export default function TopBar({
     }
   };
 
+  const storedEmail = localStorage.getItem("email");
+  const isLoggedIn = !!(user || storedEmail);
+
   // Formatted User Display Name
   const userDisplayName = user?.displayName
     ? user.displayName.split(" ")[0]
     : user?.email
     ? user.email.split("@")[0]
-    : localStorage.getItem("email")
-    ? localStorage.getItem("email")!.split("@")[0]
+    : storedEmail
+    ? storedEmail.split("@")[0]
     : "Member";
 
   // Modern Clean Omnibar
   const renderOmnibar = (isMobile = false) => (
-    <div
-      className={`relative flex items-center bg-white rounded-2xl shadow-sm border border-slate-200/90 focus-within:border-amber-400 focus-within:ring-4 focus-within:ring-amber-400/20 transition-all duration-200 overflow-hidden ${
-        isMobile ? "w-full" : "w-full"
-      }`}
-    >
+    <div className="relative flex items-center w-full bg-white rounded-2xl shadow-sm border border-slate-200/90 focus-within:border-amber-400 focus-within:ring-4 focus-within:ring-amber-400/20 transition-all duration-200 overflow-hidden">
       {/* Category Dropdown (Desktop / Tablet only) */}
       {!isMobile && (
         <div className="relative border-r border-slate-200/80 hidden md:block flex-shrink-0">
@@ -222,41 +256,16 @@ export default function TopBar({
 
   return (
     <>
-      {/* ── 1. Top Minimalist Announcement & Compliance Bar ── */}
-      <div className="w-full bg-[#0A0E1A] text-slate-300 text-[11px] py-1.5 border-b border-white/[0.06] font-poppins">
-        <div className="w-full px-3 sm:px-6 lg:px-12 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-2.5 overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
-            <span className="inline-flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/25 text-amber-300 font-bold px-2.5 py-0.5 rounded-full text-[10px] tracking-wider uppercase flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Independent Curation
-            </span>
-            <span className="text-slate-300 hidden sm:inline truncate font-medium">
-              Yearnit — Independent Product Reviews & In-Depth Buyer Comparisons
-            </span>
-            <span className="text-slate-300 sm:hidden truncate font-medium">
-              Yearnit Product Reviews & Guides
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 text-slate-400 text-[11px] flex-shrink-0 font-medium">
-            <span className="hidden md:inline text-slate-400 hover:text-slate-200 transition">
-              Direct Partner Storefront Links
-            </span>
-            <span className="text-slate-700 hidden md:inline">|</span>
-            <span className="flex items-center gap-1.5 text-slate-300 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">
-              <span className="hidden xs:inline text-[10px] font-semibold text-slate-300">India</span>
-              <span>🇮🇳</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 2. Main Header ── */}
+      {/* ── 1. Main Header ── */}
       <header className="font-poppins w-full bg-[#0F172A]/95 text-white shadow-lg sticky top-0 z-40 border-b border-white/[0.08] backdrop-blur-md">
-        <div className="w-full px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3 flex items-center justify-between gap-2.5 sm:gap-5">
-          
-          {/* Left: Mobile Toggle & Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        {/*
+          Layout: [ left group ] [ search (fills remaining space) ] [ right group ]
+          The "Deliver to" pill lives INSIDE the left group, so it always sits
+          right next to the logo instead of floating in the middle.
+        */}
+        <div className="w-full px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 lg:gap-6">
+          {/* Left group: menu toggle + logo + deliver-to */}
+          <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-4 flex-shrink-0">
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition"
@@ -265,38 +274,33 @@ export default function TopBar({
               <Bars3Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            {/* Brand Logo & Name */}
-            <a href="/" className="flex items-center gap-2 sm:gap-2.5 group no-underline">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                Y
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-amber-400 transition-colors leading-none">
-                  Yearnit
-                </span>
-                <span className="text-[9px] font-bold text-amber-400/90 uppercase tracking-widest mt-0.5 hidden xs:block">
-                  Buyer Guides
-                </span>
-              </div>
+            {/* Brand Logo */}
+            <a href="/" aria-label="Yearnit home" className="flex items-center flex-shrink-0">
+              <img
+                src={YearnitLogo}
+                alt="Yearnit"
+                className="h-9 sm:h-11 w-auto object-contain transition-transform duration-200 hover:scale-105"
+                draggable={false}
+              />
             </a>
-          </div>
 
-          {/* Location Pill (Desktop) */}
-          <div className="hidden xl:flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition flex-shrink-0">
-            <MapPinIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <div className="leading-tight">
-              <span className="text-[10px] text-slate-400 block font-normal">Deliver to</span>
-              <span className="font-bold text-white block">India</span>
+            {/* Deliver-to pill (desktop only, sits next to the logo) */}
+            <div className="hidden xl:flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition flex-shrink-0">
+              <MapPinIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="leading-tight">
+                <span className="text-[10px] text-slate-400 block font-normal">Deliver to</span>
+                <span className="font-bold text-white block">India</span>
+              </div>
             </div>
           </div>
 
-          {/* Center: Search Omnibar */}
-          <div className="hidden sm:block flex-1 max-w-3xl mx-1 sm:mx-3">
-            {renderOmnibar(false)}
+          {/* Center: search omnibar (takes all remaining space, centered, capped width) */}
+          <div className="hidden sm:flex flex-1 min-w-0 justify-center">
+            <div className="w-full max-w-3xl">{renderOmnibar(false)}</div>
           </div>
 
-          {/* Right Header Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          {/* Right group: wishlist, admin, account */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto sm:ml-0">
             {/* Wishlist Heart Button */}
             {onOpenWishlist && (
               <button
@@ -307,7 +311,7 @@ export default function TopBar({
               >
                 <HeartIcon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-4.5 sm:h-4.5 bg-amber-400 text-slate-950 rounded-full text-[10px] font-black flex items-center justify-center shadow-md animate-scale-in">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-amber-400 text-slate-950 rounded-full text-[10px] font-black flex items-center justify-center shadow-md animate-scale-in">
                     {wishlistCount}
                   </span>
                 )}
@@ -320,7 +324,7 @@ export default function TopBar({
             </div>
 
             {/* User Account / Auth Dropdown */}
-            {user || localStorage.getItem("email") ? (
+            {isLoggedIn ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setUserMenuOpen((prev) => !prev)}
@@ -335,12 +339,10 @@ export default function TopBar({
                     />
                   ) : (
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-black flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
-                      {(user?.email || localStorage.getItem("email") || "U")
-                        .charAt(0)
-                        .toUpperCase()}
+                      {(user?.email || storedEmail || "U").charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="hidden md:block leading-tight pr-0.5">
+                  <div className="hidden md:block leading-tight pr-0.5 min-w-0">
                     <span className="text-[10px] text-slate-400 block font-normal truncate max-w-[110px]">
                       Hello, {userDisplayName}
                     </span>
@@ -352,11 +354,11 @@ export default function TopBar({
 
                 {/* Account Dropdown Menu */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 text-slate-800 animate-fade-in font-poppins">
+                  <div className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 text-slate-800 animate-fade-in font-poppins">
                     <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/80 rounded-t-xl">
                       <p className="text-[11px] text-slate-400 font-medium">Signed in as</p>
                       <p className="text-xs font-bold text-slate-900 truncate mt-0.5">
-                        {user?.email || localStorage.getItem("email")}
+                        {user?.email || storedEmail}
                       </p>
                     </div>
 
@@ -374,8 +376,7 @@ export default function TopBar({
                         </button>
                       )}
 
-                      {(isAdmin ||
-                        isEmailAdmin(user?.email || localStorage.getItem("email"))) && (
+                      {(isAdmin || isEmailAdmin(user?.email || storedEmail)) && (
                         <>
                           <button
                             onClick={() => {
@@ -416,7 +417,7 @@ export default function TopBar({
             ) : (
               <button
                 onClick={openLogIn}
-                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 active:scale-95 text-slate-950 px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-amber-500/20 hover:shadow-lg transition-all flex-shrink-0"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 active:scale-95 text-slate-950 px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-amber-500/20 hover:shadow-lg transition-all flex-shrink-0 whitespace-nowrap"
               >
                 <UserCircleIcon className="w-4 h-4 stroke-[2.2]" />
                 <span>Sign In</span>
@@ -426,11 +427,9 @@ export default function TopBar({
         </div>
 
         {/* Mobile Dedicated Omnibar */}
-        <div className="sm:hidden px-3 pb-3 pt-0">
-          {renderOmnibar(true)}
-        </div>
+        <div className="sm:hidden px-3 pb-3 pt-0">{renderOmnibar(true)}</div>
 
-        {/* ── 3. Secondary Sub-Nav Bar ── */}
+        {/* ── 2. Secondary Sub-Nav Bar ── */}
         <div className="bg-[#0B1120] text-xs text-slate-300 border-t border-white/[0.06] font-medium">
           <div className="w-full px-3 sm:px-6 lg:px-12 py-2 flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-none touch-scroll">
             <button
@@ -440,99 +439,84 @@ export default function TopBar({
               <SparklesIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               All Guides
             </button>
-            <button
-              onClick={() => handleQuickCategoryClick("Electronics")}
-              className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
-            >
-              Electronics
-            </button>
-            <button
-              onClick={() => handleQuickCategoryClick("Clothing")}
-              className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
-            >
-              Fashion & Apparel
-            </button>
-            <button
-              onClick={() => handleQuickCategoryClick("Audio")}
-              className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
-            >
-              Audio & Wearables
-            </button>
-            <button
-              onClick={() => handleQuickCategoryClick("Home")}
-              className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
-            >
-              Home & Kitchen
-            </button>
-            <button
-              onClick={() => handleQuickCategoryClick("Gadgets")}
-              className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
-            >
-              Gadgets
-            </button>
+
+            {SUB_NAV_CATEGORIES.map((item) => (
+              <button
+                key={item.cat}
+                onClick={() => handleQuickCategoryClick(item.cat)}
+                className="px-3 py-1.5 rounded-xl hover:bg-white/10 hover:text-white text-slate-300 whitespace-nowrap transition flex-shrink-0"
+              >
+                {item.label}
+              </button>
+            ))}
+
             <button
               onClick={() => handleQuickCategoryClick("All")}
               className="px-3 py-1.5 rounded-xl hover:bg-white/10 text-amber-300 font-semibold whitespace-nowrap transition flex-shrink-0"
             >
               Editorial Recommendations
             </button>
-            
-            <div className="ml-auto hidden lg:flex items-center gap-1.5 text-slate-400 text-[11px] font-medium flex-shrink-0">
-              <ShieldCheckIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span>Independent Product Research & Price History Tracker</span>
-            </div>
           </div>
         </div>
       </header>
 
-      {/* ── 4. Mobile Drawer Menu ── */}
+      {/* ── 3. Mobile Drawer Menu ── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden font-poppins">
+          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-4/5 max-w-xs bg-white text-slate-900 shadow-2xl flex flex-col z-50">
-            {/* Drawer Header */}
-            <div className="p-4 bg-[#0A0E1A] text-white flex items-center justify-between border-b border-white/[0.08]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-black flex items-center justify-center text-sm">
-                  Y
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm leading-tight text-white">
-                    {user ? `Hello, ${userDisplayName}` : "Welcome to Yearnit"}
-                  </span>
-                  <span className="text-[10px] text-amber-400 font-medium">
-                    Curated Buyer Guides
-                  </span>
-                </div>
+
+          {/* Panel */}
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Main menu"
+            className="fixed inset-y-0 left-0 w-[85%] max-w-xs bg-white text-slate-900 shadow-2xl flex flex-col z-50"
+          >
+            {/* Drawer Header: logo + close on top row, greeting below (never overlaps) */}
+            <div className="bg-[#0A0E1A] text-white px-4 pt-4 pb-3.5 border-b border-white/[0.08]">
+              <div className="flex items-center justify-between gap-3">
+                <a
+                  href="/"
+                  aria-label="Yearnit home"
+                  className="flex items-center min-w-0"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <img
+                    src={YearnitLogo}
+                    alt="Yearnit"
+                    className="h-9 w-auto max-w-full object-contain"
+                    draggable={false}
+                  />
+                </a>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex-shrink-0"
+                  aria-label="Close menu"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
-                aria-label="Close menu"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+
+              <div className="mt-3 min-w-0">
+                <p className="font-bold text-sm leading-tight text-white truncate">
+                  {isLoggedIn ? `Hello, ${userDisplayName}` : "Welcome to Yearnit"}
+                </p>
+              </div>
             </div>
 
             {/* Drawer Links */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
               {/* Category Quick Links */}
               <div>
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Browse Categories
                 </p>
                 <div className="space-y-1">
-                  {[
-                    { label: "All Product Guides", cat: "All" },
-                    { label: "Electronics & Smart Devices", cat: "Electronics" },
-                    { label: "Fashion & Trending Apparel", cat: "Clothing" },
-                    { label: "Audio & Wearables", cat: "Audio" },
-                    { label: "Home & Kitchen Appliances", cat: "Home" },
-                    { label: "Gadgets & Daily Tech", cat: "Gadgets" },
-                  ].map((item) => (
+                  {DRAWER_CATEGORIES.map((item) => (
                     <button
                       key={item.cat}
                       onClick={() => {
@@ -583,7 +567,7 @@ export default function TopBar({
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition text-left"
                   >
-                    <ShieldCheckIcon className="w-4 h-4 text-purple-600" />
+                    <ShieldCheckIcon className="w-4 h-4 text-purple-600 flex-shrink-0" />
                     <span>Open Admin Console</span>
                   </button>
                 </div>
@@ -592,10 +576,10 @@ export default function TopBar({
 
             {/* Drawer Footer */}
             <div className="p-4 border-t border-slate-100 bg-slate-50">
-              {user ? (
+              {isLoggedIn ? (
                 <button
                   onClick={handleLogout}
-                  className="w-full py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                 >
                   <ArrowRightOnRectangleIcon className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -613,7 +597,7 @@ export default function TopBar({
                 </button>
               )}
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </>

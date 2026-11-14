@@ -1,3 +1,4 @@
+import YearnitLogo from "../assets/yearnit_logo-bg.png";
 export default function Footer() {
   return (
     <footer className="w-full font-sans text-gray-300 antialiased selection:bg-amber-400 selection:text-gray-950">
@@ -185,30 +186,20 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Amazon-style Divider with Brand & Regional Selectors */}
-        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-[#3a4553] flex flex-wrap items-center justify-center gap-6 text-xs text-[#CCC]">
+        {/* Brand Divider */}
+        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-[#3a4553] flex items-center justify-center">
           <a
             href="/"
-            style={{ color: "#FFF", textDecoration: "none" }}
-            className="flex items-center gap-2 group hover:opacity-90 transition"
+            aria-label="Yearnit home"
+            className="flex items-center hover:opacity-90 transition"
           >
-            <div className="w-7 h-7 rounded bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-gray-950 font-black text-sm">
-              Y
-            </div>
-            <span className="text-lg font-bold text-white tracking-wide">
-              Yearnit
-            </span>
+            <img
+              src={YearnitLogo}
+              alt="Yearnit"
+              className="h-10 sm:h-12 w-auto object-contain"
+              draggable={false}
+            />
           </a>
-
-          <div className="flex items-center gap-3">
-            <span className="border border-[#848688] rounded px-3 py-1 text-xs text-gray-300">
-              English
-            </span>
-            <span className="border border-[#848688] rounded px-3 py-1 text-xs text-gray-300 flex items-center gap-1.5">
-              <span>🇮🇳</span>
-              <span>India</span>
-            </span>
-          </div>
         </div>
       </div>
 
