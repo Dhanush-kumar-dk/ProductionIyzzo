@@ -1,26 +1,23 @@
 /**
- * Vercel serverless function: /api/og?id=PRODUCT_ID
+ * Vercel Serverless Function: /api/og?id=PRODUCT_ID
  *
- * Link-preview bots (WhatsApp, Telegram, Facebook, X, LinkedIn...) don't run JavaScript,
- * so vercel.json routes THEIR requests for /product/:id here. This returns a tiny HTML
- * page whose Open Graph tags carry the product's own name, price and image.
- * Normal visitors never hit this; they get the regular React app.
+ * Link-preview bots (WhatsApp, Telegram, Facebook, X, LinkedIn, Discord...) don't run JavaScript,
+ * so vercel.json routes their requests for /product/:id here. This returns an HTML
+ * page whose Open Graph & Twitter meta tags carry the product's live name, price, and image.
+ * Normal visitors never hit this; they get the regular React application.
  */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-declare const process: { env: Record<string, string | undefined> };
 
 const SITE = "https://yearnit.in";
 const FALLBACK_IMAGE = `${SITE}/logo.png`;
 
-const esc = (s: string) =>
-  String(s)
+const esc = (s) =>
+  String(s || "")
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-const absolute = (src?: string | null) => {
+const absolute = (src) => {
   if (!src) return FALLBACK_IMAGE;
   const s = String(src).trim();
   if (/^https?:\/\//i.test(s)) return s;
@@ -28,7 +25,7 @@ const absolute = (src?: string | null) => {
   return `${SITE}${s.startsWith("/") ? "" : "/"}${s}`;
 };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   const rawId = Array.isArray(req.query?.id) ? req.query.id[0] : req.query?.id;
   const id = String(rawId || "").trim();
 
