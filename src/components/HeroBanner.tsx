@@ -11,9 +11,21 @@ interface Slide {
 }
 
 const slides: Slide[] = [
-  { id: 1, image: Image1, alt: "Top-rated electronics: mobiles, TVs and appliances" },
-  { id: 2, image: Image2, alt: "Curated fashion picks: trends and styles" },
-  { id: 3, image: Image3, alt: "Essential accessories: bags, watches and more" },
+  {
+    id: 1,
+    image: Image1,
+    alt: "Upgrade Your Life with Amazon — Better Products. Greater Savings.",
+  },
+  {
+    id: 2,
+    image: Image2,
+    alt: "Your Next Big Deal Awaits! — Explore top-rated products on Amazon",
+  },
+  {
+    id: 3,
+    image: Image3,
+    alt: "Shop Smarter, Save Bigger — Discover the best deals on Amazon",
+  },
 ];
 
 const AUTOPLAY_MS = 5500;
