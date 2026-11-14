@@ -40,7 +40,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { initAllTrackers, trackPageView } from "./utils/tracking";
 import { captureAttribution } from "./utils/attribution";
-import { updateSEO } from "./utils/seo";
+import { updateSEO, DEFAULT_OG_IMAGE } from "./utils/seo";
 
 /**
  * Route Tracker Component: handles SPA route transitions and attribution captures
@@ -79,7 +79,7 @@ function HomePage() {
       title: "Yearnit - Independent Product Reviews & Curated Buyer Guides",
       description:
         "Yearnit provides independent product reviews, in-depth buyer guides, and curated recommendations across electronics, audio, home essentials, and lifestyle.",
-      image: "https://yearnit.in/og-image.jpg",
+      image: DEFAULT_OG_IMAGE,
       url: "https://yearnit.in/",
       type: "website",
       keywords: [
