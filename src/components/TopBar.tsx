@@ -363,6 +363,17 @@ export default function TopBar({
                     </div>
 
                     <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          navigate("/profile");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-800 hover:bg-slate-50 font-bold transition text-left"
+                      >
+                        <UserCircleIcon className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>My Profile &amp; Settings</span>
+                      </button>
+
                       {onOpenWishlist && (
                         <button
                           onClick={() => {
@@ -530,6 +541,24 @@ export default function TopBar({
                   ))}
                 </div>
               </div>
+
+              {/* User Profile Link in Mobile */}
+              {isLoggedIn && (
+                <div className="border-t border-slate-100 pt-3">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-800 bg-amber-50/50 hover:bg-amber-100/50 transition text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <UserCircleIcon className="w-4 h-4 text-amber-500" />
+                      My Profile &amp; Settings
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* Wishlist Link */}
               {onOpenWishlist && (

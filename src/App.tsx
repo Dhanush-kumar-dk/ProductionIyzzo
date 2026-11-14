@@ -35,6 +35,7 @@ const AboutPage = lazy(() => import("./components/AboutPage"));
 const AffiliateDisclosure = lazy(() => import("./components/AffiliateDisclosure"));
 const ContactPage = lazy(() => import("./components/ContactPage"));
 const ProductDetailPage = lazy(() => import("./components/ProductDetailPage"));
+const UserProfilePage = lazy(() => import("./components/profile/UserProfilePage"));
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -209,6 +210,8 @@ function AnimatedRoutes() {
           <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
           <Route path="/affiliate-disclosure" element={<PageTransition><AffiliateDisclosure /></PageTransition>} />
           <Route path="/contact" element={<PageTransition><ContactPage /></PageTransition>} />
+          <Route path="/profile" element={<PageTransition><UserProfilePage /></PageTransition>} />
+          <Route path="/profile/:tab" element={<PageTransition><UserProfilePage /></PageTransition>} />
           <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
