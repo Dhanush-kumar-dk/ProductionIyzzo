@@ -7,6 +7,7 @@ import ProductCard from "./ProductCard";
 import PriceHistoryTracker from "./PriceHistoryTracker";
 import {
   getProductById,
+  getProductByIdAsync,
   getRelatedProducts,
   Product,
 } from "../data/products";
@@ -35,126 +36,197 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState<Product | null>(null);
+  // Start from the local cache when possible, otherwise show a loader
+  // (instead of flashing "Product Not Found" while we fetch).
+  const [product, setProduct] = useState<Product | null>(() =>
+    id ? getProductById(id) ?? null : null
+  );
+  const [loading, setLoading] = useState<boolean>(() =>
+    id ? !getProductById(id) : false
+  );
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [openLogIn, setOpenLogIn] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [, setCatalogVersion] = useState(0);
 
+  // Resolve the product: cache first, then Supabase (shared links / fresh browsers)
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (id) {
-      const found = getProductById(id);
-      if (found) {
-        setProduct(found);
-        setSelectedImage(found.image);
 
-        const cleanPrice = found.price ? found.price.replace(/,/g, "") : undefined;
-        const brandName = found.name.split(" ")[0] || "Yearnit";
-        const canonicalUrl = `https://yearnit.in/product/${found.id}`;
-
-        const productJsonLd: Record<string, unknown> = {
-          "@context": "https://schema.org",
-          "@type": "Product",
-          "name": found.name,
-          "image": [found.image, found.image1, found.image2].filter(Boolean),
-          "description": found.summary || found.shortDetail || `Detailed review, specifications, pros, and cons for ${found.name}.`,
-          "sku": found.id,
-          "mpn": found.id,
-          "brand": {
-            "@type": "Brand",
-            "name": brandName,
-          },
-          "offers": {
-            "@type": "Offer",
-            "url": canonicalUrl,
-            "priceCurrency": "INR",
-            "price": cleanPrice || "999",
-            "priceValidUntil": "2027-12-31",
-            "itemCondition": "https://schema.org/NewCondition",
-            "availability": "https://schema.org/InStock",
-            "seller": {
-              "@type": "Organization",
-              "name": "Amazon India",
-            },
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": found.rating || 4.2,
-            "reviewCount": found.ratingCount || 1420,
-            "bestRating": 5,
-            "worstRating": 1,
-          },
-        };
-
-        if (found.customerReviews && found.customerReviews.length > 0) {
-          productJsonLd.review = found.customerReviews.map((rev) => ({
-            "@type": "Review",
-            "author": {
-              "@type": "Person",
-              "name": rev.author,
-            },
-            "datePublished": "2026-10-15",
-            "reviewBody": rev.content,
-            "name": rev.title,
-            "reviewRating": {
-              "@type": "Rating",
-              "ratingValue": rev.rating,
-              "bestRating": 5,
-            },
-          }));
-        }
-
-        const breadcrumbsJsonLd: Record<string, unknown> = {
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://yearnit.in/",
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": found.category || "All Products",
-              "item": "https://yearnit.in/#featured-catalog",
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": found.name,
-              "item": canonicalUrl,
-            },
-          ],
-        };
-
-        updateSEO({
-          title: `${found.name} Price History, Review & Buyer Guide`,
-          description: `Price history graph, lowest recorded price, and buying recommendation for ${found.name}. ${found.summary || found.shortDetail || ""}`,
-          image: found.image,
-          url: canonicalUrl,
-          type: "product",
-          keywords: [
-            found.name,
-            `${found.name} price history`,
-            `${found.name} lowest price`,
-            "best time to buy",
-            "price tracker",
-            found.category || "Electronics",
-            "India Review",
-            "Amazon Price",
-            "Buyer Guide",
-          ],
-          jsonLd: [productJsonLd, breadcrumbsJsonLd],
-        });
-      } else {
-        setProduct(null);
-      }
+    if (!id) {
+      setProduct(null);
+      setLoading(false);
+      return;
     }
+
+    const cached = getProductById(id);
+    if (cached) {
+      setProduct(cached);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setProduct(null);
+    setLoading(true);
+
+    getProductByIdAsync(id)
+      .then((found) => {
+        if (cancelled) return;
+        setProduct(found ?? null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn("Failed to load product:", err);
+        if (cancelled) return;
+        setProduct(null);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
+  // Re-render related products when the catalog finishes syncing in the background
+  useEffect(() => {
+    const onCatalogUpdated = () => setCatalogVersion((v) => v + 1);
+    window.addEventListener("catalogUpdated", onCatalogUpdated);
+    return () => window.removeEventListener("catalogUpdated", onCatalogUpdated);
+  }, []);
+
+  // Gallery image + SEO whenever the product resolves
+  useEffect(() => {
+    if (!product) return;
+    const found = product;
+    setSelectedImage(found.image);
+
+    const cleanPrice = found.price ? found.price.replace(/,/g, "") : undefined;
+    const brandName = found.name.split(" ")[0] || "Yearnit";
+    const canonicalUrl = `https://yearnit.in/product/${found.id}`;
+
+    const productJsonLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": found.name,
+      "image": [found.image, found.image1, found.image2].filter(Boolean),
+      "description":
+        found.summary ||
+        found.shortDetail ||
+        `Detailed review, specifications, pros, and cons for ${found.name}.`,
+      "sku": found.id,
+      "mpn": found.id,
+      "brand": {
+        "@type": "Brand",
+        "name": brandName,
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": canonicalUrl,
+        "priceCurrency": "INR",
+        "price": cleanPrice || "999",
+        "priceValidUntil": "2027-12-31",
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": "https://schema.org/InStock",
+        "seller": {
+          "@type": "Organization",
+          "name": "Amazon India",
+        },
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": found.rating || 4.2,
+        "reviewCount": found.ratingCount || 1420,
+        "bestRating": 5,
+        "worstRating": 1,
+      },
+    };
+
+    if (found.customerReviews && found.customerReviews.length > 0) {
+      productJsonLd.review = found.customerReviews.map((rev) => ({
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": rev.author,
+        },
+        "datePublished": "2026-10-15",
+        "reviewBody": rev.content,
+        "name": rev.title,
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": rev.rating,
+          "bestRating": 5,
+        },
+      }));
+    }
+
+    const breadcrumbsJsonLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://yearnit.in/",
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": found.category || "All Products",
+          "item": "https://yearnit.in/#featured-catalog",
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": found.name,
+          "item": canonicalUrl,
+        },
+      ],
+    };
+
+    updateSEO({
+      title: `${found.name} Price History, Review & Buyer Guide`,
+      description: `Price history graph, lowest recorded price, and buying recommendation for ${found.name}. ${found.summary || found.shortDetail || ""}`,
+      image: found.image,
+      url: canonicalUrl,
+      type: "product",
+      keywords: [
+        found.name,
+        `${found.name} price history`,
+        `${found.name} lowest price`,
+        "best time to buy",
+        "price tracker",
+        found.category || "Electronics",
+        "India Review",
+        "Amazon Price",
+        "Buyer Guide",
+      ],
+      jsonLd: [productJsonLd, breadcrumbsJsonLd],
+    });
+  }, [product]);
+
+  // ── Loading state (shared link opened in a fresh browser) ──
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F7F8F9] flex flex-col font-poppins text-gray-900">
+        <TopBar openLogIn={() => setOpenLogIn(true)} />
+        {openLogIn && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
+            <LogIn onClose={() => setOpenLogIn(false)} />
+          </div>
+        )}
+        <main className="flex-1 flex flex-col items-center justify-center gap-3 py-24">
+          <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-gray-500 font-medium">Loading product…</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // ── Not found (only after the lookup has fully finished) ──
   if (!product) {
     return (
       <div className="min-h-screen bg-[#F0F2F2] flex flex-col font-poppins text-gray-900">

@@ -621,6 +621,30 @@ interface SupabaseProductRow {
 }
 
 /**
+ * Convert a Supabase row into a Product, keeping any richer local fields
+ * (category, pros, cons, specs...) from a previously cached copy.
+ */
+function rowToProduct(r: SupabaseProductRow, prev?: Product): Product {
+  return {
+    id: String(r.id).trim(),
+    name: String(r.name).trim(),
+    price: r.price ? String(r.price).trim() : prev?.price || undefined,
+    image: String(r.image || prev?.image || "").trim(),
+    image1: r.image1 ? String(r.image1).trim() : prev?.image1 || undefined,
+    image2: r.image2 ? String(r.image2).trim() : prev?.image2 || undefined,
+    url: r.url ? String(r.url).trim() : prev?.url || "https://www.amazon.in",
+    category: prev?.category || "Consumer Electronics",
+    editorBadge: prev?.editorBadge,
+    shortDetail: prev?.shortDetail,
+    summary: prev?.summary,
+    pros: prev?.pros,
+    cons: prev?.cons,
+    whoItsFor: prev?.whoItsFor,
+    specs: prev?.specs,
+  };
+}
+
+/**
  * Synchronize custom products from Supabase database into local catalog cache
  */
 export async function syncProductsFromSupabase(): Promise<Product[]> {
@@ -659,24 +683,7 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
         const key = String(r.id).trim().toUpperCase();
         if (deletedIds.has(key)) return;
 
-        const prev = existingMap.get(key);
-        existingMap.set(key, {
-          id: String(r.id).trim(),
-          name: String(r.name).trim(),
-          price: r.price ? String(r.price).trim() : (prev?.price || undefined),
-          image: String(r.image || prev?.image || "").trim(),
-          image1: r.image1 ? String(r.image1).trim() : (prev?.image1 || undefined),
-          image2: r.image2 ? String(r.image2).trim() : (prev?.image2 || undefined),
-          url: r.url ? String(r.url).trim() : (prev?.url || "https://www.amazon.in"),
-          category: prev?.category || "Consumer Electronics",
-          editorBadge: prev?.editorBadge,
-          shortDetail: prev?.shortDetail,
-          summary: prev?.summary,
-          pros: prev?.pros,
-          cons: prev?.cons,
-          whoItsFor: prev?.whoItsFor,
-          specs: prev?.specs,
-        });
+        existingMap.set(key, rowToProduct(r, existingMap.get(key)));
       });
 
       const merged = Array.from(existingMap.values());
@@ -698,3 +705,88 @@ export async function syncProductsFromSupabase(): Promise<Product[]> {
   return getCustomProducts();
 }
 
+/**
+ * Fetch ONE product row straight from Supabase by id.
+ * Tries the SDK first, then the REST endpoint (exact match, then case-insensitive).
+ */
+async function fetchProductRowById(cleanId: string): Promise<SupabaseProductRow | null> {
+  // 1. SDK exact match
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", cleanId)
+      .limit(1);
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data[0] as SupabaseProductRow;
+    }
+  } catch (err) {
+    console.warn("Supabase single-product fetch failed:", err);
+  }
+
+  // 2. REST fallback (exact, then case-insensitive)
+  const headers = {
+    apikey: supabaseKey,
+    Authorization: `Bearer ${supabaseKey}`,
+  };
+  for (const filter of [`eq.${cleanId}`, `ilike.${cleanId}`]) {
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/products?select=*&id=${encodeURIComponent(filter)}&limit=1`,
+        { headers }
+      );
+      if (res.ok) {
+        const rows = (await res.json()) as SupabaseProductRow[];
+        if (Array.isArray(rows) && rows.length > 0) return rows[0];
+      }
+    } catch (restErr) {
+      console.warn("Supabase REST single-product fallback failed:", restErr);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resolve a product by id even when the local cache is empty
+ * (e.g. someone opens a shared link in a fresh browser).
+ *
+ * Order: local cache -> Supabase single-row fetch -> full catalog sync.
+ */
+export async function getProductByIdAsync(id: string): Promise<Product | undefined> {
+  if (!id) return undefined;
+
+  // 1. Already in cache / curated list
+  const cached = getProductById(id);
+  if (cached) return cached;
+
+  const cleanId = id.trim();
+  if (getDeletedProductIds().includes(cleanId.toUpperCase())) return undefined;
+
+  // 2. Fetch just this product from Supabase
+  const row = await fetchProductRowById(cleanId);
+  if (row && row.id && row.name) {
+    const prev = getCustomProducts().find(
+      (p) => p.id.toUpperCase() === String(row.id).trim().toUpperCase()
+    );
+    const product = rowToProduct(row, prev);
+
+    // Cache it so the next visit is instant
+    try {
+      const others = getCustomProducts().filter(
+        (p) => p.id.toUpperCase() !== product.id.toUpperCase()
+      );
+      localStorage.setItem("yearnit_custom_products", JSON.stringify([product, ...others]));
+    } catch (e) {
+      console.warn("Failed to cache fetched product:", e);
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("catalogUpdated"));
+    }
+    return product;
+  }
+
+  // 3. Last resort: sync the whole catalog, then look again
+  await syncProductsFromSupabase();
+  return getProductById(cleanId);
+}
