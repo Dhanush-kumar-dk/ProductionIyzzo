@@ -7,6 +7,9 @@
 import { getAttribution } from "./attribution";
 import { API_BASE_URL } from "../config/api";
 import { recordDailyVisit } from "./visitorAnalytics";
+import Clarity from "@microsoft/clarity";
+
+export { Clarity };
 
 declare global {
   interface Window {
@@ -42,6 +45,10 @@ export const GADS_PURCHASE_LABEL =
   (import.meta.env.VITE_GADS_PURCHASE_CONVERSION_LABEL as string) ||
   (import.meta.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_LABEL as string) ||
   "";
+
+export const CLARITY_PROJECT_ID =
+  (import.meta.env.VITE_CLARITY_PROJECT_ID as string) ||
+  "zdcr53blnh";
 
 export const CONSENT_STORAGE_KEY = "yearnit_cookie_consent";
 
@@ -89,17 +96,28 @@ export function initConsentMode(): void {
  * Updates Google Consent Mode state when user accepts or denies.
  */
 export function updateConsent(granted: boolean): void {
-  if (typeof window === "undefined" || !window.gtag) return;
-
   const status = granted ? "granted" : "denied";
   localStorage.setItem(CONSENT_STORAGE_KEY, status);
 
-  window.gtag("consent", "update", {
-    ad_storage: status,
-    ad_user_data: status,
-    ad_personalization: status,
-    analytics_storage: status,
-  });
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("consent", "update", {
+      ad_storage: status,
+      ad_user_data: status,
+      ad_personalization: status,
+      analytics_storage: status,
+    });
+  }
+
+  // Synchronize with Microsoft Clarity Consent Mode v2
+  try {
+    if (granted) {
+      Clarity.consentV2({ ad_Storage: "granted", analytics_Storage: "granted" });
+    } else {
+      Clarity.consentV2({ ad_Storage: "denied", analytics_Storage: "denied" });
+    }
+  } catch {
+    // Non-blocking
+  }
 }
 
 /**
@@ -185,12 +203,43 @@ export function initGoogleTags(): void {
 }
 
 /**
+ * Initializes Microsoft Clarity behavioral analytics via the official NPM package.
+ */
+export function initClarity(): void {
+  if (typeof window === "undefined" || !CLARITY_PROJECT_ID) return;
+
+  try {
+    Clarity.init(CLARITY_PROJECT_ID);
+
+    // Apply stored user consent state
+    const storedConsent = localStorage.getItem(CONSENT_STORAGE_KEY);
+    if (storedConsent === "granted") {
+      Clarity.consentV2({ ad_Storage: "granted", analytics_Storage: "granted" });
+    } else if (storedConsent === "denied") {
+      Clarity.consentV2({ ad_Storage: "denied", analytics_Storage: "denied" });
+    }
+
+    // Attach attribution tags to the Clarity session
+    const attribution = getAttribution();
+    if (attribution.utm_source) {
+      Clarity.setTag("utm_source", attribution.utm_source);
+    }
+    if (attribution.utm_campaign) {
+      Clarity.setTag("utm_campaign", attribution.utm_campaign);
+    }
+  } catch (err) {
+    console.warn("Failed to initialize Microsoft Clarity:", err);
+  }
+}
+
+/**
  * Master initialization for all advertising trackers.
  */
 export function initAllTrackers(): void {
   initConsentMode();
   initMetaPixel();
   initGoogleTags();
+  initClarity();
 }
 
 /**
@@ -323,6 +372,13 @@ export async function trackEvent(
     }).catch((err) => {
       console.warn("CAPI dispatch failed silently:", err.message);
     });
+  } catch {
+    // Non-blocking
+  }
+
+  // 4. Microsoft Clarity Smart Event
+  try {
+    Clarity.event(eventName);
   } catch {
     // Non-blocking
   }
