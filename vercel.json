@@ -47,6 +47,14 @@
       "destination": "/api/syncjoins"
     },
     {
+      "source": "/api/upload-product-image",
+      "destination": "/api/upload-screenshot?folder=Product-image"
+    },
+    {
+      "source": "/api/product-image",
+      "destination": "/api/screenshot?stream=true"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

@@ -81,13 +81,14 @@ export async function uploadProductImageToR2(
 ): Promise<{ key: string; url: string; presigned_url: string; folder: string }> {
   const image_data = await fileToBase64DataUrl(file);
 
-  const response = await fetch("/api/upload-product-image", {
+  const response = await fetch("/api/upload-screenshot", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       image_data,
+      folder: "Product-image",
       slot: options?.slot ?? "primary",
       product_id: options?.productId ?? "",
       filename: options?.filename ?? file.name,

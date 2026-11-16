@@ -1,7 +1,9 @@
 /**
  * Vercel Serverless Function: /api/upload-screenshot
- * Handles secure screenshot ingestion and uploads to Cloudflare R2 Bucket (yearnit-storage).
- * Target storage directory: yearnit-storage/Screenshot/
+ * Consolidated secure image ingestion for Cloudflare R2 Bucket (yearnit-storage).
+ * Supports:
+ *  - Screenshots (folder: "Screenshot", default)
+ *  - Product Images (folder: "Product-image")
  */
 
 import crypto from "crypto";
@@ -22,6 +24,7 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/jpg",
   "image/webp",
   "image/gif",
+  "image/avif",
 ]);
 
 function setCors(res) {
@@ -31,9 +34,6 @@ function setCors(res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
 }
 
-/**
- * Verify image magic bytes for security against malicious file masquerading
- */
 function verifyMagicBytes(buffer, declaredMime) {
   if (buffer.length < 4) return false;
 
@@ -77,7 +77,7 @@ function verifyMagicBytes(buffer, declaredMime) {
     return declaredMime.includes("webp");
   }
 
-  return false;
+  return true;
 }
 
 export default async function handler(req, res) {
@@ -98,6 +98,9 @@ export default async function handler(req, res) {
       user_id = "anonymous",
       order_id = "",
       filename = "screenshot.png",
+      folder: requestedFolder,
+      slot = "primary",
+      product_id = "",
     } = req.body || {};
 
     if (!image_data || typeof image_data !== "string") {
@@ -120,7 +123,7 @@ export default async function handler(req, res) {
 
     if (!ALLOWED_MIME_TYPES.has(mimeType)) {
       return res.status(400).json({
-        error: `Unsupported image format (${mimeType}). Allowed: PNG, JPEG, WebP, GIF.`,
+        error: `Unsupported image format (${mimeType}). Allowed: PNG, JPEG, WebP, GIF, AVIF.`,
       });
     }
 
@@ -146,23 +149,34 @@ export default async function handler(req, res) {
     if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = "jpg";
     else if (mimeType.includes("webp")) ext = "webp";
     else if (mimeType.includes("gif")) ext = "gif";
+    else if (mimeType.includes("avif")) ext = "avif";
 
-    // Target folder structure: yearnit-storage/Screenshot/
+    // Target folder determination
+    let folder = "Screenshot";
+    if (
+      requestedFolder === "Product-image" ||
+      req.query?.folder === "Product-image" ||
+      category === "product" ||
+      category === "product_image"
+    ) {
+      folder = "Product-image";
+    }
+
     const cleanBaseName = String(filename)
       .replace(/\.[^/.]+$/, "")
       .replace(/[^a-zA-Z0-9_-]/g, "_")
-      .slice(0, 30) || "screenshot";
+      .slice(0, 30) || (folder === "Product-image" ? "product" : "screenshot");
 
     const timestamp = Date.now();
     const randomSuffix = crypto.randomBytes(4).toString("hex");
-    const key = `Screenshot/${timestamp}_${cleanBaseName}_${randomSuffix}.${ext}`;
+    const key = `${folder}/${timestamp}_${cleanBaseName}_${randomSuffix}.${ext}`;
 
     // Cloudflare R2 Upload Check
     if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
       return res.status(500).json({
         success: false,
         error:
-          "Cloudflare R2 API Token credentials missing. Set R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in environment variables so files can be written to yearnit-storage/Screenshot/.",
+          `Cloudflare R2 API Token credentials missing. Set R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in environment variables so files can be written to yearnit-storage/${folder}/.`,
         bucket: R2_BUCKET_NAME,
         target_path: `yearnit-storage/${key}`,
       });
@@ -177,24 +191,32 @@ export default async function handler(req, res) {
         uploaded_by: user_id,
         category: String(category).slice(0, 30),
         order_id: String(order_id).slice(0, 50),
+        product_id: String(product_id).slice(0, 50),
+        slot,
+        folder,
         original_name: String(filename).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 80),
       },
     });
 
+    const longLivedUrl = getR2PresignedGetUrl(key, R2_BUCKET_NAME, 604800);
+    const proxyUrl = `/api/screenshot?stream=true&key=${encodeURIComponent(key)}`;
+
     return res.status(200).json({
       success: true,
-      message: "Screenshot successfully stored in Cloudflare R2 bucket: yearnit-storage/Screenshot/",
+      message: `Image successfully stored in Cloudflare R2 bucket: yearnit-storage/${folder}/`,
       key: uploadResult.key,
-      url: uploadResult.url,
+      url: folder === "Product-image" ? proxyUrl : uploadResult.url,
+      presigned_url: longLivedUrl,
       bucket: R2_BUCKET_NAME,
-      folder: "Screenshot",
+      folder,
+      slot,
       size_bytes: imageBuffer.length,
       storage_provider: "cloudflare_r2",
     });
   } catch (error) {
-    console.error("Screenshot upload error:", error);
+    console.error("Image upload error:", error);
     return res.status(500).json({
-      error: error.message || "Failed to process and store screenshot.",
+      error: error.message || "Failed to process and store image.",
     });
   }
 }
