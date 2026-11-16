@@ -5,12 +5,13 @@ import PageTransition, { TopProgressBar } from "./components/PageTransition";
 import ErrorBoundary from "./components/ErrorBoundary";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
-import Carousel from "./components/Carousel";
 import HeroBanner from "./components/HeroBanner";
-import CategoryStrip from "./components/CategoryStrip";
-import CashbackSteps from "./components/CashbackSteps";
-// import FlashDealsBar from "./components/FlashDealsBar";
-import TrustFeatures from "./components/TrustFeatures";
+import ExploreByCategory from "./components/ExploreByCategory";
+import CuratedGuides from "./components/CuratedGuides";
+import EditorialSpotlight from "./components/EditorialSpotlight";
+import ResearchFeatureRow from "./components/ResearchFeatureRow";
+import Benefits from "./components/Benefits";
+import Testimonials from "./components/Testimonials";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
@@ -132,10 +133,10 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F7F9FA] flex flex-col font-poppins text-gray-900">
+    <div className="min-h-screen w-full bg-[#FAFBF8] flex flex-col font-sans text-[#3F4A44]">
       {/* Login Modal */}
       {openLogIn && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 backdrop-blur-sm bg-[#1E2A24]/60 z-50 flex items-center justify-center p-3 sm:p-4">
           <LogIn onClose={() => setOpenLogIn(false)} />
         </div>
       )}
@@ -146,47 +147,51 @@ function HomePage() {
         onClose={() => setIsWishlistOpen(false)}
       />
 
-      {/* Main Header */}
+      {/* 1. Navbar */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
         onCategorySelect={setSelectedCategory}
       />
 
-      {/* Main Page Flow */}
-      <main className="flex-1 space-y-2">
-        {/* Promotional Hero Slider */}
-        <HeroBanner onExploreClick={scrollToCatalog} />
+      {/* Main Editorial Flow */}
+      <main className="flex-1">
+        {/* 2. Hero Banner */}
+        <HeroBanner
+          onExploreClick={scrollToCatalog}
+          onCategorySelect={setSelectedCategory}
+        />
 
-        {/* Quick Category Chips */}
-        <CategoryStrip
+        {/* 3. Explore by Category */}
+        <ExploreByCategory
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          onExploreAll={scrollToCatalog}
+        />
+
+        {/* 4. Curated Buyer Guides & Recommendations */}
+        <CuratedGuides
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* Editorial Spotlight Banner */}
-        {/* <FlashDealsBar /> */}
+        {/* 5. Editorial Spotlight */}
+        <EditorialSpotlight />
 
-        {/* Products Grid with Filter Toolbar */}
-        <Carousel
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
+        {/* 6. Independent Research & Benchmark Lab */}
+        <ResearchFeatureRow />
 
-        {/* Consumer Value & Trust Propositions */}
-        <TrustFeatures />
+        {/* 7. Benefits for your experience (full-width tinted band) */}
+        <Benefits />
 
-        {/* Editorial Product Digest */}
+        {/* 8. Testimonials */}
+        <Testimonials />
+
+        {/* 9. Newsletter (50/50 split panel) */}
         <DealsNewsletter />
-
-        {/* Three Steps Towards Cashback (Before Footer) */}
-        <CashbackSteps
-          onLoginClick={() => setOpenLogIn(true)}
-          onShopClick={scrollToCatalog}
-        />
       </main>
 
-      {/* Comprehensive Footer */}
+      {/* 10. Comprehensive Footer */}
       <Footer />
     </div>
   );

@@ -14,62 +14,68 @@ export default function DealsNewsletter() {
   };
 
   return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 py-10 font-poppins">
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden border border-slate-800">
-        {/* Background decorative circles */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="max-w-2xl mx-auto text-center relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold tracking-wide text-amber-300">
-            <span>📬 Editorial Newsletter</span>
+    <section className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      {/* One Rounded 28px Panel Split 50/50 */}
+      <div className="rounded-[24px] sm:rounded-[28px] overflow-hidden border border-[#E3E8E2] grid grid-cols-1 md:grid-cols-2 shadow-subtle">
+        {/* Left Half: Sage Gray with Envelope Icon */}
+        <div className="bg-[#E6EAE5] p-8 sm:p-12 md:p-14 flex flex-col justify-between min-h-[260px]">
+          <div>
+            <div className="w-12 h-12 rounded-full bg-white border border-[#CBD3CB] flex items-center justify-center text-[#4F6F5D] mb-4 shadow-subtle">
+              <EnvelopeIcon className="w-6 h-6 stroke-[1.5]" />
+            </div>
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-[#4F6F5D] block mb-2">
+              Every Thursday
+            </span>
+            <h3 className="font-serif font-normal text-2xl sm:text-3xl text-[#1E2A24] leading-snug">
+              Curated digests delivered to your inbox.
+            </h3>
           </div>
+          <p className="font-sans text-xs sm:text-sm text-[#7B857F] mt-4">
+            Zero sponsored spam. Only verified benchmarks, price drops, and buyer insights.
+          </p>
+        </div>
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+        {/* Right Half: Mint with Serif Title & Subscribe Form */}
+        <div className="bg-[#D7EBDF] p-8 sm:p-12 md:p-14 flex flex-col justify-center">
+          <h3 className="font-serif font-normal text-2xl sm:text-3xl text-[#1E2A24] leading-snug mb-3">
             Yearnit Weekly Product Digest
-          </h2>
-
-          <p className="text-xs sm:text-sm text-gray-300 max-w-lg mx-auto leading-relaxed">
-            Get our latest hands-on buying guides, honest pros and cons, and carefully vetted tech recommendations delivered directly to your inbox. No spam, ever.
+          </h3>
+          <p className="font-sans text-xs sm:text-sm text-[#3F4A44] leading-relaxed mb-6">
+            Get our latest hardware teardowns, lab comparisons, and genuine Amazon price drop alerts once a week.
           </p>
 
           {subscribed ? (
-            <div className="bg-white/10 border border-white/20 p-4 rounded-2xl flex items-center justify-center gap-2 text-white animate-fade-in max-w-md mx-auto">
-              <CheckCircleIcon className="w-6 h-6 text-emerald-400" />
-              <span className="text-sm font-semibold">
-                Thank you! You're subscribed to the Yearnit Product Digest.
+            <div className="bg-white/80 border border-[#CBD3CB] p-4 rounded-[12px] flex items-center gap-2.5 text-[#1E2A24] animate-fade-in">
+              <CheckCircleIcon className="w-5 h-5 text-[#2F7D52] flex-shrink-0" />
+              <span className="text-xs font-medium">
+                Thank you! You’re subscribed to the Yearnit Weekly Digest.
               </span>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto pt-2"
-            >
-              <div className="relative flex-1">
-                <EnvelopeIcon className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2.5">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md"
+                  className="flex-1 px-4 py-3 bg-white border border-[#CBD3CB] rounded-[10px] text-xs sm:text-sm text-[#1E2A24] placeholder-[#7B857F] focus:outline-none focus:ring-2 focus:ring-[#5E7F6C]/30 focus:border-[#4F6F5D] transition"
                 />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#4F6F5D] text-white text-xs sm:text-sm font-medium rounded-[10px] hover:bg-[#5E7F6C] transition shadow-subtle flex-shrink-0"
+                >
+                  Subscribe
+                </button>
               </div>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 font-bold text-sm rounded-xl shadow-md transition transform hover:scale-105 active:scale-95"
-              >
-                Subscribe
-              </button>
+              <p className="font-sans text-[11px] text-[#7B857F]">
+                No spam, ever. Unsubscribe anytime with 1 click.
+              </p>
             </form>
           )}
-
-          <p className="text-[11px] text-gray-400">
-            By subscribing, you agree to receive editorial newsletters from Yearnit. You can unsubscribe at any time.
-          </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
