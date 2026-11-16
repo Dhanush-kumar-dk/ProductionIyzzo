@@ -1,6 +1,6 @@
 import { StarIcon } from "@heroicons/react/20/solid";
 import { buildAffiliateUrl } from "../utils/affiliate";
-import { TvIcon } from "@heroicons/react/24/outline";
+import { TvIcon, SparklesIcon } from "@heroicons/react/24/outline";
 
 export default function EditorialSpotlight() {
   const spotlightProduct = {
@@ -44,77 +44,83 @@ export default function EditorialSpotlight() {
   ];
 
   return (
-    <section id="spotlight" className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-      {/* Centered Serif Section Title + Subtitle */}
-      <div className="text-center mb-10 sm:mb-12">
-        <h2 className="font-serif font-normal text-3xl sm:text-4xl text-[#1E2A24] tracking-tight">
-          Editorial Spotlight
-        </h2>
-        <p className="font-sans text-xs sm:text-sm text-[#7B857F] mt-2 max-w-[60ch] mx-auto">
-          Independent evaluation by our hardware bench: tested for display fidelity, build quality, and value.
-        </p>
+    <section id="spotlight" className="w-full px-3 sm:px-6 lg:px-12 py-8 sm:py-10 font-poppins">
+      {/* Section Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 border-b border-gray-200/80 pb-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full mb-1">
+            <SparklesIcon className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span>Featured Teardown</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Editorial Spotlight
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
+            Independent evaluation by our hardware bench: tested for display fidelity, build quality, and real-world value.
+          </p>
+        </div>
       </div>
 
-      {/* Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-stretch">
-        {/* Left Column: Large rounded muted image panel (7 of 12 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-[24px] border border-[#E3E8E2] p-6 sm:p-8 flex flex-col justify-between">
+      {/* Two-Column Desktop Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+        {/* Left Column: Spotlight Card (7 of 12 cols) */}
+        <div className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-6 sm:p-8 flex flex-col justify-between shadow-sm">
           <div>
             {/* Visual Panel / Image Area */}
-            <div className="relative w-full rounded-[20px] bg-[#E6EAE5] min-h-[220px] sm:min-h-[260px] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+            <div className="relative w-full rounded-2xl bg-slate-50 border border-gray-100 min-h-[220px] sm:min-h-[260px] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
               <img
                 src={spotlightProduct.image}
                 alt={spotlightProduct.title}
-                className="max-h-[180px] sm:max-h-[210px] max-w-full object-contain mix-blend-multiply"
+                className="max-h-[190px] sm:max-h-[220px] max-w-full object-contain mix-blend-multiply"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = "none";
                 }}
               />
               <div className="mt-3 flex items-center gap-2">
-                <TvIcon className="w-4 h-4 text-[#4F6F5D]" />
-                <span className="font-serif text-xs text-[#1E2A24]">
+                <TvIcon className="w-4 h-4 text-orange-600" />
+                <span className="text-xs font-bold text-gray-800">
                   Xiaomi 4K Display Hardware Test
                 </span>
               </div>
-              <p className="font-sans text-[11px] text-[#7B857F] mt-1 max-w-[42ch]">
+              <p className="text-[11px] text-gray-500 mt-1 max-w-[48ch]">
                 {spotlightProduct.caption}
               </p>
             </div>
 
-            {/* Product Title (serif) */}
-            <h3 className="font-serif font-normal text-lg sm:text-xl text-[#1E2A24] mt-5 leading-snug">
+            {/* Product Title */}
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-5 leading-snug">
               {spotlightProduct.title}
             </h3>
 
             {/* Stars & Rating */}
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="flex text-[#E0A83A]">
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex text-amber-500">
                 {[...Array(5)].map((_, i) => (
                   <StarIcon
                     key={i}
-                    className={`w-3.5 h-3.5 ${
-                      i < Math.floor(spotlightProduct.rating) ? "fill-current" : "text-[#E0A83A]/30"
+                    className={`w-4 h-4 ${
+                      i < Math.floor(spotlightProduct.rating) ? "fill-current" : "text-gray-200"
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-xs font-semibold text-[#1E2A24]">{spotlightProduct.rating}</span>
-              <span className="text-[11px] text-[#7B857F]">
-                ({spotlightProduct.ratingCount.toLocaleString()} lab audits & verified reviews)
+              <span className="text-xs font-bold text-gray-900">{spotlightProduct.rating}</span>
+              <span className="text-xs text-gray-500">
+                ({spotlightProduct.ratingCount.toLocaleString()} verified reviews)
               </span>
             </div>
           </div>
 
           {/* Pricing & CTA */}
-          <div className="mt-6 pt-4 border-t border-[#E3E8E2] flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="font-sans font-bold text-xl sm:text-2xl text-[#1E2A24]">
+          <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <span className="font-extrabold text-2xl sm:text-3xl text-gray-950">
                 ₹{spotlightProduct.price}
               </span>
-              <span className="text-xs text-[#7B857F] line-through">
+              <span className="text-xs sm:text-sm text-gray-400 line-through">
                 ₹{spotlightProduct.mrp}
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-[#D9F2E3] text-[#2F7D52] text-[10px] font-bold uppercase">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold uppercase">
                 {spotlightProduct.discount}
               </span>
             </div>
@@ -123,7 +129,7 @@ export default function EditorialSpotlight() {
               href={spotlightProduct.affiliateUrl}
               target="_blank"
               rel="sponsored nofollow noopener"
-              className="px-5 py-2.5 rounded-[10px] bg-[#4F6F5D] text-white text-xs sm:text-sm font-medium hover:bg-[#5E7F6C] transition shadow-subtle flex items-center gap-1.5 text-decoration-none"
+              className="px-6 py-3 bg-[#FFD814] hover:bg-[#F7CA00] text-gray-950 text-xs sm:text-sm font-bold rounded-xl shadow-sm transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 text-decoration-none"
             >
               <span>Check Amazon Pricing</span>
               <span>↗</span>
@@ -133,12 +139,11 @@ export default function EditorialSpotlight() {
 
         {/* Right Column: Editorial Verdict + 3 Compact Rows (5 of 12 cols) */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-          <div className="bg-white rounded-[24px] border border-[#E3E8E2] p-6 sm:p-7">
-            {/* Small uppercase label */}
-            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-[#4F6F5D] block mb-2">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-6 sm:p-7 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-orange-600 block mb-2">
               Editorial Verdict
             </span>
-            <p className="font-sans text-xs sm:text-sm text-[#3F4A44] leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
               Our engineering bench concluded that this panel provides the highest dynamic range,
               truest blacks, and smoothest OS responsiveness in its budget tier. Sound output exceeds
               benchmarks with Dolby Audio integration, avoiding the need for an external soundbar in medium rooms.
@@ -146,28 +151,28 @@ export default function EditorialSpotlight() {
           </div>
 
           {/* Bordered list of 3 compact product rows */}
-          <div className="bg-white rounded-[24px] border border-[#E3E8E2] divide-y divide-[#E3E8E2] overflow-hidden">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 divide-y divide-gray-100 shadow-sm overflow-hidden">
             {compactRows.map((row) => {
               const affUrl = buildAffiliateUrl(row.url);
               return (
                 <div
                   key={row.id}
-                  className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-[#FAFBF8] transition"
+                  className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-slate-50 transition"
                 >
                   <div className="min-w-0">
-                    <span className="inline-block px-2 py-0.5 rounded bg-[#F1F4EF] text-[9px] font-bold uppercase tracking-wider text-[#3F4A44] mb-1">
+                    <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                       {row.category}
                     </span>
-                    <h5 className="font-serif text-xs sm:text-sm font-medium text-[#1E2A24] truncate max-w-[220px]">
+                    <h5 className="text-xs sm:text-sm font-bold text-gray-900 truncate max-w-[240px]">
                       {row.name}
                     </h5>
-                    <div className="flex items-center gap-1 mt-1 text-[11px] text-[#7B857F]">
-                      <div className="flex text-[#E0A83A]">
+                    <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-500">
+                      <div className="flex text-amber-500">
                         {[...Array(5)].map((_, i) => (
                           <StarIcon
                             key={i}
                             className={`w-3 h-3 ${
-                              i < Math.floor(row.rating) ? "fill-current" : "text-[#E0A83A]/30"
+                              i < Math.floor(row.rating) ? "fill-current" : "text-gray-200"
                             }`}
                           />
                         ))}
@@ -177,16 +182,16 @@ export default function EditorialSpotlight() {
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <span className="font-sans font-bold text-xs sm:text-sm text-[#1E2A24] block">
+                    <span className="font-extrabold text-sm sm:text-base text-gray-950 block">
                       ₹{row.price}
                     </span>
                     <a
                       href={affUrl}
                       target="_blank"
                       rel="sponsored nofollow noopener"
-                      className="text-[11px] font-medium text-[#4F6F5D] hover:underline"
+                      className="text-xs font-semibold text-orange-600 hover:underline"
                     >
-                      Deal ↗
+                      View Deal ↗
                     </a>
                   </div>
                 </div>

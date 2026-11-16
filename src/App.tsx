@@ -6,13 +6,15 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
 import HeroBanner from "./components/HeroBanner";
+import CategoryStrip from "./components/CategoryStrip";
 import ExploreByCategory from "./components/ExploreByCategory";
-import CuratedGuides from "./components/CuratedGuides";
+import Carousel from "./components/Carousel";
 import EditorialSpotlight from "./components/EditorialSpotlight";
 import ResearchFeatureRow from "./components/ResearchFeatureRow";
 import Benefits from "./components/Benefits";
 import Testimonials from "./components/Testimonials";
 import DealsNewsletter from "./components/DealsNewsletter";
+import CashbackSteps from "./components/CashbackSteps";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
 import CookieConsent from "./components/CookieConsent";
@@ -133,10 +135,10 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FAFBF8] flex flex-col font-sans text-[#3F4A44]">
+    <div className="min-h-screen w-full bg-[#F7F9FA] flex flex-col font-poppins text-gray-900">
       {/* Login Modal */}
       {openLogIn && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-[#1E2A24]/60 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 backdrop-blur-sm bg-zinc-900/60 z-50 flex items-center justify-center p-3 sm:p-4">
           <LogIn onClose={() => setOpenLogIn(false)} />
         </div>
       )}
@@ -147,51 +149,60 @@ function HomePage() {
         onClose={() => setIsWishlistOpen(false)}
       />
 
-      {/* 1. Navbar */}
+      {/* 1. Full Desktop TopBar with Omnibar, Categories & Account */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
         onCategorySelect={setSelectedCategory}
       />
 
-      {/* Main Editorial Flow */}
-      <main className="flex-1">
-        {/* 2. Hero Banner */}
-        <HeroBanner
-          onExploreClick={scrollToCatalog}
-          onCategorySelect={setSelectedCategory}
+      {/* Main Full-Width Desktop Flow */}
+      <main className="flex-1 space-y-4 sm:space-y-6">
+        {/* 2. Full-Width Hero Banner Slider */}
+        <HeroBanner onExploreClick={scrollToCatalog} />
+
+        {/* 3. Quick Category Exploration Strip */}
+        <CategoryStrip
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
         />
 
-        {/* 3. Explore by Category */}
+        {/* 4. Explore by Category Two-Column Desktop Section */}
         <ExploreByCategory
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
           onExploreAll={scrollToCatalog}
         />
 
-        {/* 4. Curated Buyer Guides & Recommendations */}
-        <CuratedGuides
+        {/* 5. Curated Buyer Guides & Recommendations Grid */}
+        <Carousel
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* 5. Editorial Spotlight */}
+        {/* 6. Editorial Spotlight Deep Dive */}
         <EditorialSpotlight />
 
-        {/* 6. Independent Research & Benchmark Lab */}
+        {/* 7. Independent Research & Benchmark Lab */}
         <ResearchFeatureRow />
 
-        {/* 7. Benefits for your experience (full-width tinted band) */}
+        {/* 8. Benefits for Your Experience */}
         <Benefits />
 
-        {/* 8. Testimonials */}
+        {/* 9. Verified Buyer Reviews & Testimonials */}
         <Testimonials />
 
-        {/* 9. Newsletter (50/50 split panel) */}
+        {/* 10. Weekly Product Digest Newsletter */}
         <DealsNewsletter />
+
+        {/* 11. Cashback Steps */}
+        <CashbackSteps
+          onLoginClick={() => setOpenLogIn(true)}
+          onShopClick={scrollToCatalog}
+        />
       </main>
 
-      {/* 10. Comprehensive Footer */}
+      {/* 12. Full-Width Comprehensive Footer */}
       <Footer />
     </div>
   );

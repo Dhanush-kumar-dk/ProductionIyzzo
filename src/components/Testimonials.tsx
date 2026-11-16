@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { UserIcon } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/20/solid";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
 const TESTIMONIALS = [
   {
@@ -18,7 +19,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "Yearnit feels like a classic, well-edited magazine. The pros and cons list is actually critical, not just praise disguised as a review.",
+      "Yearnit feels like a classic, well-edited review publication. The pros and cons list is actually critical, not just praise disguised as a review.",
     author: "Rohan Iyer",
     role: "Independent Technology Journalist, Mumbai",
     initials: "RI",
@@ -27,74 +28,71 @@ const TESTIMONIALS = [
 
 export default function Testimonials() {
   const [activeIdx, setActiveIdx] = useState(0);
-  const current = TESTIMONIALS[activeIdx];
 
   return (
-    <section className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-      {/* Centered Serif Section Title + Subtitle */}
-      <div className="text-center mb-12 sm:mb-16">
-        <h2 className="font-serif font-normal text-3xl sm:text-4xl text-[#1E2A24] tracking-tight">
-          Testimonials
-        </h2>
-        <p className="font-sans text-xs sm:text-sm text-[#7B857F] mt-2 max-w-[60ch] mx-auto">
-          Direct observations from readers and tech buyers relying on our testing laboratory.
-        </p>
-      </div>
-
-      {/* Large Quote Layout */}
-      <div className="max-w-[920px] mx-auto bg-white rounded-[24px] border border-[#E3E8E2] p-8 sm:p-12 shadow-subtle">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-10">
-          {/* Rounded Gray Avatar Square on Left */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-[20px] bg-[#E6EAE5] flex items-center justify-center flex-shrink-0">
-            <span className="font-serif font-bold text-xl sm:text-2xl text-[#4F6F5D]">
-              {current.initials}
-            </span>
-            {/* Pastel quote glyph indicator */}
-            <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#DDD5F0] text-[#6B4FB3] flex items-center justify-center text-xs font-serif font-bold shadow-xs">
-              “
-            </div>
+    <section className="w-full px-3 sm:px-6 lg:px-12 py-10 sm:py-14 font-poppins">
+      {/* Section Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 border-b border-gray-200/80 pb-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full mb-1">
+            <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 text-amber-600" />
+            <span>Reader Feedback</span>
           </div>
-
-          {/* Quote Text + Author Info on Right */}
-          <div className="flex-1 space-y-4">
-            <p className="font-serif text-lg sm:text-xl text-[#1E2A24] leading-relaxed italic">
-              "{current.quote}"
-            </p>
-            <div>
-              <p className="font-sans font-semibold text-xs sm:text-sm text-[#1E2A24]">
-                {current.author}
-              </p>
-              <p className="font-sans text-xs text-[#7B857F]">
-                {current.role}
-              </p>
-            </div>
-          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Verified Buyer Reviews & Testimonials
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
+            Direct observations from readers and tech buyers relying on our testing laboratory.
+          </p>
         </div>
-
-        {/* Carousel selector dots for testimonials */}
-        <div className="flex items-center justify-center gap-2 mt-8 pt-4 border-t border-[#E3E8E2]">
-          {TESTIMONIALS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIdx(i)}
-              aria-label={`Testimonial ${i + 1}`}
-              className={`h-2 transition-all rounded-full ${
-                activeIdx === i ? "w-6 bg-[#4F6F5D]" : "w-2 bg-[#CBD3CB]"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Thin Horizontal Divider with Right-Aligned Link */}
-      <div className="max-w-[920px] mx-auto mt-8 pt-4 border-t border-[#E3E8E2] flex justify-end">
         <a
           href="/about"
-          className="font-sans text-xs font-medium text-[#4F6F5D] hover:underline flex items-center gap-1 text-decoration-none"
+          className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1"
         >
-          <span>Read all testimonials</span>
+          <span>Read all reader stories</span>
           <span>→</span>
         </a>
+      </div>
+
+      {/* 3-Column Desktop Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {TESTIMONIALS.map((t, idx) => (
+          <div
+            key={idx}
+            className={`rounded-2xl sm:rounded-3xl p-6 sm:p-7 border transition-all duration-200 flex flex-col justify-between ${
+              activeIdx === idx
+                ? "bg-white border-orange-400 shadow-md ring-2 ring-orange-500/10"
+                : "bg-white border-gray-200 shadow-sm hover:border-gray-300"
+            }`}
+            onClick={() => setActiveIdx(idx)}
+          >
+            <div>
+              {/* Star Rating */}
+              <div className="flex text-amber-400 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon key={i} className="w-4 h-4 fill-current" />
+                ))}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed italic mb-6">
+                "{t.quote}"
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-slate-900 text-amber-400 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                {t.initials}
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                  {t.author}
+                </h4>
+                <p className="text-[11px] text-gray-500 truncate">
+                  {t.role}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

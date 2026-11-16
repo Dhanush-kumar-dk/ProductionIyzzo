@@ -1,205 +1,174 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Image1 from "../assets/banner_1.png";
+import Image2 from "../assets/banner_2.png";
+import Image3 from "../assets/banner_3.png";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 
-interface HeroSlide {
+interface Slide {
   id: number;
-  eyebrow: string;
-  titleLine1: string;
-  titleLine2: string;
-  description: string;
-  primaryCta: string;
-  secondaryCta: string;
-  stats: { value: string; label: string }[];
-  categoryTarget: string;
+  image: string;
+  alt: string;
 }
 
-const HERO_SLIDES: HeroSlide[] = [
+const slides: Slide[] = [
   {
     id: 1,
-    eyebrow: "Independent curation & lab audits",
-    titleLine1: "Top-Rated Electronics",
-    titleLine2: "MOBILE, TV & APPLIANCES",
-    description:
-      "Discover the latest lab-audited phones, noise-canceling earbuds, and smart appliances benchmarked across battery endurance, build quality, and real-world value.",
-    primaryCta: "Shop the Latest",
-    secondaryCta: "Certified & Warranty Protected",
-    stats: [
-      { value: "2,400+ Hrs", label: "Lab Tested" },
-      { value: "100%", label: "Unbiased Verdicts" },
-      { value: "0 Paid", label: "Brand Sponsorships" },
-    ],
-    categoryTarget: "Electronics",
+    image: Image1,
+    alt: "Upgrade Your Life with Amazon — Better Products. Greater Savings.",
   },
   {
     id: 2,
-    eyebrow: "Acoustics & Sound Benchmarks",
-    titleLine1: "True Wireless & Audio",
-    titleLine2: "STUDIO DRIVERS & NOISE CANCELLING",
-    description:
-      "Exhaustive frequency response curves, active noise-cancelling attenuation trials, and microphone clarity recordings in busy street conditions.",
-    primaryCta: "Explore Audio Picks",
-    secondaryCta: "Review Testing Protocols",
-    stats: [
-      { value: "180+ Models", label: "Headphones Measured" },
-      { value: "±0.5 dB", label: "Measurement Precision" },
-      { value: "48 Hrs", label: "Average Battery Stress" },
-    ],
-    categoryTarget: "Audio",
+    image: Image2,
+    alt: "Your Next Big Deal Awaits! — Explore top-rated products on Amazon",
   },
   {
     id: 3,
-    eyebrow: "Home & Everyday Performance",
-    titleLine1: "Modern Home Essentials",
-    titleLine2: "KITCHEN, CLIMATE & SMART LIVING",
-    description:
-      "Tested for daily durability in Indian households — energy efficiency measurements, thermal thermal cameras, and mechanical stress evaluations.",
-    primaryCta: "View Living Guides",
-    secondaryCta: "Safety & Efficiency Benchmarks",
-    stats: [
-      { value: "350+ Homes", label: "Reader Cohort Tests" },
-      { value: "5-Year", label: "Component Durability" },
-      { value: "100%", label: "Lab Verified Specs" },
-    ],
-    categoryTarget: "Home",
+    image: Image3,
+    alt: "Shop Smarter, Save Bigger — Discover the best deals on Amazon",
   },
 ];
 
-const AUTOPLAY_MS = 6500;
+const AUTOPLAY_MS = 5500;
+const SWIPE_THRESHOLD = 40;
 
-export default function HeroBanner({
-  onExploreClick,
-  onCategorySelect,
-}: {
-  onExploreClick: () => void;
-  onCategorySelect?: (cat: string) => void;
-}) {
+export default function HeroBanner({ onExploreClick }: { onExploreClick: () => void }) {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
-  const next = useCallback(() => {
-    setCurrent((p) => (p + 1) % HERO_SLIDES.length);
+  const next = useCallback(() => setCurrent((p) => (p + 1) % slides.length), []);
+  const prev = useCallback(
+    () => setCurrent((p) => (p === 0 ? slides.length - 1 : p - 1)),
+    []
+  );
+
+  // Preload every slide so switching is instant
+  useEffect(() => {
+    slides.forEach((s) => {
+      const img = new Image();
+      img.src = s.image;
+    });
   }, []);
 
-  const prev = useCallback(() => {
-    setCurrent((p) => (p === 0 ? HERO_SLIDES.length - 1 : p - 1));
-  }, []);
-
+  // Autoplay (pauses on hover / touch)
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(next, AUTOPLAY_MS);
     return () => clearInterval(timer);
-  }, [isPaused, next]);
+  }, [isPaused, next, current]);
 
-  const slide = HERO_SLIDES[current];
-
-  const handlePrimaryClick = () => {
-    if (onCategorySelect && slide.categoryTarget) {
-      onCategorySelect(slide.categoryTarget);
-    }
-    onExploreClick();
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    setIsPaused(true);
   };
 
-  const handleSecondaryClick = () => {
-    const el = document.getElementById("research-lab");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      onExploreClick();
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current !== null) {
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > SWIPE_THRESHOLD) diff > 0 ? next() : prev();
     }
+    touchStartX.current = null;
+    setIsPaused(false);
   };
+
+  const arrowClass =
+    "absolute top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/40 hover:bg-black/70 " +
+    "text-white backdrop-blur-md transition-all duration-300 shadow-lg " +
+    "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 " +
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80";
 
   return (
-    <section className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+    <section
+      aria-roledescription="carousel"
+      aria-label="Promotional banners"
+      className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4"
+    >
       <div
-        className="relative w-full rounded-[24px] sm:rounded-[28px] bg-[#B5BEB5] text-[#1E2A24] overflow-hidden p-6 sm:p-10 md:p-14 transition-all duration-300"
+        className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-950 shadow-xl cursor-pointer select-none"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onClick={onExploreClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onExploreClick();
+          }
+        }}
       >
-        {/* Subtle background ambient grain / texture */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/[0.04] pointer-events-none" />
-
-        {/* Carousel Prev Arrow */}
-        <button
-          onClick={prev}
-          aria-label="Previous slide"
-          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-[#1E2A24] shadow-subtle flex items-center justify-center transition hover:scale-105 z-20"
-        >
-          <ChevronLeftIcon className="w-4 h-4" />
-        </button>
-
-        {/* Carousel Next Arrow */}
-        <button
-          onClick={next}
-          aria-label="Next slide"
-          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white text-[#1E2A24] shadow-subtle flex items-center justify-center transition hover:scale-105 z-20"
-        >
-          <ChevronRightIcon className="w-4 h-4" />
-        </button>
-
-        {/* Slide Content */}
-        <div className="relative z-10 max-w-[640px] flex flex-col items-start gap-4 sm:gap-5">
-          {/* Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 backdrop-blur-xs text-[11px] font-sans font-medium tracking-wide text-[#1E2A24]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4F6F5D]" />
-            <span>{slide.eyebrow}</span>
-          </div>
-
-          {/* Signature H1: Serif upright + Serif italic uppercase accent line */}
-          <div className="space-y-1">
-            <h1 className="font-serif font-normal text-3xl sm:text-5xl lg:text-[56px] leading-[1.08] text-[#1E2A24] tracking-tight">
-              {slide.titleLine1}
-            </h1>
-            <h2 className="font-serif italic uppercase text-xl sm:text-2xl lg:text-[30px] leading-[1.1] text-[#1E2A24] tracking-wide font-normal">
-              {slide.titleLine2}
-            </h2>
-          </div>
-
-          {/* Subtitle / Paragraph */}
-          <p className="font-sans text-sm sm:text-base text-[#3F4A44] leading-relaxed max-w-[50ch]">
-            {slide.description}
-          </p>
-
-          {/* Buttons: Primary Brand + Secondary White */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              onClick={handlePrimaryClick}
-              className="px-5 py-2.5 rounded-[10px] bg-[#4F6F5D] text-white text-xs sm:text-sm font-medium hover:bg-[#5E7F6C] transition shadow-subtle flex items-center gap-2"
+        {/*
+          All slides share one grid cell. The container's height is set by the
+          images themselves (w-full h-auto), so any banner is shown in full,
+          never cropped, and scales fluidly at every screen width.
+        */}
+        <div className="grid">
+          {slides.map((slide, idx) => (
+            <div
+              key={slide.id}
+              aria-hidden={idx !== current}
+              className={`col-start-1 row-start-1 flex items-center justify-center transition-opacity duration-700 ease-in-out ${
+                idx === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              }`}
             >
-              <span>{slide.primaryCta}</span>
-              <span>→</span>
-            </button>
-            <button
-              onClick={handleSecondaryClick}
-              className="px-5 py-2.5 rounded-[10px] bg-white border border-[#CBD3CB] text-[#1E2A24] text-xs sm:text-sm font-medium hover:bg-[#FAFBF8] transition"
-            >
-              {slide.secondaryCta}
-            </button>
-          </div>
-
-          {/* Three-Stat Row */}
-          <div className="w-full pt-6 sm:pt-8 mt-2 border-t border-black/[0.08] grid grid-cols-3 gap-4 sm:gap-8">
-            {slide.stats.map((st) => (
-              <div key={st.label} className="space-y-0.5">
-                <span className="font-serif font-bold text-lg sm:text-2xl text-[#1E2A24] block">
-                  {st.value}
-                </span>
-                <span className="font-sans text-[10px] sm:text-[11px] text-[#3F4A44] font-medium tracking-tight block">
-                  {st.label}
-                </span>
-              </div>
-            ))}
-          </div>
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                draggable={false}
+                loading={idx === 0 ? "eager" : "lazy"}
+                decoding="async"
+                className="block w-full h-auto"
+              />
+            </div>
+          ))}
         </div>
 
-        {/* Carousel Pagination Dots */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-          {HERO_SLIDES.map((s, idx) => (
+        {/* Arrows */}
+        <button
+          type="button"
+          aria-label="Previous slide"
+          onClick={(e) => {
+            e.stopPropagation();
+            prev();
+          }}
+          className={`${arrowClass} left-2 sm:left-4`}
+        >
+          <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+
+        <button
+          type="button"
+          aria-label="Next slide"
+          onClick={(e) => {
+            e.stopPropagation();
+            next();
+          }}
+          className={`${arrowClass} right-2 sm:right-4`}
+        >
+          <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+
+        {/* Dots */}
+        <div
+          className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {slides.map((_, idx) => (
             <button
-              key={s.id}
-              onClick={() => setCurrent(idx)}
+              type="button"
+              key={idx}
               aria-label={`Go to slide ${idx + 1}`}
-              className={`h-2 transition-all duration-300 rounded-full ${
-                current === idx ? "w-6 bg-[#4F6F5D]" : "w-2 bg-white/70 hover:bg-white"
+              aria-current={idx === current}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrent(idx);
+              }}
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 focus:outline-none ${
+                idx === current
+                  ? "w-6 sm:w-8 bg-[#FFD814]"
+                  : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/90"
               }`}
             />
           ))}

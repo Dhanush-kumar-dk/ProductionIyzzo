@@ -34,34 +34,39 @@ export default function Benefits() {
   ];
 
   return (
-    <section className="w-full bg-[#F1F4EF] py-16 sm:py-24">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Centered Serif Section Title */}
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="font-serif font-normal text-3xl sm:text-4xl text-[#1E2A24] tracking-tight">
-            Benefits for your experience
+    <section className="w-full bg-slate-900 text-white py-12 sm:py-16 font-poppins">
+      <div className="w-full px-3 sm:px-6 lg:px-12">
+        {/* Section Header */}
+        <div className="text-center mb-10 sm:mb-14">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-white/10 px-3 py-1 rounded-full mb-2">
+            <span>Guaranteed Trust</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
+            Benefits for Your Shopping Experience
           </h2>
-          <p className="font-sans text-xs sm:text-sm text-[#7B857F] mt-2 max-w-[60ch] mx-auto">
-            Why discerning Indian buyers rely on Yearnit’s quiet, lab-audited recommendations.
+          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-xl mx-auto">
+            Why discerning Indian buyers rely on Yearnit’s verified, lab-audited recommendations.
           </p>
         </div>
 
-        {/* 4 Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+        {/* 4 Columns spanning the full desktop width */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {benefits.map((b, idx) => {
             const Icon = b.icon;
             return (
-              <div key={idx} className="flex flex-col items-center text-center space-y-3">
-                {/* Circular tinted icon container */}
-                <div className="w-12 h-12 rounded-full bg-white border border-[#CBD3CB] flex items-center justify-center text-[#4F6F5D] shadow-subtle">
-                  <Icon className="w-6 h-6 stroke-[1.5]" />
+              <div
+                key={idx}
+                className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 flex flex-col items-center text-center space-y-3 hover:border-slate-600 transition"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                  <Icon className="w-6 h-6 stroke-[1.8]" />
                 </div>
 
-                <h3 className="font-serif font-medium text-base sm:text-lg text-[#1E2A24]">
+                <h3 className="font-bold text-base sm:text-lg text-white">
                   {b.title}
                 </h3>
 
-                <p className="font-sans text-xs sm:text-[13px] text-[#7B857F] leading-relaxed max-w-[28ch]">
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                   {b.description}
                 </p>
               </div>

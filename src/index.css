@@ -2,67 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Surfaces */
-  --bg-page:        #FAFBF8;
-  --bg-section-alt: #F1F4EF;
-  --surface-card:   #FFFFFF;
-  --surface-muted:  #E6EAE5;
-  --surface-sage:   #B5BEB5;
-  --surface-sage-deep: #A3AEA3;
-  --surface-mint:   #D7EBDF;
-
-  /* Brand / actions */
-  --brand-700: #4F6F5D;
-  --brand-600: #5E7F6C;
-  --brand-100: #DCE8E0;
-
-  /* Text */
-  --text-strong: #1E2A24;
-  --text-body:   #3F4A44;
-  --text-muted:  #7B857F;
-  --text-on-brand: #FFFFFF;
-
-  /* Borders */
-  --border-subtle: #E3E8E2;
-  --border-strong: #CBD3CB;
-
-  /* Product-card pastels */
-  --pastel-mint:     #BFE6D3;
-  --pastel-blue:     #D3E3F4;
-  --pastel-lavender: #DDD5F0;
-  --pastel-peach:    #FADFC8;
-
-  /* Status badges */
-  --badge-hot-bg:    #FDE4E0; --badge-hot-fg:    #C2412D;
-  --badge-deal-bg:   #D9F2E3; --badge-deal-fg:   #2F7D52;
-  --badge-trend-bg:  #E8DEF8; --badge-trend-fg:  #6B4FB3;
-  --badge-new-bg:    #D5F0F0; --badge-new-fg:    #1F7A7A;
-  --badge-budget-bg: #FDE9D2; --badge-budget-fg: #B8661A;
-
-  /* Rating */
-  --star: #E0A83A;
-}
-
 @layer base {
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
-    background-color: #FAFBF8;
   }
 
   body {
-    @apply bg-page text-ink-body font-sans antialiased;
+    @apply bg-[#F7F9FA] text-[#1A1A1A] font-poppins antialiased;
     overflow-x: hidden;
     width: 100%;
     min-width: 320px;
-    background-color: #FAFBF8;
-    color: #3F4A44;
-  }
-
-  h1, h2, h3, h4 {
-    color: #1E2A24;
   }
 }
 
