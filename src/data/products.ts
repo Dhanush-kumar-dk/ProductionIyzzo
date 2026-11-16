@@ -563,6 +563,32 @@ export function deleteProduct(productId: string): void {
   window.dispatchEvent(new Event("catalogUpdated"));
 }
 
+export function deleteMultipleProducts(productIds: string[]): void {
+  if (typeof window === "undefined" || !productIds.length) return;
+  const cleanIds = new Set(productIds.map((id) => id.trim().toUpperCase()));
+
+  // 1. Remove from custom products
+  const existing = getCustomProducts();
+  const updatedCustom = existing.filter((p) => !cleanIds.has(p.id.toUpperCase()));
+  try {
+    localStorage.setItem("yearnit_custom_products", JSON.stringify(updatedCustom));
+  } catch (err) {
+    console.warn("Failed to remove custom products from localStorage:", err);
+  }
+
+  // 2. Add to deleted IDs set
+  const deleted = getDeletedProductIds();
+  const deletedSet = new Set(deleted);
+  cleanIds.forEach((id) => deletedSet.add(id));
+  try {
+    localStorage.setItem("yearnit_deleted_products", JSON.stringify(Array.from(deletedSet)));
+  } catch (err) {
+    console.warn("Failed to save deleted products to localStorage:", err);
+  }
+
+  window.dispatchEvent(new Event("catalogUpdated"));
+}
+
 export function removeCustomProduct(productId: string): void {
   deleteProduct(productId);
 }

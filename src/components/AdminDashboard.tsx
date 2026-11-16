@@ -14,6 +14,7 @@ import {
   getCustomProducts,
   getDeletedProductIds,
   deleteProduct,
+  deleteMultipleProducts,
   restoreProduct,
   resetCatalogToDefaults,
   syncProductsFromSupabase,
@@ -48,6 +49,9 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -161,6 +165,85 @@ const AdminDashboard = () => {
     } finally {
       setIsDeleting(false);
       setProductToDelete(null);
+    }
+  };
+
+  const isAllSelected =
+    filteredProducts.length > 0 &&
+    filteredProducts.every((p) => selectedProductIds.includes(p.id));
+
+  const isSomeSelected =
+    selectedProductIds.length > 0 && !isAllSelected;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      const visibleSet = new Set(filteredProducts.map((p) => p.id));
+      setSelectedProductIds((prev) => prev.filter((id) => !visibleSet.has(id)));
+    } else {
+      const newSelected = new Set(selectedProductIds);
+      filteredProducts.forEach((p) => newSelected.add(p.id));
+      setSelectedProductIds(Array.from(newSelected));
+    }
+  };
+
+  const toggleSelectProduct = (id: string) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const confirmBulkDelete = async () => {
+    if (!selectedProductIds.length) return;
+    setIsBulkDeleting(true);
+    const count = selectedProductIds.length;
+    const idsToDelete = [...selectedProductIds];
+
+    try {
+      // 1. Local batch deletion
+      deleteMultipleProducts(idsToDelete);
+
+      // 2. Cloud DB sync (Supabase)
+      try {
+        const { error: sbErr } = await supabase.from("products").delete().in("id", idsToDelete);
+        if (sbErr) {
+          for (const id of idsToDelete) {
+            await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${encodeURIComponent(id)}`, {
+              method: "DELETE",
+              headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+              },
+            }).catch(() => {});
+          }
+        }
+      } catch (sbErr) {
+        console.warn("Supabase bulk delete notice:", sbErr);
+      }
+
+      // 3. Firestore delete
+      try {
+        for (const id of idsToDelete) {
+          await deleteDoc(doc(firestore, "products", id)).catch(() => {});
+        }
+      } catch (fsErr) {
+        console.warn("Firestore bulk delete notice:", fsErr);
+      }
+
+      setSelectedProductIds([]);
+      setShowBulkDeleteModal(false);
+      setToastMessage({
+        type: "success",
+        text: `Successfully removed ${count} product${count > 1 ? "s" : ""} from the catalog.`,
+      });
+      refreshCatalog();
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      setToastMessage({
+        type: "error",
+        text: "Could not complete bulk deletion. Please try again.",
+      });
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -501,26 +584,86 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Search Box */}
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200/90 shadow-2xs flex items-center gap-2">
-            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1" />
-            <input
-              type="text"
-              placeholder="Search products by title, ID/ASIN, or category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs sm:text-sm outline-none placeholder-gray-400 font-medium"
-            />
-            {searchQuery && (
+          {/* Search & Bulk Select Toolbar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200/90 shadow-2xs flex items-center gap-2 flex-1">
+              <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1" />
+              <input
+                type="text"
+                placeholder="Search products by title, ID/ASIN, or category..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full text-xs sm:text-sm outline-none placeholder-gray-400 font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-bold px-2 py-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {filteredProducts.length > 0 && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="text-xs text-gray-400 hover:text-gray-600 font-bold px-2 py-1"
+                onClick={toggleSelectAll}
+                className={`inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl text-xs font-bold border transition ${
+                  isAllSelected
+                    ? "bg-amber-500 text-gray-950 border-amber-500 shadow-xs"
+                    : selectedProductIds.length > 0
+                    ? "bg-amber-50 text-amber-900 border-amber-300"
+                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                }`}
               >
-                Clear
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = isSomeSelected;
+                  }}
+                  onChange={() => {}} // handled by button onClick
+                  className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-gray-300 cursor-pointer accent-amber-500 pointer-events-none"
+                />
+                <span>
+                  {isAllSelected
+                    ? "Deselect All"
+                    : `Select All (${filteredProducts.length})`}
+                </span>
               </button>
             )}
           </div>
+
+          {/* Bulk Selection Action Bar */}
+          {selectedProductIds.length > 0 && (
+            <div className="bg-gradient-to-r from-amber-50 via-amber-100/60 to-amber-50 border border-amber-300/80 rounded-2xl p-3 sm:px-4 flex items-center justify-between gap-3 animate-fade-in shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-bold text-gray-900">
+                  <span className="text-amber-800 font-extrabold">{selectedProductIds.length}</span> product{selectedProductIds.length > 1 ? "s" : ""} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProductIds([])}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl transition"
+                >
+                  Deselect All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  <TrashIcon className="w-3.5 h-3.5" />
+                  <span>Delete Selected ({selectedProductIds.length})</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Products Table & Mobile Cards */}
           <div className="bg-white rounded-3xl border border-gray-200/90 shadow-2xs overflow-hidden">
@@ -535,9 +678,22 @@ const AdminDashboard = () => {
                   const isCustom = customProducts.some(
                     (c) => c.id.toUpperCase() === p.id.toUpperCase()
                   );
+                  const isChecked = selectedProductIds.includes(p.id);
                   return (
-                    <div key={p.id} className="p-4 space-y-3">
+                    <div
+                      key={p.id}
+                      className={`p-4 space-y-3 transition ${
+                        isChecked ? "bg-amber-50/50" : ""
+                      }`}
+                    >
                       <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelectProduct(p.id)}
+                          aria-label={`Select product ${p.name}`}
+                          className="w-4 h-4 mt-1 rounded text-amber-500 focus:ring-amber-500 border-gray-300 cursor-pointer accent-amber-500 flex-shrink-0"
+                        />
                         <img
                           src={p.image}
                           alt={p.name}
@@ -605,6 +761,18 @@ const AdminDashboard = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-gray-50/90 border-b border-gray-100 text-gray-500 font-bold uppercase tracking-wider">
                   <tr>
+                    <th className="py-3.5 px-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = isSomeSelected;
+                        }}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all products"
+                        className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-gray-300 cursor-pointer accent-amber-500"
+                      />
+                    </th>
                     <th className="py-3.5 px-4">Item & Title</th>
                     <th className="py-3.5 px-4">Category</th>
                     <th className="py-3.5 px-4">Price / MRP</th>
@@ -616,7 +784,7 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-gray-100">
                   {filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400 font-medium">
+                      <td colSpan={7} className="py-12 text-center text-gray-400 font-medium">
                         No products match your criteria.
                       </td>
                     </tr>
@@ -625,8 +793,23 @@ const AdminDashboard = () => {
                       const isCustom = customProducts.some(
                         (c) => c.id.toUpperCase() === p.id.toUpperCase()
                       );
+                      const isChecked = selectedProductIds.includes(p.id);
                       return (
-                        <tr key={p.id} className="hover:bg-gray-50/70 transition">
+                        <tr
+                          key={p.id}
+                          className={`hover:bg-gray-50/70 transition ${
+                            isChecked ? "bg-amber-50/60" : ""
+                          }`}
+                        >
+                          <td className="py-3 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleSelectProduct(p.id)}
+                              aria-label={`Select product ${p.name}`}
+                              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-gray-300 cursor-pointer accent-amber-500"
+                            />
+                          </td>
                           <td className="py-3 px-4 max-w-sm">
                             <div className="flex items-center gap-3">
                               <img
@@ -791,6 +974,87 @@ const AdminDashboard = () => {
                   <>
                     <TrashIcon className="w-4 h-4" />
                     <span>Yes, Delete Product</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && selectedProductIds.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => {
+            if (!isBulkDeleting) setShowBulkDeleteModal(false);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 text-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <TrashIcon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-gray-950">
+                  Delete {selectedProductIds.length} Products?
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This will immediately remove {selectedProductIds.length} selected products from your live store catalog, carousels, and search results.
+                </p>
+              </div>
+            </div>
+
+            {/* Selected Items Summary Preview */}
+            <div className="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 mb-5 max-h-40 overflow-y-auto divide-y divide-gray-100">
+              {filteredProducts
+                .filter((p) => selectedProductIds.includes(p.id))
+                .map((p) => (
+                  <div key={p.id} className="py-2 flex items-center gap-2.5 first:pt-0 last:pb-0">
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-8 h-8 object-contain rounded-lg bg-white p-0.5 border border-gray-200 flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-gray-900 truncate">
+                        {p.name}
+                      </p>
+                      <p className="text-[10px] text-gray-400 font-mono">
+                        {p.id} • ₹{p.price || "Check Price"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isBulkDeleting}
+                onClick={confirmBulkDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Deleting {selectedProductIds.length}...</span>
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Yes, Delete All Selected ({selectedProductIds.length})</span>
                   </>
                 )}
               </button>
