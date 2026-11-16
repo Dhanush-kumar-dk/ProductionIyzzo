@@ -42,23 +42,24 @@ export default function CategoryStrip({
   };
 
   return (
-    <div className="w-full px-3 sm:px-6 lg:px-12 py-4 sm:py-5 font-poppins">
-      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
-        <h2 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span>Shop by Category</span>
-        </h2>
-        {selectedCategory && (
-          <button
-            onClick={() => onSelectCategory("")}
-            className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-semibold flex items-center gap-1 transition cursor-pointer"
-          >
-            <span>Reset to All Deals</span>
-            <span>✕</span>
-          </button>
-        )}
-      </div>
+    <div className="w-full py-3 sm:py-4 font-poppins">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+          <h2 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
+            <span>Shop by Category</span>
+          </h2>
+          {selectedCategory && (
+            <button
+              onClick={() => onSelectCategory("")}
+              className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-semibold flex items-center gap-1 transition cursor-pointer"
+            >
+              <span>Reset to All Deals</span>
+              <span>✕</span>
+            </button>
+          )}
+        </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none touch-scroll pr-4">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none touch-scroll pr-4">
         {categories.map((cat) => {
           const isSelected =
             (cat.id === "all" &&
@@ -96,6 +97,7 @@ export default function CategoryStrip({
             </button>
           );
         })}
+        </div>
       </div>
     </div>
   );

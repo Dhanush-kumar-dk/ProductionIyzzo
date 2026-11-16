@@ -263,7 +263,7 @@ export default function TopBar({
           The "Deliver to" pill lives INSIDE the left group, so it always sits
           right next to the logo instead of floating in the middle.
         */}
-        <div className="w-full px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 lg:gap-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 lg:gap-6">
           {/* Left group: menu toggle + logo + deliver-to */}
           <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-4 flex-shrink-0">
             <button
@@ -442,7 +442,7 @@ export default function TopBar({
 
         {/* ── 2. Secondary Sub-Nav Bar ── */}
         <div className="bg-[#0B1120] text-xs text-slate-300 border-t border-white/[0.06] font-medium">
-          <div className="w-full px-3 sm:px-6 lg:px-12 py-2 flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-none touch-scroll">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-none touch-scroll">
             <button
               onClick={() => handleQuickCategoryClick("All")}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/15 text-amber-300 hover:bg-amber-400/25 border border-amber-400/30 font-bold whitespace-nowrap flex-shrink-0 transition shadow-xs"

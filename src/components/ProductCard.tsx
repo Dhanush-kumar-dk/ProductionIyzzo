@@ -182,10 +182,10 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Card Content */}
-        <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between bg-white">
+        <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between bg-white">
           <div>
             {/* Title */}
-            <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug mb-1 min-h-[2rem] sm:min-h-[2.5rem]">
+            <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug mb-1 min-h-[2.5rem] sm:min-h-[2.75rem]">
               {product.name}
             </h3>
 
@@ -195,7 +195,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
-                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${
+                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
                       i < Math.floor(currentRating)
                         ? "fill-[#FFA41C] text-[#FFA41C]"
                         : i < currentRating
@@ -208,16 +208,16 @@ export default function ProductCard({ product }: ProductCardProps) {
                   </svg>
                 ))}
               </div>
-              <span className="font-bold text-gray-900 text-[11px] sm:text-xs">
+              <span className="font-bold text-gray-900 text-xs sm:text-[13px]">
                 {currentRating.toFixed(1)}
               </span>
-              <span className="text-[10px] sm:text-[11px] text-gray-400">
+              <span className="text-[11px] sm:text-xs text-gray-400">
                 ({reviewCount > 999 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount})
               </span>
             </div>
 
             {/* Product Short Detail (visible on larger screens / tablets) */}
-            <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed mb-2.5 hidden xs:block">
+            <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-2.5 hidden xs:block">
               {product.shortDetail || product.summary || "Verified product specifications, authentic reviews, and official warranty."}
             </p>
           </div>
@@ -226,15 +226,15 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* Price Display */}
             {product.price && (
               <div className="flex items-baseline gap-1.5 mb-2 flex-wrap">
-                <span className="text-sm sm:text-lg font-black text-gray-950 tracking-tight">
+                <span className="text-base sm:text-xl font-black text-gray-950 tracking-tight">
                   ₹{product.price}
                 </span>
                 {product.mrp && (
-                  <span className="text-[10px] sm:text-xs text-gray-400 line-through">
+                  <span className="text-xs sm:text-[13px] text-gray-400 line-through">
                     ₹{product.mrp}
                   </span>
                 )}
-                <span className="text-[9px] sm:text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1 sm:px-1.5 py-0.5 rounded">
+                <span className="text-[9px] sm:text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
                   Prime
                 </span>
               </div>

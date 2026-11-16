@@ -60,7 +60,7 @@ export default function ProfileLayout({
   ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
       {/* Mobile Top Tabs (Horizontal Scrollbar on Small Devices) */}
       <div className="lg:hidden mb-6 -mx-4 px-4 overflow-x-auto no-scrollbar pb-2">
         <div className="flex items-center gap-2 min-w-max">

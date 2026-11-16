@@ -203,7 +203,7 @@ export default function Carousel({
   }, [products, selectedCategory, localSearch, sortBy]);
 
   return (
-    <section id="featured-catalog" className="w-full px-3 sm:px-6 lg:px-12 py-6 sm:py-8 font-poppins">
+    <section id="featured-catalog" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 font-poppins">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 border-b border-gray-200/80 pb-4 sm:pb-5">
         <div>
@@ -211,7 +211,7 @@ export default function Carousel({
             <SparklesIcon className="w-3.5 h-3.5 flex-shrink-0 text-amber-600" />
             <span>Independent Editorial Reviews</span>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             Curated Buyer Guides & Recommendations
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -292,7 +292,7 @@ export default function Carousel({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

@@ -30,7 +30,7 @@ export default function Testimonials() {
   const [activeIdx, setActiveIdx] = useState(0);
 
   return (
-    <section className="w-full px-3 sm:px-6 lg:px-12 py-10 sm:py-14 font-poppins">
+    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 font-poppins">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 border-b border-gray-200/80 pb-4">
         <div>
@@ -38,7 +38,7 @@ export default function Testimonials() {
             <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 text-amber-600" />
             <span>Reader Feedback</span>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
             Verified Buyer Reviews & Testimonials
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">

@@ -35,7 +35,7 @@ export default function Benefits() {
 
   return (
     <section className="w-full bg-slate-900 text-white py-12 sm:py-16 font-poppins">
-      <div className="w-full px-3 sm:px-6 lg:px-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-white/10 px-3 py-1 rounded-full mb-2">
