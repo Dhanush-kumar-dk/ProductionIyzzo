@@ -37,6 +37,8 @@ export default async function handler(req, res) {
   if (
     !cleanKey.startsWith("Screenshot/") &&
     !cleanKey.startsWith("screenshots/") &&
+    !cleanKey.startsWith("Product-image/") &&
+    !cleanKey.startsWith("product-image/") &&
     !cleanKey.startsWith("avatars/")
   ) {
     return res.status(403).json({ error: "Access denied: Unauthorized storage path." });

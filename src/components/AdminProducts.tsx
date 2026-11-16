@@ -34,7 +34,10 @@ import {
   EyeIcon,
   BoltIcon,
   ArrowPathIcon,
+  CloudArrowUpIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/solid";
+import { uploadProductImageToR2 } from "../utils/r2Storage";
 import { fetchProductDataFromUrl } from "../utils/amazonUrlParser";
 
 // ==========================================
@@ -257,6 +260,8 @@ export default function AdminProducts() {
   // URL Auto-Fetch feature state
   const [isFetchingUrlData, setIsFetchingUrlData] = useState(false);
   const [fetchFeedback, setFetchFeedback] = useState<FetchFeedbackState | null>(null);
+  const [uploadingSlot, setUploadingSlot] = useState<"image" | "image1" | "image2" | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -272,6 +277,53 @@ export default function AdminProducts() {
   const resetForm = useCallback(() => {
     setForm(INITIAL_FORM_STATE);
   }, []);
+
+  // Upload image to Cloudflare R2 bucket: yearnit-storage/Product-image/
+  const handleImageFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: "image" | "image1" | "image2"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file (PNG, JPG, WebP, AVIF).");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image size must be under 10MB.");
+      return;
+    }
+
+    setUploadingSlot(slot);
+    setUploadError(null);
+
+    try {
+      const res = await uploadProductImageToR2(file, {
+        slot,
+        productId: form.id || form.asin || "custom_product",
+        filename: file.name,
+      });
+
+      updateFormField(slot, res.url);
+      setStatusMessage({
+        type: "success",
+        text: `Image uploaded & stored in yearnit-storage/Product-image/ (${file.name})`,
+      });
+    } catch (err: any) {
+      console.error("Product image upload failed:", err);
+      const msg = err.message || "Failed to upload image to Cloudflare R2";
+      setUploadError(msg);
+      setStatusMessage({
+        type: "error",
+        text: msg,
+      });
+    } finally {
+      setUploadingSlot(null);
+      e.target.value = "";
+    }
+  };
 
   // Auto-Fetch data from Amazon URL
   const handleAutoFetch = async (targetUrl?: string) => {
@@ -1095,34 +1147,192 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                {/* 5. Images (Multi-Image Carousel Support) */}
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-700">
-                    Product Image URLs (Multi-Image Carousel) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={form.image}
-                    onChange={(e) => updateFormField("image", e.target.value)}
-                    placeholder="Primary Image URL: https://m.media-amazon.com/images/I/..."
-                    className="w-full px-3.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="url"
-                      value={form.image1}
-                      onChange={(e) => updateFormField("image1", e.target.value)}
-                      placeholder="Additional Image 1 (Optional)"
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
-                    />
-                    <input
-                      type="url"
-                      value={form.image2}
-                      onChange={(e) => updateFormField("image2", e.target.value)}
-                      placeholder="Additional Image 2 (Optional)"
-                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500"
-                    />
+                {/* 5. Images (Upload to yearnit-storage/Product-image/ & Multi-Image Carousel Support) */}
+                <div className="space-y-3 pt-2 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <label className="block text-xs font-bold text-gray-700">
+                      Product Images & Upload (Multi-Image Carousel) <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+                      <CloudArrowUpIcon className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <span>Saves to <strong>yearnit-storage/Product-image/</strong></span>
+                    </span>
+                  </div>
+
+                  {/* Primary Image Upload & Input */}
+                  <div className="bg-gray-50/70 p-3 rounded-2xl border border-gray-200/80 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-800">Primary Product Image <span className="text-red-500">*</span></span>
+                      {form.image && (
+                        <span className="text-[10px] text-gray-500 font-mono truncate max-w-[200px]">
+                          {form.image.includes("Product-image") ? "✓ Stored in R2" : "External URL"}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                      <input
+                        type="url"
+                        required
+                        value={form.image}
+                        onChange={(e) => updateFormField("image", e.target.value)}
+                        placeholder="Paste image URL OR click Upload Image →"
+                        className="flex-1 px-3.5 py-2 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-white"
+                      />
+                      <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-950 font-bold text-xs rounded-xl shadow-xs cursor-pointer transition flex-shrink-0">
+                        {uploadingSlot === "image" ? (
+                          <>
+                            <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                            <span>Uploading to R2...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CloudArrowUpIcon className="w-4 h-4" />
+                            <span>Upload Image</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={uploadingSlot !== null}
+                          onChange={(e) => handleImageFileUpload(e, "image")}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Image Preview Thumbnail */}
+                    {form.image && (
+                      <div className="flex items-center gap-3 pt-1 border-t border-gray-200/50">
+                        <img
+                          src={form.image}
+                          alt="Primary preview"
+                          className="w-12 h-12 object-contain rounded-xl bg-white p-1 border border-gray-200 flex-shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold text-gray-800 truncate">
+                            {form.image}
+                          </p>
+                          <p className="text-[10px] text-emerald-600 font-medium">
+                            {form.image.includes("Product-image")
+                              ? "✓ Ready in yearnit-storage/Product-image/"
+                              : "Live image source connected"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => updateFormField("image", "")}
+                          className="p-1 text-gray-400 hover:text-red-500 transition"
+                          title="Remove image"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Additional Carousel Images (Image 1 & Image 2) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Additional Image 1 */}
+                    <div className="bg-gray-50/70 p-2.5 rounded-2xl border border-gray-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-gray-700">Additional Image 1 (Optional)</span>
+                        {form.image1 && (
+                          <button
+                            type="button"
+                            onClick={() => updateFormField("image1", "")}
+                            className="text-[10px] text-red-500 hover:underline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="url"
+                          value={form.image1}
+                          onChange={(e) => updateFormField("image1", e.target.value)}
+                          placeholder="Image 1 URL or Upload"
+                          className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-white"
+                        />
+                        <label className="p-2 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl cursor-pointer text-gray-700 hover:text-gray-900 transition flex-shrink-0" title="Upload Image 1 to R2">
+                          {uploadingSlot === "image1" ? (
+                            <ArrowPathIcon className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                          ) : (
+                            <PhotoIcon className="w-3.5 h-3.5 text-amber-600" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={uploadingSlot !== null}
+                            onChange={(e) => handleImageFileUpload(e, "image1")}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      {form.image1 && (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={form.image1}
+                            alt="Image 1 preview"
+                            className="w-8 h-8 object-contain rounded-lg bg-white p-0.5 border border-gray-200 flex-shrink-0"
+                          />
+                          <span className="text-[10px] text-gray-500 truncate">{form.image1}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Additional Image 2 */}
+                    <div className="bg-gray-50/70 p-2.5 rounded-2xl border border-gray-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-gray-700">Additional Image 2 (Optional)</span>
+                        {form.image2 && (
+                          <button
+                            type="button"
+                            onClick={() => updateFormField("image2", "")}
+                            className="text-[10px] text-red-500 hover:underline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="url"
+                          value={form.image2}
+                          onChange={(e) => updateFormField("image2", e.target.value)}
+                          placeholder="Image 2 URL or Upload"
+                          className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-white"
+                        />
+                        <label className="p-2 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl cursor-pointer text-gray-700 hover:text-gray-900 transition flex-shrink-0" title="Upload Image 2 to R2">
+                          {uploadingSlot === "image2" ? (
+                            <ArrowPathIcon className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                          ) : (
+                            <PhotoIcon className="w-3.5 h-3.5 text-amber-600" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={uploadingSlot !== null}
+                            onChange={(e) => handleImageFileUpload(e, "image2")}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      {form.image2 && (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={form.image2}
+                            alt="Image 2 preview"
+                            className="w-8 h-8 object-contain rounded-lg bg-white p-0.5 border border-gray-200 flex-shrink-0"
+                          />
+                          <span className="text-[10px] text-gray-500 truncate">{form.image2}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

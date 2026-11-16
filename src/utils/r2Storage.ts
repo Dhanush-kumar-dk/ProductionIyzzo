@@ -69,6 +69,45 @@ export async function uploadScreenshotToR2(
 }
 
 // ─────────────────────────────────────────────
+// Product Image Upload to yearnit-storage/Product-image/
+// ─────────────────────────────────────────────
+export async function uploadProductImageToR2(
+  file: File,
+  options?: {
+    slot?: "primary" | "image1" | "image2" | string;
+    productId?: string;
+    filename?: string;
+  }
+): Promise<{ key: string; url: string; presigned_url: string; folder: string }> {
+  const image_data = await fileToBase64DataUrl(file);
+
+  const response = await fetch("/api/upload-product-image", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image_data,
+      slot: options?.slot ?? "primary",
+      product_id: options?.productId ?? "",
+      filename: options?.filename ?? file.name,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error ?? "Failed to upload product image to R2");
+  }
+
+  return (await response.json()) as {
+    key: string;
+    url: string;
+    presigned_url: string;
+    folder: string;
+  };
+}
+
+// ─────────────────────────────────────────────
 // React hook used by UploadScreenshotModal
 // ─────────────────────────────────────────────
 export function useScreenshotUpload() {
