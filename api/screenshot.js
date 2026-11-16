@@ -34,7 +34,11 @@ export default async function handler(req, res) {
 
   // Security sanitize key: prevent path traversal or accessing root
   const cleanKey = key.replace(/^\/+/, "");
-  if (!cleanKey.startsWith("screenshots/") && !cleanKey.startsWith("avatars/")) {
+  if (
+    !cleanKey.startsWith("Screenshot/") &&
+    !cleanKey.startsWith("screenshots/") &&
+    !cleanKey.startsWith("avatars/")
+  ) {
     return res.status(403).json({ error: "Access denied: Unauthorized storage path." });
   }
 

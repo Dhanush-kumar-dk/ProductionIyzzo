@@ -13,10 +13,16 @@ export const R2_BUCKET_NAME =
   process.env.R2_BUCKET_NAME || "yearnit-storage";
 
 export const R2_ACCESS_KEY_ID =
-  process.env.R2_ACCESS_KEY_ID || process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || "";
+  process.env.R2_ACCESS_KEY_ID ||
+  process.env.VITE_R2_ACCESS_KEY_ID ||
+  process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ||
+  "";
 
 export const R2_SECRET_ACCESS_KEY =
-  process.env.R2_SECRET_ACCESS_KEY || process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || "";
+  process.env.R2_SECRET_ACCESS_KEY ||
+  process.env.VITE_R2_SECRET_ACCESS_KEY ||
+  process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ||
+  "";
 
 export const R2_ENDPOINT = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 export const R2_REGION = "auto";

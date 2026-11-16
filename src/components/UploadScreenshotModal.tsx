@@ -110,7 +110,7 @@ export default function UploadScreenshotModal({
                 Upload Verification Screenshot
               </h3>
               <p className="text-[11px] text-slate-500">
-                Encrypted & stored in Cloudflare R2 private bucket
+                Encrypted & stored in Cloudflare R2 bucket: yearnit-storage/Screenshot/
               </p>
             </div>
           </div>
@@ -142,8 +142,8 @@ export default function UploadScreenshotModal({
               {/* Bucket details badge */}
               <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-left space-y-1.5 text-xs text-slate-600 font-mono">
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-400 font-sans">Storage Bucket:</span>
-                  <span className="font-semibold text-slate-800">yearnit-storage</span>
+                  <span className="text-slate-400 font-sans">Storage Target:</span>
+                  <span className="font-semibold text-slate-800">yearnit-storage/Screenshot/</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] truncate">
                   <span className="text-slate-400 font-sans">Object Key:</span>

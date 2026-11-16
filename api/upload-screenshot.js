@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless Function: /api/upload-screenshot
  * Handles secure screenshot ingestion and uploads to Cloudflare R2 Bucket (yearnit-storage).
- * Supports: Order proofs, cashback verification, support attachments, and user avatars.
+ * Target storage directory: yearnit-storage/Screenshot/
  */
 
 import crypto from "crypto";
@@ -147,48 +147,48 @@ export default async function handler(req, res) {
     else if (mimeType.includes("webp")) ext = "webp";
     else if (mimeType.includes("gif")) ext = "gif";
 
-    // Sanitize category & path to prevent path traversal
-    const safeCategory = String(category).toLowerCase().replace(/[^a-z0-9_-]/g, "") || "general";
-    const datePartition = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const randomSuffix = crypto.randomBytes(8).toString("hex");
+    // Target folder structure: yearnit-storage/Screenshot/
+    const cleanBaseName = String(filename)
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 30) || "screenshot";
+
     const timestamp = Date.now();
-    const key = `screenshots/${safeCategory}/${datePartition}/${timestamp}_${randomSuffix}.${ext}`;
+    const randomSuffix = crypto.randomBytes(4).toString("hex");
+    const key = `Screenshot/${timestamp}_${cleanBaseName}_${randomSuffix}.${ext}`;
 
-    // Upload to Cloudflare R2 if credentials present
-    let resultUrl = "";
-    let isSigned = false;
-
-    if (R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
-      const uploadResult = await uploadToR2({
-        key,
-        buffer: imageBuffer,
-        contentType: mimeType,
+    // Cloudflare R2 Upload Check
+    if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "Cloudflare R2 API Token credentials missing. Set R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY in environment variables so files can be written to yearnit-storage/Screenshot/.",
         bucket: R2_BUCKET_NAME,
-        metadata: {
-          uploaded_by: user_id,
-          category: safeCategory,
-          order_id: String(order_id).slice(0, 50),
-          original_name: String(filename).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 100),
-        },
+        target_path: `yearnit-storage/${key}`,
       });
-      resultUrl = uploadResult.url;
-      isSigned = true;
-    } else {
-      // In development or when credentials are being provisioned in Vercel environment:
-      // Return presigned/safe link structure and instruct on env setup
-      resultUrl = getR2PresignedGetUrl(key, R2_BUCKET_NAME, 3600);
     }
+
+    const uploadResult = await uploadToR2({
+      key,
+      buffer: imageBuffer,
+      contentType: mimeType,
+      bucket: R2_BUCKET_NAME,
+      metadata: {
+        uploaded_by: user_id,
+        category: String(category).slice(0, 30),
+        order_id: String(order_id).slice(0, 50),
+        original_name: String(filename).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 80),
+      },
+    });
 
     return res.status(200).json({
       success: true,
-      message: "Screenshot successfully stored in Cloudflare R2 bucket.",
-      key,
-      url: resultUrl,
+      message: "Screenshot successfully stored in Cloudflare R2 bucket: yearnit-storage/Screenshot/",
+      key: uploadResult.key,
+      url: uploadResult.url,
       bucket: R2_BUCKET_NAME,
-      account_id: R2_ACCOUNT_ID,
-      category: safeCategory,
+      folder: "Screenshot",
       size_bytes: imageBuffer.length,
-      is_signed: isSigned,
       storage_provider: "cloudflare_r2",
     });
   } catch (error) {
