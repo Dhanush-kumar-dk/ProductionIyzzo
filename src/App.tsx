@@ -5,16 +5,13 @@ import PageTransition, { TopProgressBar } from "./components/PageTransition";
 import ErrorBoundary from "./components/ErrorBoundary";
 import TopBar from "./components/TopBar";
 import LogIn from "./components/Login";
+import Carousel from "./components/Carousel";
 import HeroBanner from "./components/HeroBanner";
 import CategoryStrip from "./components/CategoryStrip";
-import ExploreByCategory from "./components/ExploreByCategory";
-import Carousel from "./components/Carousel";
-import EditorialSpotlight from "./components/EditorialSpotlight";
-import ResearchFeatureRow from "./components/ResearchFeatureRow";
-import Benefits from "./components/Benefits";
-import Testimonials from "./components/Testimonials";
-import DealsNewsletter from "./components/DealsNewsletter";
 import CashbackSteps from "./components/CashbackSteps";
+// import FlashDealsBar from "./components/FlashDealsBar";
+import TrustFeatures from "./components/TrustFeatures";
+import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
 import CookieConsent from "./components/CookieConsent";
@@ -149,60 +146,47 @@ function HomePage() {
         onClose={() => setIsWishlistOpen(false)}
       />
 
-      {/* 1. Full Desktop TopBar with Omnibar, Categories & Account */}
+      {/* Main Header */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
         onCategorySelect={setSelectedCategory}
       />
 
-      {/* Main Full-Width Desktop Flow */}
-      <main className="flex-1 space-y-4 sm:space-y-6">
-        {/* 2. Full-Width Hero Banner Slider */}
+      {/* Main Page Flow */}
+      <main className="flex-1 space-y-2">
+        {/* Promotional Hero Slider */}
         <HeroBanner onExploreClick={scrollToCatalog} />
 
-        {/* 3. Quick Category Exploration Strip */}
+        {/* Quick Category Chips */}
         <CategoryStrip
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* 4. Explore by Category Two-Column Desktop Section */}
-        <ExploreByCategory
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          onExploreAll={scrollToCatalog}
-        />
+        {/* Editorial Spotlight Banner */}
+        {/* <FlashDealsBar /> */}
 
-        {/* 5. Curated Buyer Guides & Recommendations Grid */}
+        {/* Products Grid with Filter Toolbar */}
         <Carousel
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
         />
 
-        {/* 6. Editorial Spotlight Deep Dive */}
-        <EditorialSpotlight />
+        {/* Consumer Value & Trust Propositions */}
+        <TrustFeatures />
 
-        {/* 7. Independent Research & Benchmark Lab */}
-        <ResearchFeatureRow />
-
-        {/* 8. Benefits for Your Experience */}
-        <Benefits />
-
-        {/* 9. Verified Buyer Reviews & Testimonials */}
-        <Testimonials />
-
-        {/* 10. Weekly Product Digest Newsletter */}
+        {/* Editorial Product Digest */}
         <DealsNewsletter />
 
-        {/* 11. Cashback Steps */}
+        {/* Three Steps Towards Cashback (Before Footer) */}
         <CashbackSteps
           onLoginClick={() => setOpenLogIn(true)}
           onShopClick={scrollToCatalog}
         />
       </main>
 
-      {/* 12. Full-Width Comprehensive Footer */}
+      {/* Comprehensive Footer */}
       <Footer />
     </div>
   );
