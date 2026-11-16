@@ -14,6 +14,7 @@ import TrustFeatures from "./components/TrustFeatures";
 import DealsNewsletter from "./components/DealsNewsletter";
 import Footer from "./components/Footer";
 import SavedDealsModal from "./components/SavedDealsModal";
+import UploadScreenshotModal from "./components/UploadScreenshotModal";
 import CookieConsent from "./components/CookieConsent";
 import InstallAppPrompt from "./components/InstallAppPrompt";
 
@@ -73,6 +74,7 @@ function PageFallback() {
 function HomePage() {
   const [openLogIn, setOpenLogIn] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [isScreenshotOpen, setIsScreenshotOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   useEffect(() => {
@@ -88,7 +90,7 @@ function HomePage() {
         "Electronics Buyer Guides",
         "Best Earbuds India",
         "Best Smartphones 2026",
-        "Amazon Affiliate Reviews",
+        "Curated Deals & Cashback",
         "Unbiased Tech Comparisons",
         "Yearnit",
       ],
@@ -146,6 +148,13 @@ function HomePage() {
         onClose={() => setIsWishlistOpen(false)}
       />
 
+      {/* Cloudflare R2 Screenshot Upload Modal */}
+      <UploadScreenshotModal
+        isOpen={isScreenshotOpen}
+        onClose={() => setIsScreenshotOpen(false)}
+        defaultCategory="order_proof"
+      />
+
       {/* Main Header */}
       <TopBar
         openLogIn={() => setOpenLogIn(true)}
@@ -183,6 +192,7 @@ function HomePage() {
         <CashbackSteps
           onLoginClick={() => setOpenLogIn(true)}
           onShopClick={scrollToCatalog}
+          onUploadProof={() => setIsScreenshotOpen(true)}
         />
       </main>
 

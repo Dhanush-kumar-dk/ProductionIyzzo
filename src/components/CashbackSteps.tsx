@@ -6,6 +6,7 @@ import mascot3 from "../assets/step3-mascot@2x.png";
 interface CashbackStepsProps {
   onLoginClick?: () => void;
   onShopClick?: () => void;
+  onUploadProof?: () => void;
 }
 
 // Step 1: Door with arrow entering bracket (Login / Sign in)
@@ -101,7 +102,7 @@ const stepsData: StepItem[] = [
   {
     number: "03",
     title: "Earn & Withdraw",
-    description: "Watch your wallet balance grow and transfer real cashback to your bank anytime",
+    description: "Upload order screenshot for verified tracking and withdraw real cashback to your bank or UPI anytime",
     mascotSrc: mascot3,
     mascotAlt: "Mascot with coins, wallet and bank cash",
     actionType: "info",
@@ -112,12 +113,15 @@ const stepsData: StepItem[] = [
 export const CashbackSteps: FC<CashbackStepsProps> = ({
   onLoginClick,
   onShopClick,
+  onUploadProof,
 }) => {
   const handleAction = (type: "login" | "shop" | "info") => {
     if (type === "login" && onLoginClick) {
       onLoginClick();
     } else if (type === "shop" && onShopClick) {
       onShopClick();
+    } else if (type === "info" && onUploadProof) {
+      onUploadProof();
     }
   };
 

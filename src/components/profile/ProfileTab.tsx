@@ -468,9 +468,30 @@ export default function ProfileTab({ profile, onSave, showToast }: ProfileTabPro
       {cropModalOpen && (
         <AvatarCropModal
           imageSrc={tempImageSrc}
-          onCropComplete={(croppedDataUrl) => {
-            setFormData({ ...formData, avatar_url: croppedDataUrl });
-            showToast("info", "Avatar cropped! Click Save Changes to store.");
+          onCropComplete={async (croppedDataUrl) => {
+            setFormData((prev) => ({ ...prev, avatar_url: croppedDataUrl }));
+            showToast("info", "Uploading avatar to Cloudflare R2 storage...");
+            try {
+              const res = await fetch("/api/upload-screenshot", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  image_data: croppedDataUrl,
+                  category: "avatar",
+                  user_id: formData.id,
+                  filename: "avatar.jpg",
+                }),
+              });
+              const data = await res.json();
+              if (data.url) {
+                setFormData((prev) => ({ ...prev, avatar_url: data.url }));
+                showToast("success", "Avatar stored securely in Cloudflare R2!");
+              } else {
+                showToast("info", "Avatar ready. Click Save Changes to store.");
+              }
+            } catch {
+              showToast("info", "Avatar ready. Click Save Changes to store.");
+            }
           }}
           onClose={() => setCropModalOpen(false)}
         />

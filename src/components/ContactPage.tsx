@@ -1,12 +1,58 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CheckCircleIcon } from "@heroicons/react/24/solid";
+import {
+  ArrowLeftIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  MapPinIcon,
+  CheckCircleIcon,
+  PhotoIcon,
+  CloudArrowUpIcon,
+} from "@heroicons/react/24/solid";
 import { trackEvent } from "../utils/tracking";
+import { uploadScreenshotToR2 } from "../utils/r2Storage";
 
 export default function ContactPage() {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
+  const [screenshotKey, setScreenshotKey] = useState<string | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
+
+  const handleScreenshotChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload a valid image (PNG, JPG, WebP).");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Screenshot must be under 10MB.");
+      return;
+    }
+
+    // Set preview
+    const reader = new FileReader();
+    reader.onload = () => setScreenshotPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    setIsUploadingScreenshot(true);
+    try {
+      const res = await uploadScreenshotToR2(file, {
+        category: "support",
+        userId: formData.email || "support_guest",
+        filename: file.name,
+      });
+      setScreenshotKey(res.key);
+    } catch (err: any) {
+      console.warn("R2 upload notice:", err);
+    } finally {
+      setIsUploadingScreenshot(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,6 +60,7 @@ export default function ContactPage() {
       email: formData.email,
       phone: formData.phone,
       name: formData.name,
+      screenshot_key: screenshotKey || undefined,
     });
     setSubmitted(true);
   };
@@ -129,9 +176,46 @@ export default function ContactPage() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Attach Screenshot (Optional)
+                  </label>
+                  <label className="border border-dashed border-gray-200 hover:border-blue-400 bg-gray-50/50 hover:bg-blue-50/20 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+                    <div className="flex items-center gap-2">
+                      <PhotoIcon className="w-4 h-4 text-gray-400" />
+                      <span className="text-xs text-gray-500">
+                        {screenshotKey ? "Screenshot attached" : "Attach error or order screenshot (PNG, JPG)"}
+                      </span>
+                    </div>
+                    {isUploadingScreenshot ? (
+                      <span className="text-[11px] font-semibold text-blue-600 animate-pulse">
+                        Uploading to R2...
+                      </span>
+                    ) : screenshotKey ? (
+                      <span className="text-[11px] font-bold text-emerald-600">
+                        ✓ Stored in R2
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 font-medium">Browse</span>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleScreenshotChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {screenshotPreview && (
+                    <div className="mt-2 relative rounded-lg overflow-hidden border border-gray-200 max-w-[120px] max-h-[80px]">
+                      <img src={screenshotPreview} alt="Attached screenshot" className="object-cover w-full h-full" />
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition"
+                  disabled={isUploadingScreenshot}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md transition"
                 >
                   Send Inquiry
                 </button>
