@@ -117,7 +117,7 @@ export default function ExploreByCategory({
   };
 
   return (
-    <section id="categories" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 font-poppins">
+    <section id="categories" className="w-full px-3 sm:px-6 lg:px-12 py-8 sm:py-10 font-poppins">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 border-b border-gray-200/80 pb-4">
         <div>
@@ -125,7 +125,7 @@ export default function ExploreByCategory({
             <TagIcon className="w-3.5 h-3.5 text-orange-600" />
             <span>Curated Taxonomy</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
             Explore by Category
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -135,7 +135,7 @@ export default function ExploreByCategory({
         {selectedCategory && selectedCategory !== "All" && (
           <button
             onClick={() => onSelectCategory && onSelectCategory("All")}
-            className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer"
+            className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline"
           >
             Reset Filters ✕
           </button>
@@ -223,10 +223,10 @@ export default function ExploreByCategory({
                     </span>
                   )}
                 </div>
-                <h3 className="text-base sm:text-[17px] font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
                   {tile.title}
                 </h3>
-                <p className="text-xs sm:text-[13px] text-gray-500 mt-1 leading-relaxed">
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                   {tile.caption}
                 </p>
               </div>

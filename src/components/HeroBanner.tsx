@@ -81,25 +81,24 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
     <section
       aria-roledescription="carousel"
       aria-label="Promotional banners"
-      className="w-full pt-3 sm:pt-4"
+      className="w-full px-3 sm:px-6 lg:px-12 pt-3 sm:pt-4"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div
-          className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-950 shadow-xl cursor-pointer select-none"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          onClick={onExploreClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onExploreClick();
-            }
-          }}
-        >
+      <div
+        className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-950 shadow-xl cursor-pointer select-none"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onClick={onExploreClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onExploreClick();
+          }
+        }}
+      >
         {/*
           All slides share one grid cell. The container's height is set by the
           images themselves (w-full h-auto), so any banner is shown in full,
@@ -173,7 +172,6 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
               }`}
             />
           ))}
-        </div>
         </div>
       </div>
     </section>

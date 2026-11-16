@@ -124,9 +124,9 @@ export const CashbackSteps: FC<CashbackStepsProps> = ({
   return (
     <section
       aria-label="How Yearnit Works - Three steps Towards Cashback"
-      className="w-full py-10 sm:py-14 font-poppins bg-white"
+      className="w-full px-4 sm:px-6 lg:px-12 py-10 sm:py-14 font-poppins bg-white"
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header matching design mockup */}
         <div className="mb-6 sm:mb-8 text-left">
           <p className="text-xs sm:text-[13px] font-semibold text-slate-400 tracking-wider uppercase mb-1.5">

@@ -14,7 +14,7 @@ export default function DealsNewsletter() {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 font-poppins">
+    <div className="w-full px-3 sm:px-6 lg:px-12 py-10 font-poppins">
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden border border-slate-800">
         {/* Background decorative circles */}
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />

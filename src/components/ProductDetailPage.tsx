@@ -313,7 +313,7 @@ export default function ProductDetailPage() {
       )}
 
       {/* Main Container with generous sizing and elevated margins */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5 pb-24 sm:pb-12">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-24 sm:pb-12">
         {/* Breadcrumb Bar */}
         <div className="flex items-center justify-between text-xs text-gray-500 mb-3 pb-2 border-b border-gray-200/80 gap-2">
           <nav className="flex items-center gap-1.5 overflow-x-auto scrollbar-none whitespace-nowrap min-w-0 pr-2">

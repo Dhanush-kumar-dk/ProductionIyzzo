@@ -2,7 +2,7 @@ import { ArrowRightIcon, ShieldCheckIcon, BeakerIcon, ClockIcon, ScaleIcon } fro
 
 export default function ResearchFeatureRow() {
   return (
-    <section id="research-lab" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 font-poppins">
+    <section id="research-lab" className="w-full px-3 sm:px-6 lg:px-12 py-8 sm:py-10 font-poppins">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 sm:gap-6">
         {/* Card 1: Dark Slate Feature Card (5 of 12 cols) */}
         <div className="lg:col-span-5 rounded-2xl sm:rounded-3xl bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between min-h-[250px] shadow-sm relative overflow-hidden">

@@ -44,7 +44,7 @@ export default function EditorialSpotlight() {
   ];
 
   return (
-    <section id="spotlight" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 font-poppins">
+    <section id="spotlight" className="w-full px-3 sm:px-6 lg:px-12 py-8 sm:py-10 font-poppins">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 border-b border-gray-200/80 pb-4">
         <div>
@@ -52,7 +52,7 @@ export default function EditorialSpotlight() {
             <SparklesIcon className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
             <span>Featured Teardown</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
             Editorial Spotlight
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
@@ -88,7 +88,7 @@ export default function EditorialSpotlight() {
             </div>
 
             {/* Product Title */}
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-5 leading-snug">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-5 leading-snug">
               {spotlightProduct.title}
             </h3>
 
