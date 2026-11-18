@@ -20,7 +20,7 @@ const metaPixelHeadNoscriptPlugin = () => ({
     handler(html: string) {
       return html.replace(
         '<!-- Meta Pixel Noscript -->',
-        '<noscript><img height="1" width="1" style="display:none"\nsrc="https://www.facebook.com/tr?id=1154456314006792&ev=PageView&noscript=1"\n/></noscript>'
+        '<noscript><img height="1" width="1" style="display:none"\nsrc="https://www.facebook.com/tr?id=1459486569390454&ev=PageView&noscript=1"\n/></noscript>'
       );
     },
   },

@@ -24,7 +24,7 @@ declare global {
 export const META_PIXEL_ID =
   (import.meta.env.VITE_META_PIXEL_ID as string) ||
   (import.meta.env.NEXT_PUBLIC_META_PIXEL_ID as string) ||
-  "1154456314006792";
+  "1459486569390454";
 
 export const GOOGLE_ADS_ID =
   (import.meta.env.VITE_GOOGLE_ADS_ID as string) ||
