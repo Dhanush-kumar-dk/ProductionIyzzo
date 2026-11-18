@@ -5,7 +5,7 @@ import LogIn from "../components/Login";
 import Footer from "../components/Footer";
 import ProductCard, { Product } from "./ProductCard";
 import { API_BASE_URL } from "../config/api";
-import { getActiveTrackingId, buildAffiliateUrl, buildMarketplaceSearchUrl } from "../utils/affiliate";
+import { getActiveTrackingId, buildAffiliateUrl, buildMarketplaceSearchUrl, extractAsin } from "../utils/affiliate";
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
 import { updateSEO } from "../utils/seo";
 import { metaEvents } from "../utils/tracking";
@@ -174,8 +174,9 @@ export default function SearchResults() {
                     : item.image
                   : "";
 
+                const extractedAsin = extractAsin(item.DetailPageURL);
                 const productItem: Product = {
-                  id: `search-${index}-${encodeURIComponent(item.Title.slice(0, 15))}`,
+                  id: extractedAsin || `SEARCH-${index + 1}`,
                   name: item.Title,
                   price: item.DisplayAmount ? item.DisplayAmount.replace(/[^0-9.]/g, "") : undefined,
                   isLivePrice: Boolean(item.DisplayAmount),

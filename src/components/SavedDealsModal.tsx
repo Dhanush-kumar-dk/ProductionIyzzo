@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getSavedDeals, toggleSaveDeal, SavedProduct } from "../utils/wishlist";
 import { buildAffiliateUrl } from "../utils/affiliate";
+import { getProductPath } from "../utils/productUrl";
 import { XMarkIcon, TrashIcon, ArrowTopRightOnSquareIcon, HeartIcon } from "@heroicons/react/24/outline";
 
 interface SavedDealsModalProps {
@@ -101,19 +103,25 @@ export default function SavedDealsModal({ isOpen, onClose }: SavedDealsModalProp
                   key={deal.id}
                   className="flex gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow transition items-center"
                 >
-                  <img
-                    src={deal.image}
-                    alt={deal.name}
-                    className="w-16 h-16 object-contain rounded-lg bg-gray-50 p-1 flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2">
-                      {deal.name}
-                    </h4>
-                    <p className="text-sm font-bold text-blue-600 mt-1">
-                      ₹{deal.price}
-                    </p>
-                  </div>
+                  <Link
+                    to={getProductPath(deal)}
+                    onClick={onClose}
+                    className="flex gap-3 flex-1 min-w-0 items-center no-underline"
+                  >
+                    <img
+                      src={deal.image}
+                      alt={deal.name}
+                      className="w-16 h-16 object-contain rounded-lg bg-gray-50 p-1 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-900 hover:text-blue-600 line-clamp-2">
+                        {deal.name}
+                      </h4>
+                      <p className="text-sm font-bold text-blue-600 mt-1">
+                        ₹{deal.price}
+                      </p>
+                    </div>
+                  </Link>
                   <div className="flex flex-col gap-1 items-end">
                     <a
                       href={buildAffiliateUrl(deal.url)}

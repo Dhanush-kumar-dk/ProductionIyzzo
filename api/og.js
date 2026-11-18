@@ -99,55 +99,154 @@ const absolute = (src) => {
   return `${SITE}${s.startsWith("/") ? "" : "/"}${s}`;
 };
 
+const slugifyProductName = (name, maxLength = 70) => {
+  if (!name) return "";
+  const normalized = String(name)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/['’"“”`]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (normalized.length <= maxLength) return normalized;
+  const sliced = normalized.slice(0, maxLength);
+  const lastHyphen = sliced.lastIndexOf("-");
+  const trimmed = lastHyphen > 20 ? sliced.slice(0, lastHyphen) : sliced;
+  return trimmed.replace(/-+$/g, "");
+};
+
+const buildProductSlug = (id, name) => {
+  const cleanId = String(id || "").trim();
+  if (!cleanId) return "";
+  const nameSlug = slugifyProductName(name);
+  if (!nameSlug) return cleanId;
+  const lowerSlug = nameSlug.toLowerCase();
+  const lowerId = cleanId.toLowerCase();
+  if (lowerSlug === lowerId) return cleanId;
+  if (lowerSlug.endsWith(`-${lowerId}`)) {
+    const prefix = nameSlug.slice(0, nameSlug.length - cleanId.length - 1).replace(/-+$/g, "");
+    return prefix ? `${prefix}-${cleanId}` : cleanId;
+  }
+  return `${nameSlug}-${cleanId}`;
+};
+
+const extractProductIdCandidates = (slugOrId) => {
+  let clean = String(slugOrId || "").trim();
+  try {
+    clean = decodeURIComponent(clean).trim();
+  } catch {
+    // Keep original if malformed URI encoding
+  }
+  if (!clean) return [];
+
+  const extracted = [];
+
+  const uuidMatch = clean.match(
+    /(?:^|-)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
+  );
+  if (uuidMatch) extracted.push(uuidMatch[1]);
+
+  const prefixedMatch = clean.match(/(?:^|-)((?:PROD|CUSTOM|ITEM|SKU)-[A-Z0-9_-]+)$/i);
+  if (prefixedMatch) extracted.push(prefixedMatch[1]);
+
+  const asinMatch = clean.match(/(?:^|-)([A-Z0-9]{10})$/i);
+  if (asinMatch && /\d/.test(asinMatch[1])) extracted.push(asinMatch[1]);
+
+  const lastHyphen = clean.lastIndexOf("-");
+  if (lastHyphen > 0 && lastHyphen < clean.length - 1) {
+    extracted.push(clean.slice(lastHyphen + 1));
+  }
+
+  const looksLikeSlug = clean.includes("-") && /[a-z]{3,}/.test(clean) && extracted.length > 0;
+  const ordered = looksLikeSlug ? [...extracted, clean] : [clean, ...extracted];
+  return Array.from(new Set(ordered.filter(Boolean)));
+};
+
 export default async function handler(req, res) {
   const rawId = Array.isArray(req.query?.id) ? req.query.id[0] : req.query?.id;
-  const id = String(rawId || "").trim();
+  const rawParam = String(rawId || "").trim();
+  const candidates = extractProductIdCandidates(rawParam);
 
   let title = "Yearnit - Independent Product Reviews & Buyer Guides";
   let description =
     "Honest, comprehensive product evaluations with pros, cons, and buyer breakdowns across top electronics and everyday gear.";
   let image = FALLBACK_IMAGE;
   let isProduct = false;
+  let resolvedId = "";
+  let resolvedName = "";
 
-  // 1. Check curated in-memory catalog first (instantaneous response)
-  const upperId = id.toUpperCase();
-  if (CURATED_CATALOG[upperId]) {
-    const item = CURATED_CATALOG[upperId];
-    title = `${item.name}${item.price ? ` - ₹${item.price}` : ""} | Yearnit`;
-    description = item.summary || `Price history, review and buyer breakdown for ${item.name}.`;
-    image = absolute(item.image);
-    isProduct = true;
+  // 1. Check curated in-memory catalog first (supports both raw ID and full SEO slug)
+  for (const cand of candidates) {
+    const upperCand = cand.toUpperCase();
+    if (CURATED_CATALOG[upperCand]) {
+      const item = CURATED_CATALOG[upperCand];
+      resolvedId = upperCand;
+      resolvedName = item.name;
+      title = `${item.name}${item.price ? ` - ₹${item.price}` : ""} | Yearnit`;
+      description = item.summary || `Price history, review and buyer breakdown for ${item.name}.`;
+      image = absolute(item.image);
+      isProduct = true;
+      break;
+    }
+  }
+
+  // Fallback curated match by full slug / name slug
+  if (!isProduct && rawParam) {
+    const cleanLower = rawParam.toLowerCase();
+    for (const [key, item] of Object.entries(CURATED_CATALOG)) {
+      if (
+        buildProductSlug(key, item.name).toLowerCase() === cleanLower ||
+        slugifyProductName(item.name) === cleanLower
+      ) {
+        resolvedId = key;
+        resolvedName = item.name;
+        title = `${item.name}${item.price ? ` - ₹${item.price}` : ""} | Yearnit`;
+        description = item.summary || `Price history, review and buyer breakdown for ${item.name}.`;
+        image = absolute(item.image);
+        isProduct = true;
+        break;
+      }
+    }
   }
 
   // 2. Query Supabase for dynamic or custom uploaded products
-  if (!isProduct && id) {
+  if (!isProduct && candidates.length > 0) {
     try {
       const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
-      for (const filter of [`eq.${id}`, `ilike.${id}`]) {
-        const r = await fetch(
-          `${SUPABASE_URL}/rest/v1/products?select=*&id=${encodeURIComponent(filter)}&limit=1`,
-          { headers }
-        );
-        if (!r.ok) continue;
-        const rows = await r.json();
-        const p = Array.isArray(rows) ? rows[0] : null;
-        if (p && p.name) {
-          title = `${p.name}${p.price ? ` - ₹${p.price}` : ""} | Yearnit`;
-          description =
-            p.summary ||
-            p.shortDetail ||
-            `Price history, review and verified buyer guide for ${p.name}. Find the best deals on Yearnit.`;
-          image = absolute(p.image || p.image1);
-          isProduct = true;
-          break;
+      for (const cand of candidates.slice(0, 3)) {
+        for (const filter of [`eq.${cand}`, `ilike.${cand}`]) {
+          const r = await fetch(
+            `${SUPABASE_URL}/rest/v1/products?select=*&id=${encodeURIComponent(filter)}&limit=1`,
+            { headers }
+          );
+          if (!r.ok) continue;
+          const rows = await r.json();
+          const p = Array.isArray(rows) ? rows[0] : null;
+          if (p && p.name) {
+            resolvedId = String(p.id || cand).trim();
+            resolvedName = String(p.name).trim();
+            title = `${resolvedName}${p.price ? ` - ₹${p.price}` : ""} | Yearnit`;
+            description =
+              p.summary ||
+              p.shortDetail ||
+              `Price history, review and verified buyer guide for ${resolvedName}. Find the best deals on Yearnit.`;
+            image = absolute(p.image || p.image1);
+            isProduct = true;
+            break;
+          }
         }
+        if (isProduct) break;
       }
     } catch (err) {
       console.warn("og: Supabase product lookup failed", err);
     }
   }
 
-  const url = id ? `${SITE}/product/${encodeURIComponent(id)}` : SITE;
+  const canonicalSlug = resolvedId
+    ? buildProductSlug(resolvedId, resolvedName)
+    : rawParam;
+  const url = canonicalSlug ? `${SITE}/product/${encodeURIComponent(canonicalSlug)}` : SITE;
   const imageType = image.endsWith(".png") ? "image/png" : "image/jpeg";
   const imageWidth = isProduct ? "1024" : "1200";
   const imageHeight = isProduct ? "1024" : "630";

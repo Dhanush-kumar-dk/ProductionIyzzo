@@ -17,6 +17,7 @@ import {
   restoreProduct,
   resetCatalogToDefaults,
   syncProductsFromSupabase,
+  getProductPath,
 } from "../data/products";
 import ProductCard from "./ProductCard";
 import {
@@ -1644,7 +1645,7 @@ export default function AdminProducts() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => navigate(`/product/${p.id}`)}
+                          onClick={() => navigate(getProductPath(p))}
                           className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-lg text-xs"
                         >
                           View
@@ -1768,7 +1769,7 @@ export default function AdminProducts() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() => navigate(`/product/${p.id}`)}
+                              onClick={() => navigate(getProductPath(p))}
                               className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-xl text-xs transition"
                               title="View product detail page"
                             >

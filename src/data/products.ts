@@ -1,4 +1,13 @@
 import { supabase, supabaseUrl, supabaseKey } from "../supabase";
+import {
+  buildProductSlug,
+  extractProductIdCandidates,
+  getProductCanonicalUrl,
+  getProductPath,
+  slugifyProductName,
+} from "../utils/productUrl";
+
+export { buildProductSlug, getProductPath, getProductCanonicalUrl, slugifyProductName };
 
 export type CustomerReview = {
   id: string;
@@ -626,10 +635,43 @@ export function getAllCatalogProducts(): Product[] {
   return [...custom, ...defaults];
 }
 
-export function getProductById(id: string): Product | undefined {
-  if (!id) return undefined;
-  const cleanId = id.trim().toUpperCase();
-  return getAllCatalogProducts().find((p) => p.id.toUpperCase() === cleanId);
+export function getProductById(idOrSlug: string): Product | undefined {
+  if (!idOrSlug) return undefined;
+  let clean = idOrSlug.trim();
+  try {
+    clean = decodeURIComponent(clean).trim();
+  } catch {
+    // Keep raw string
+  }
+  if (!clean) return undefined;
+
+  const catalog = getAllCatalogProducts();
+  const candidates = extractProductIdCandidates(clean);
+  const candidateSet = new Set(candidates.map((c) => c.toUpperCase()));
+
+  // 1. Exact ID match against extracted candidates (handles both raw IDs and <slug>-<id>)
+  for (const cand of candidates) {
+    const upper = cand.toUpperCase();
+    const match = catalog.find((p) => p.id.toUpperCase() === upper);
+    if (match) return match;
+  }
+
+  // 2. Suffix match for custom IDs containing arbitrary hyphens (e.g. <slug>-<custom-id>)
+  const cleanUpper = clean.toUpperCase();
+  const suffixMatch = catalog.find(
+    (p) =>
+      candidateSet.has(p.id.toUpperCase()) ||
+      cleanUpper.endsWith(`-${p.id.toUpperCase()}`)
+  );
+  if (suffixMatch) return suffixMatch;
+
+  // 3. Full slug or name-only slug match
+  const cleanLower = clean.toLowerCase();
+  return catalog.find(
+    (p) =>
+      buildProductSlug(p).toLowerCase() === cleanLower ||
+      slugifyProductName(p.name) === cleanLower
+  );
 }
 
 export function getRelatedProducts(productId: string, category?: string, limit: number = 4): Product[] {
@@ -779,40 +821,45 @@ async function fetchProductRowById(cleanId: string): Promise<SupabaseProductRow 
  *
  * Order: local cache -> Supabase single-row fetch -> full catalog sync.
  */
-export async function getProductByIdAsync(id: string): Promise<Product | undefined> {
-  if (!id) return undefined;
+export async function getProductByIdAsync(idOrSlug: string): Promise<Product | undefined> {
+  if (!idOrSlug) return undefined;
 
   // 1. Already in cache / curated list
-  const cached = getProductById(id);
+  const cached = getProductById(idOrSlug);
   if (cached) return cached;
 
-  const cleanId = id.trim();
-  if (getDeletedProductIds().includes(cleanId.toUpperCase())) return undefined;
+  const candidates = extractProductIdCandidates(idOrSlug);
+  if (candidates.length === 0) return undefined;
 
-  // 2. Fetch just this product from Supabase
-  const row = await fetchProductRowById(cleanId);
-  if (row && row.id && row.name) {
-    const prev = getCustomProducts().find(
-      (p) => p.id.toUpperCase() === String(row.id).trim().toUpperCase()
-    );
-    const product = rowToProduct(row, prev);
+  const deletedSet = new Set(getDeletedProductIds());
+  if (candidates.some((c) => deletedSet.has(c.toUpperCase()))) return undefined;
 
-    // Cache it so the next visit is instant
-    try {
-      const others = getCustomProducts().filter(
-        (p) => p.id.toUpperCase() !== product.id.toUpperCase()
+  // 2. Fetch just this product from Supabase trying extracted ID candidates first
+  for (const cand of candidates.slice(0, 3)) {
+    const row = await fetchProductRowById(cand);
+    if (row && row.id && row.name) {
+      const prev = getCustomProducts().find(
+        (p) => p.id.toUpperCase() === String(row.id).trim().toUpperCase()
       );
-      localStorage.setItem("yearnit_custom_products", JSON.stringify([product, ...others]));
-    } catch (e) {
-      console.warn("Failed to cache fetched product:", e);
+      const product = rowToProduct(row, prev);
+
+      // Cache it so the next visit is instant
+      try {
+        const others = getCustomProducts().filter(
+          (p) => p.id.toUpperCase() !== product.id.toUpperCase()
+        );
+        localStorage.setItem("yearnit_custom_products", JSON.stringify([product, ...others]));
+      } catch (e) {
+        console.warn("Failed to cache fetched product:", e);
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("catalogUpdated"));
+      }
+      return product;
     }
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("catalogUpdated"));
-    }
-    return product;
   }
 
-  // 3. Last resort: sync the whole catalog, then look again
+  // 3. Last resort: sync the whole catalog, then look again (supports arbitrary slug/hyphen IDs)
   await syncProductsFromSupabase();
-  return getProductById(cleanId);
+  return getProductById(idOrSlug);
 }

@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { InformationCircleIcon, XMarkIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { buildAffiliateUrl } from "../utils/affiliate";
-import { Product } from "../data/products";
+import { Product, getProductPath } from "../data/products";
 import { metaEvents, parsePriceValue } from "../utils/tracking";
 
 export type { Product };
@@ -69,8 +69,10 @@ export default function ProductCard({ product }: ProductCardProps) {
     };
   }, [images.length, isHovered, idSeed]);
 
+  const productPath = getProductPath(product);
+
   const handleCardClick = () => {
-    navigate(`/product/${product.id}`);
+    navigate(productPath, { state: { product } });
   };
 
   const currentRating = product.rating || 4.2;
@@ -187,7 +189,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div>
             {/* Title */}
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug mb-1 min-h-[2rem] sm:min-h-[2.5rem]">
-              {product.name}
+              <Link
+                to={productPath}
+                state={{ product }}
+                onClick={(e) => e.stopPropagation()}
+                className="text-inherit hover:text-blue-600 no-underline"
+              >
+                {product.name}
+              </Link>
             </h3>
 
             {/* Star Rating Display */}

@@ -229,6 +229,7 @@ function AnimatedRoutes() {
           <Route path="/profile" element={<PageTransition><UserProfilePage /></PageTransition>} />
           <Route path="/profile/:tab" element={<PageTransition><UserProfilePage /></PageTransition>} />
           <Route path="/product/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
+          <Route path="/p/:id" element={<PageTransition><ProductDetailPage /></PageTransition>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<PageTransition><AdminDashboard /></PageTransition>} />
           <Route path="/admin/products" element={<PageTransition><AdminProducts /></PageTransition>} />

@@ -160,19 +160,19 @@ export default function AboutPage() {
 
             <div className="pt-3 border-t border-[#E7E7E7] text-xs space-y-2">
               <span className="font-bold text-[#0F1111] block">Featured Product Guides:</span>
-              <a href="/product/B09N3ZNHTY" className="text-[#007185] hover:underline block">
+              <a href="/product/boat-airdopes-141-true-wireless-earbuds-with-42h-playtime-B09N3ZNHTY" className="text-[#007185] hover:underline block">
                 • boAt Airdopes 141 Review
               </a>
-              <a href="/product/B0CHX1W1XY" className="text-[#007185] hover:underline block">
+              <a href="/product/apple-iphone-15-128-gb-dynamic-island-and-48mp-camera-B0CHX1W1XY" className="text-[#007185] hover:underline block">
                 • Apple iPhone 15 Breakdown
               </a>
-              <a href="/product/B09G9FPHP6" className="text-[#007185] hover:underline block">
+              <a href="/product/sony-wh-1000xm5-wireless-active-noise-cancelling-headphones-B09G9FPHP6" className="text-[#007185] hover:underline block">
                 • Sony WH-1000XM5 ANC Review
               </a>
-              <a href="/product/B0C7771Z11" className="text-[#007185] hover:underline block">
+              <a href="/product/oneplus-nord-ce-3-lite-5g-8gb-ram-128gb-storage-B0C7771Z11" className="text-[#007185] hover:underline block">
                 • OnePlus Nord CE 3 Lite Guide
               </a>
-              <a href="/product/B0C9J7SML8" className="text-[#007185] hover:underline block">
+              <a href="/product/lenovo-ideapad-slim-3-12th-gen-intel-core-i5-laptop-16gb-512gb-B0C9J7SML8" className="text-[#007185] hover:underline block">
                 • Lenovo IdeaPad Slim 3 Specs
               </a>
               <a href="/#featured-catalog" className="text-[#007185] hover:underline font-semibold block pt-1">

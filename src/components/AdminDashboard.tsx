@@ -18,6 +18,7 @@ import {
   restoreProduct,
   resetCatalogToDefaults,
   syncProductsFromSupabase,
+  getProductPath,
 } from "../data/products";
 import {
   ArrowUpTrayIcon,
@@ -734,7 +735,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => navigate(`/product/${p.id}`)}
+                            onClick={() => navigate(getProductPath(p))}
                             className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl text-xs transition"
                           >
                             View
@@ -873,7 +874,7 @@ const AdminDashboard = () => {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
-                                onClick={() => navigate(`/product/${p.id}`)}
+                                onClick={() => navigate(getProductPath(p))}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-xl text-xs transition"
                                 title="View product page"
                               >

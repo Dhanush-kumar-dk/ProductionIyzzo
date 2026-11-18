@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import TopBar from "./TopBar";
 import LogIn from "./Login";
 import Footer from "./Footer";
@@ -9,6 +9,8 @@ import {
   getProductById,
   getProductByIdAsync,
   getRelatedProducts,
+  getProductPath,
+  getProductCanonicalUrl,
   Product,
 } from "../data/products";
 import { buildAffiliateUrl } from "../utils/affiliate";
@@ -36,27 +38,32 @@ import {
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const stateProduct = (location.state as { product?: Product } | null)?.product ?? null;
+  const lastTrackedViewIdRef = useRef<string | null>(null);
 
-  // Start from the local cache when possible, otherwise show a loader
+  // Start from the local cache or route state when possible, otherwise show a loader
   // (instead of flashing "Product Not Found" while we fetch).
-  const [product, setProduct] = useState<Product | null>(() =>
-    id ? getProductById(id) ?? null : null
-  );
-  const [loading, setLoading] = useState<boolean>(() =>
-    id ? !getProductById(id) : false
-  );
+  const [product, setProduct] = useState<Product | null>(() => {
+    if (!id) return stateProduct;
+    return getProductById(id) ?? stateProduct ?? null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (!id) return false;
+    return !(getProductById(id) || stateProduct);
+  });
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [openLogIn, setOpenLogIn] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [, setCatalogVersion] = useState(0);
 
-  // Resolve the product: cache first, then Supabase (shared links / fresh browsers)
+  // Resolve the product: cache first, then Supabase (shared links / fresh browsers), then route state
   useEffect(() => {
     window.scrollTo(0, 0);
 
     if (!id) {
-      setProduct(null);
+      setProduct(stateProduct);
       setLoading(false);
       return;
     }
@@ -64,6 +71,12 @@ export default function ProductDetailPage() {
     const cached = getProductById(id);
     if (cached) {
       setProduct(cached);
+      setLoading(false);
+      return;
+    }
+
+    if (stateProduct) {
+      setProduct(stateProduct);
       setLoading(false);
       return;
     }
@@ -88,7 +101,19 @@ export default function ProductDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, stateProduct]);
+
+  // Canonicalize legacy /product/:id or outdated slug URLs to /product/<product-detail-slug>-<id>
+  useEffect(() => {
+    if (!product) return;
+    const canonicalPath = getProductPath(product);
+    if (location.pathname !== canonicalPath) {
+      navigate(`${canonicalPath}${location.search}${location.hash}`, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [product, location.pathname, location.search, location.hash, location.state, navigate]);
 
   // Re-render related products when the catalog finishes syncing in the background
   useEffect(() => {
@@ -101,20 +126,25 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!product) return;
     const found = product;
+    const canonicalPath = getProductPath(found);
     setSelectedImage(found.image);
 
-    metaEvents.viewContent({
-      content_ids: [found.id],
-      content_name: found.name,
-      content_category: found.category || "General",
-      content_type: "product",
-      value: parsePriceValue(found.price),
-      currency: "INR",
-    });
+    // Wait until canonical slug URL is in place before firing ViewContent to avoid double-firing on legacy redirects
+    if (location.pathname === canonicalPath && lastTrackedViewIdRef.current !== found.id) {
+      lastTrackedViewIdRef.current = found.id;
+      metaEvents.viewContent({
+        content_ids: [found.id],
+        content_name: found.name,
+        content_category: found.category || "General",
+        content_type: "product",
+        value: parsePriceValue(found.price),
+        currency: "INR",
+      });
+    }
 
     const cleanPrice = found.price ? found.price.replace(/,/g, "") : undefined;
     const brandName = found.name.split(" ")[0] || "Yearnit";
-    const canonicalUrl = `https://yearnit.in/product/${found.id}`;
+    const canonicalUrl = getProductCanonicalUrl(found);
 
     const productJsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",
@@ -215,7 +245,7 @@ export default function ProductDetailPage() {
       ],
       jsonLd: [productJsonLd, breadcrumbsJsonLd],
     });
-  }, [product]);
+  }, [product, location.pathname]);
 
   // ── Loading state (shared link opened in a fresh browser) ──
   if (loading) {
@@ -301,13 +331,14 @@ export default function ProductDetailPage() {
   ];
 
   const handleShare = () => {
+    const shareUrl = getProductCanonicalUrl(product, window.location.origin);
     if (navigator.share) {
       navigator.share({
         title: product.name,
-        url: window.location.href,
+        url: shareUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(shareUrl);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
