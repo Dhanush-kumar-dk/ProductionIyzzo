@@ -8,6 +8,7 @@ import { API_BASE_URL } from "../config/api";
 import { getActiveTrackingId, buildAffiliateUrl, buildMarketplaceSearchUrl } from "../utils/affiliate";
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
 import { updateSEO } from "../utils/seo";
+import { metaEvents } from "../utils/tracking";
 
 interface SearchResult {
   DetailPageURL: string;
@@ -39,6 +40,7 @@ export default function SearchResults() {
     });
 
     if (searchTerm) {
+      metaEvents.search(searchTerm);
       const partnerTag = getActiveTrackingId();
 
       setLoading(true);

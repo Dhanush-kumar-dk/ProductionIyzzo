@@ -1,3 +1,5 @@
+import { metaEvents, parsePriceValue } from "./tracking";
+
 export type SavedProduct = {
   id: string;
   name: string;
@@ -30,6 +32,13 @@ export const toggleSaveDeal = (product: SavedProduct): boolean => {
     updated = deals.filter((d) => d.id !== product.id);
   } else {
     updated = [product, ...deals];
+    metaEvents.addToWishlist({
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      value: parsePriceValue(product.price),
+      currency: "INR",
+    });
   }
   try {
     localStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));

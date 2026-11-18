@@ -8,6 +8,7 @@ import { auth } from "../firebase";
 import SignIn from "./GoogleSignUp";
 import { API_BASE_URL, DEFAULT_PARTNER_TAG } from "../config/api";
 import { isEmailAdmin } from "../utils/admin";
+import { metaEvents } from "../utils/tracking";
 
 export default function LogIn({ onClose }: { onClose: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -91,6 +92,10 @@ export default function LogIn({ onClose }: { onClose: () => void }) {
         );
         user = userCredential.user;
         setSuccessMsg("Account created successfully!");
+        metaEvents.completeRegistration(
+          { content_name: "Email Registration", status: true },
+          { email: cleanEmail }
+        );
       } else {
         // Sign in existing user
         const userCredential = await signInWithEmailAndPassword(

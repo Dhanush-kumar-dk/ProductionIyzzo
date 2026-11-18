@@ -13,6 +13,7 @@ import {
 } from "../data/products";
 import { buildAffiliateUrl } from "../utils/affiliate";
 import { updateSEO } from "../utils/seo";
+import { metaEvents, parsePriceValue } from "../utils/tracking";
 import {
   ArrowLeftIcon,
   ShieldCheckIcon,
@@ -96,11 +97,20 @@ export default function ProductDetailPage() {
     return () => window.removeEventListener("catalogUpdated", onCatalogUpdated);
   }, []);
 
-  // Gallery image + SEO whenever the product resolves
+  // Gallery image + SEO + Meta Pixel ViewContent whenever the product resolves
   useEffect(() => {
     if (!product) return;
     const found = product;
     setSelectedImage(found.image);
+
+    metaEvents.viewContent({
+      content_ids: [found.id],
+      content_name: found.name,
+      content_category: found.category || "General",
+      content_type: "product",
+      value: parsePriceValue(found.price),
+      currency: "INR",
+    });
 
     const cleanPrice = found.price ? found.price.replace(/,/g, "") : undefined;
     const brandName = found.name.split(" ")[0] || "Yearnit";
@@ -677,6 +687,26 @@ export default function ProductDetailPage() {
                     href={affiliateUrl}
                     target="_blank"
                     rel="sponsored nofollow noopener"
+                    onClick={() => {
+                      const val = parsePriceValue(product.price);
+                      metaEvents.addToCart({
+                        content_ids: [product.id],
+                        content_name: product.name,
+                        content_category: product.category || "General",
+                        content_type: "product",
+                        value: val,
+                        currency: "INR",
+                      });
+                      metaEvents.initiateCheckout({
+                        content_ids: [product.id],
+                        content_name: product.name,
+                        content_category: product.category || "General",
+                        content_type: "product",
+                        num_items: 1,
+                        value: val,
+                        currency: "INR",
+                      });
+                    }}
                     className="w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-full shadow-xs hover:shadow-sm transition transform active:scale-98 no-underline border border-[#FCD200]"
                   >
                     <ShoppingBagIcon className="w-4 h-4 stroke-2" />
@@ -686,7 +716,20 @@ export default function ProductDetailPage() {
 
                   {/* Add to Wishlist / Save Deal Button */}
                   <button
-                    onClick={() => setIsSaved(!isSaved)}
+                    onClick={() => {
+                      const nextSaved = !isSaved;
+                      setIsSaved(nextSaved);
+                      if (nextSaved) {
+                        metaEvents.addToWishlist({
+                          content_ids: [product.id],
+                          content_name: product.name,
+                          content_category: product.category || "General",
+                          content_type: "product",
+                          value: parsePriceValue(product.price),
+                          currency: "INR",
+                        });
+                      }
+                    }}
                     className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs rounded-full border border-gray-300 transition"
                   >
                     <BookmarkIcon

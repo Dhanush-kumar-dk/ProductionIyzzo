@@ -308,10 +308,43 @@ export function trackPageView(
 }
 
 /**
+ * Official Meta Pixel Standard Event names
+ */
+export type MetaStandardEvent =
+  | "AddPaymentInfo"
+  | "AddToCart"
+  | "AddToWishlist"
+  | "CompleteRegistration"
+  | "Contact"
+  | "CustomizeProduct"
+  | "Donate"
+  | "FindLocation"
+  | "InitiateCheckout"
+  | "Lead"
+  | "Purchase"
+  | "Schedule"
+  | "Search"
+  | "StartTrial"
+  | "SubmitApplication"
+  | "Subscribe"
+  | "ViewContent";
+
+/**
+ * Safely parses formatted price strings (e.g. "₹1,099" or "28,990") into a number.
+ */
+export function parsePriceValue(price?: string | number): number {
+  if (typeof price === "number") return Number.isFinite(price) ? price : 0;
+  if (!price) return 0;
+  const cleaned = String(price).replace(/[^0-9.]/g, "");
+  const num = parseFloat(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+/**
  * Sends events to Meta Pixel, Google Ads, GA4, and Meta Conversions API (CAPI).
  */
 export async function trackEvent(
-  eventName: "ViewContent" | "Lead" | "Contact" | "InitiateCheckout" | "Purchase" | string,
+  eventName: MetaStandardEvent | string,
   params: Record<string, unknown> = {},
   eventId?: string,
   userData?: UserTrackingData
@@ -387,3 +420,86 @@ export async function trackEvent(
     // Non-blocking
   }
 }
+
+/**
+ * Convenience helpers for all 17 Meta Pixel Standard Events.
+ * Every helper triggers fbq('track', ...), GA4, and CAPI (/api/track) with deduplication.
+ */
+export const metaEvents = {
+  addPaymentInfo: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("AddPaymentInfo", params, undefined, userData),
+
+  addToCart: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("AddToCart", { currency: "INR", ...params }, undefined, userData),
+
+  addToWishlist: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("AddToWishlist", { currency: "INR", ...params }, undefined, userData),
+
+  completeRegistration: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("CompleteRegistration", { status: true, ...params }, undefined, userData),
+
+  contact: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("Contact", params, undefined, userData),
+
+  customizeProduct: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("CustomizeProduct", params, undefined, userData),
+
+  donate: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("Donate", { currency: "INR", ...params }, undefined, userData),
+
+  findLocation: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("FindLocation", params, undefined, userData),
+
+  initiateCheckout: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("InitiateCheckout", { currency: "INR", ...params }, undefined, userData),
+
+  lead: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("Lead", params, undefined, userData),
+
+  purchase: (
+    value = 0.0,
+    currency = "INR",
+    params: Record<string, unknown> = {},
+    userData?: UserTrackingData
+  ) => trackEvent("Purchase", { value, currency, ...params }, undefined, userData),
+
+  schedule: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("Schedule", params, undefined, userData),
+
+  search: (searchString: string, params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("Search", { search_string: searchString, ...params }, undefined, userData),
+
+  startTrial: (
+    value = "0.00",
+    currency = "INR",
+    predictedLtv = "0.00",
+    params: Record<string, unknown> = {},
+    userData?: UserTrackingData
+  ) =>
+    trackEvent(
+      "StartTrial",
+      { value, currency, predicted_ltv: predictedLtv, ...params },
+      undefined,
+      userData
+    ),
+
+  submitApplication: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("SubmitApplication", params, undefined, userData),
+
+  subscribe: (
+    value = "0.00",
+    currency = "INR",
+    predictedLtv = "0.00",
+    params: Record<string, unknown> = {},
+    userData?: UserTrackingData
+  ) =>
+    trackEvent(
+      "Subscribe",
+      { value, currency, predicted_ltv: predictedLtv, ...params },
+      undefined,
+      userData
+    ),
+
+  viewContent: (params: Record<string, unknown> = {}, userData?: UserTrackingData) =>
+    trackEvent("ViewContent", { currency: "INR", ...params }, undefined, userData),
+};

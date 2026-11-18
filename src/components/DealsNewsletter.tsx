@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EnvelopeIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { metaEvents } from "../utils/tracking";
 
 export default function DealsNewsletter() {
   const [email, setEmail] = useState("");
@@ -7,7 +8,10 @@ export default function DealsNewsletter() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
+    const cleanEmail = email.trim();
+    if (cleanEmail) {
+      metaEvents.subscribe("0.00", "INR", "0.00", { content_name: "Yearnit Weekly Product Digest" }, { email: cleanEmail });
+      metaEvents.lead({ content_name: "Yearnit Weekly Product Digest", method: "newsletter" }, { email: cleanEmail });
       setSubscribed(true);
       setEmail("");
     }

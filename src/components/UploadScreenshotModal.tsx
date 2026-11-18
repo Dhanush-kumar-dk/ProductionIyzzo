@@ -8,6 +8,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/solid";
 import { useScreenshotUpload, R2UploadResult } from "../utils/r2Storage";
+import { metaEvents } from "../utils/tracking";
 
 interface UploadScreenshotModalProps {
   isOpen: boolean;
@@ -80,6 +81,22 @@ export default function UploadScreenshotModal({
         orderId,
         filename: selectedFile.name,
       });
+
+      if (category === "order_proof") {
+        metaEvents.submitApplication({
+          content_name: "Cashback Order Verification",
+          order_id: orderId || undefined,
+        });
+        metaEvents.purchase(0.0, "INR", {
+          content_name: "Order Proof Submission",
+          order_id: orderId || undefined,
+        });
+      } else {
+        metaEvents.contact({
+          method: "screenshot_upload",
+          category,
+        });
+      }
 
       if (onUploadSuccess) {
         onUploadSuccess(res);

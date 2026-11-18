@@ -10,6 +10,7 @@ import {
 import GoogleIcon from "../assets/google.png";
 import { API_BASE_URL, DEFAULT_PARTNER_TAG } from "../config/api";
 import { isEmailAdmin } from "../utils/admin";
+import { metaEvents } from "../utils/tracking";
 
 function SignIn({ onClose }: { onClose: () => void }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -19,6 +20,11 @@ function SignIn({ onClose }: { onClose: () => void }) {
     // 1. Immediately cache user details
     const email = user.email || "";
     localStorage.setItem("email", email);
+
+    metaEvents.completeRegistration(
+      { content_name: "Google Sign-In", status: true },
+      { email, name: user.displayName || "" }
+    );
 
     if (isEmailAdmin(email)) {
       localStorage.setItem("isAdmin", "true");

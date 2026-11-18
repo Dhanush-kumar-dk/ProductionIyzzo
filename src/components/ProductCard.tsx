@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { InformationCircleIcon, XMarkIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { buildAffiliateUrl } from "../utils/affiliate";
 import { Product } from "../data/products";
+import { metaEvents, parsePriceValue } from "../utils/tracking";
 
 export type { Product };
 
@@ -248,6 +249,24 @@ export default function ProductCard({ product }: ProductCardProps) {
               onClick={(e) => {
                 // Allow direct Buy Now on Amazon without bubbling to card navigation
                 e.stopPropagation();
+                const val = parsePriceValue(product.price);
+                metaEvents.addToCart({
+                  content_ids: [product.id],
+                  content_name: product.name,
+                  content_category: product.category || "General",
+                  content_type: "product",
+                  value: val,
+                  currency: "INR",
+                });
+                metaEvents.initiateCheckout({
+                  content_ids: [product.id],
+                  content_name: product.name,
+                  content_category: product.category || "General",
+                  content_type: "product",
+                  num_items: 1,
+                  value: val,
+                  currency: "INR",
+                });
               }}
               className="w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 py-2.5 px-2.5 sm:px-4 min-h-[38px] sm:min-h-[42px] bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow-md transition transform active:scale-95 no-underline border border-[#FCD200]"
               title="Buy Now on Amazon"
