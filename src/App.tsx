@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from "react-router-dom";
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { AnimatePresence } from "framer-motion";
 import PageTransition, { TopProgressBar } from "./components/PageTransition";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -49,11 +49,17 @@ import { updateSEO, DEFAULT_OG_IMAGE } from "./utils/seo";
  */
 function RouteTracker() {
   const location = useLocation();
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
     initAllTrackers();
     captureAttribution();
-    trackPageView(location.pathname);
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      trackPageView(location.pathname, { skipMetaPixel: true });
+    } else {
+      trackPageView(location.pathname);
+    }
   }, [location.pathname]);
 
   return null;

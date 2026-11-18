@@ -1,7 +1,6 @@
-const CACHE_NAME = 'yearnit-v1';
+const CACHE_NAME = 'yearnit-v2';
 const PRECACHE_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
@@ -10,7 +9,7 @@ const PRECACHE_ASSETS = [
   '/logo.png'
 ];
 
-// Install: pre-cache critical shell assets
+// Install: pre-cache critical shell assets and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -19,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean up older caches
+// Activate: clean up older caches (including yearnit-v1)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -30,7 +29,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for navigation/HTML, Stale-while-revalidate for assets
+// Fetch: ONLY handle same-origin GET requests; never intercept third-party pixels/analytics or /api/
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -40,15 +39,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip external APIs (Supabase, Firebase, Google Tag Manager, analytics)
-  if (
-    url.hostname.includes('supabase.co') ||
-    url.hostname.includes('firebaseio.com') ||
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('googletagmanager.com') ||
-    url.hostname.includes('google-analytics.com') ||
-    url.hostname.includes('amazon.in')
-  ) {
+  // CRITICAL: Never intercept cross-origin requests (Meta Pixel facebook.com/tr, connect.facebook.net,
+  // Google Tag Manager, GA4, Clarity, Usercentrics, Supabase, Firebase, Amazon, etc.)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Never cache serverless API routes
+  if (url.pathname.startsWith('/api/')) {
     return;
   }
 
@@ -70,26 +68,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets (scripts, styles, images): Cache-first with background network update
+  // Same-origin static assets (JS, CSS, local images): Stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background update for static assets
-        fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
-          }
-        }).catch(() => { /* ignore offline */ });
-        return cachedResponse;
-      }
-
-      return fetch(request).then((networkResponse) => {
+      const networkFetch = fetch(request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return networkResponse;
       });
+
+      return cachedResponse || networkFetch;
     })
   );
 });

@@ -246,7 +246,10 @@ export function initAllTrackers(): void {
 /**
  * Tracks standard PageView across all platforms with deduplication ID.
  */
-export function trackPageView(pagePath?: string): void {
+export function trackPageView(
+  pagePath?: string,
+  options?: { skipMetaPixel?: boolean }
+): void {
   if (typeof window === "undefined") return;
 
   const eventId = generateEventId();
@@ -256,8 +259,8 @@ export function trackPageView(pagePath?: string): void {
   // 0. Update internal daily viewers analytics
   recordDailyVisit(path);
 
-  // 1. Meta Pixel PageView
-  if (window.fbq) {
+  // 1. Meta Pixel PageView (skipped on first load because index.html base code already fired PageView)
+  if (window.fbq && !options?.skipMetaPixel) {
     (window.fbq as (action: string, event: string, params?: unknown, options?: unknown) => void)(
       "track",
       "PageView",

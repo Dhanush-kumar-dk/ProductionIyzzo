@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { updateConsent } from "../utils/tracking";
+import { updateConsent, CONSENT_STORAGE_KEY } from "../utils/tracking";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 export default function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("_consent_mode_v2");
+    const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
     if (!stored) {
       // Small delay so it doesn't cause layout shift or interrupt immediate LCP
       const timer = setTimeout(() => setIsVisible(true), 1200);
