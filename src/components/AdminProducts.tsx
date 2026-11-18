@@ -302,7 +302,7 @@ export default function AdminProducts() {
     try {
       const res = await uploadProductImageToR2(file, {
         slot,
-        productId: form.id || form.asin || "custom_product",
+        productId: form.asin || "custom_product",
         filename: file.name,
       });
 
@@ -1158,6 +1158,12 @@ export default function AdminProducts() {
                       <span>Saves to <strong>yearnit-storage/Product-image/</strong></span>
                     </span>
                   </div>
+
+                  {uploadError && (
+                    <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-medium">
+                      {uploadError}
+                    </div>
+                  )}
 
                   {/* Primary Image Upload & Input */}
                   <div className="bg-gray-50/70 p-3 rounded-2xl border border-gray-200/80 space-y-2.5">

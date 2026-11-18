@@ -7,7 +7,6 @@ import {
   MapPinIcon,
   CheckCircleIcon,
   PhotoIcon,
-  CloudArrowUpIcon,
 } from "@heroicons/react/24/solid";
 import { trackEvent } from "../utils/tracking";
 import { uploadScreenshotToR2 } from "../utils/r2Storage";

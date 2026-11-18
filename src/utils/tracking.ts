@@ -56,6 +56,7 @@ export interface UserTrackingData {
   email?: string;
   phone?: string;
   name?: string;
+  screenshot_key?: string;
 }
 
 /**
