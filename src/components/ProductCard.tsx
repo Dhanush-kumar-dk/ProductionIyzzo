@@ -249,22 +249,13 @@ export default function ProductCard({ product }: ProductCardProps) {
               onClick={(e) => {
                 // Allow direct Buy Now on Amazon without bubbling to card navigation
                 e.stopPropagation();
-                const val = parsePriceValue(product.price);
-                metaEvents.addToCart({
-                  content_ids: [product.id],
-                  content_name: product.name,
-                  content_category: product.category || "General",
-                  content_type: "product",
-                  value: val,
-                  currency: "INR",
-                });
                 metaEvents.initiateCheckout({
                   content_ids: [product.id],
                   content_name: product.name,
                   content_category: product.category || "General",
                   content_type: "product",
                   num_items: 1,
-                  value: val,
+                  value: parsePriceValue(product.price),
                   currency: "INR",
                 });
               }}

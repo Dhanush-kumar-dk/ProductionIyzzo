@@ -194,16 +194,26 @@
 
     <!-- Meta Pixel Code -->
     <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1459486569390454');
-    fbq('track', 'PageView');
+    (function(){
+      var h = window.location.hostname;
+      var p = window.location.pathname || "/";
+      var isProd = h === "yearnit.in" || h === "www.yearnit.in";
+      var isSensitive = p.indexOf("/admin") === 0 || p.indexOf("/profile") === 0;
+      if (!isProd || isSensitive) return;
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      var pvId = 'evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+      window.__YEARNIT_INITIAL_PV_ID__ = pvId;
+      fbq('set', 'autoConfig', false, '1459486569390454');
+      fbq('init', '1459486569390454');
+      fbq('track', 'PageView', {}, { eventID: pvId });
+    })();
     </script>
     <!-- Meta Pixel Noscript -->
     <!-- End Meta Pixel Code -->

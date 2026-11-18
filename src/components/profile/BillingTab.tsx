@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { UserBilling } from "./types";
-import { metaEvents } from "../../utils/tracking";
 import {
   BanknotesIcon,
   ArrowUpRightIcon,
@@ -27,10 +26,6 @@ export default function BillingTab({ billing, onUpdateBilling, showToast }: Bill
     const ok = await onUpdateBilling(data);
     setIsSaving(false);
     if (ok) {
-      metaEvents.addPaymentInfo({
-        content_category: data.payout_method,
-        status: true,
-      });
       showToast("success", "Payout details saved successfully!");
     } else {
       showToast("error", "Failed to update payout details.");

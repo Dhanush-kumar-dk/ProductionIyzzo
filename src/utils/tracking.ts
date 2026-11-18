@@ -17,7 +17,73 @@ declare global {
     gtag: (...args: unknown[]) => void;
     fbq: unknown;
     _fbq: unknown;
+    __YEARNIT_INITIAL_PV_ID__?: string;
   }
+}
+
+const ALLOWED_META_DOMAINS = new Set(["yearnit.in", "www.yearnit.in"]);
+const SENSITIVE_ROUTE_PREFIXES = ["/admin", "/profile", "/account"];
+const BLOCKED_META_PARAM_KEYS = new Set([
+  "email",
+  "phone",
+  "name",
+  "password",
+  "upi",
+  "upi_id",
+  "account_number",
+  "ifsc",
+  "ifsc_code",
+  "bank",
+  "token",
+  "secret",
+  "screenshot_key",
+]);
+
+/**
+ * Only allow Meta Pixel / CAPI on verified production domains so preview/localhost
+ * environments never pollute or trigger domain restrictions in Meta Events Manager.
+ */
+export function isMetaAllowedDomain(): boolean {
+  if (typeof window === "undefined") return false;
+  return ALLOWED_META_DOMAINS.has(window.location.hostname.toLowerCase());
+}
+
+/**
+ * Exclude admin and account/billing/payout routes from Meta Pixel tracking
+ * to stay strictly compliant with Meta Business Tool Terms.
+ */
+export function isSensitiveRoute(pathname?: string): boolean {
+  if (typeof window === "undefined") return true;
+  const path = (pathname ?? window.location.pathname).toLowerCase();
+  return SENSITIVE_ROUTE_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
+/**
+ * Strips any sensitive query parameters from URLs sent to Meta CAPI.
+ */
+export function getSanitizedEventUrl(): string {
+  if (typeof window === "undefined") return "https://yearnit.in/";
+  try {
+    const url = new URL(window.location.href);
+    const sensitiveParams = ["email", "phone", "token", "upi", "code", "password", "key", "secret"];
+    sensitiveParams.forEach((p) => url.searchParams.delete(p));
+    return url.toString();
+  } catch {
+    return `${window.location.origin}${window.location.pathname}`;
+  }
+}
+
+/**
+ * Removes any PII / financial keys before dispatching custom_data to Meta Pixel / CAPI.
+ */
+function sanitizeMetaParams(params: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === "") continue;
+    if (BLOCKED_META_PARAM_KEYS.has(k.toLowerCase())) continue;
+    clean[k] = v;
+  }
+  return clean;
 }
 
 // Environment Variables with fallbacks
@@ -126,6 +192,7 @@ export function updateConsent(granted: boolean): void {
  */
 export function initMetaPixel(): void {
   if (typeof window === "undefined" || !META_PIXEL_ID) return;
+  if (!isMetaAllowedDomain() || isSensitiveRoute()) return;
   if (window.fbq) return;
 
   type FbqFunction = {
@@ -161,6 +228,13 @@ export function initMetaPixel(): void {
   const initParams: Record<string, unknown> = {};
   if (attribution.fbp) initParams.fbp = attribution.fbp;
   if (attribution.fbc) initParams.fbc = attribution.fbc;
+
+  (window.fbq as (action: string, key: string, value: unknown, pixelId?: string) => void)(
+    "set",
+    "autoConfig",
+    false,
+    META_PIXEL_ID
+  );
 
   (window.fbq as (action: string, id: string, params?: unknown) => void)(
     "init",
@@ -252,15 +326,19 @@ export function trackPageView(
 ): void {
   if (typeof window === "undefined") return;
 
-  const eventId = generateEventId();
-  const attribution = getAttribution();
   const path = pagePath || window.location.pathname;
+  const allowMeta = isMetaAllowedDomain() && !isSensitiveRoute(path);
+  const eventId =
+    options?.skipMetaPixel && window.__YEARNIT_INITIAL_PV_ID__
+      ? window.__YEARNIT_INITIAL_PV_ID__
+      : generateEventId();
+  const attribution = getAttribution();
 
   // 0. Update internal daily viewers analytics
   recordDailyVisit(path);
 
   // 1. Meta Pixel PageView (skipped on first load because index.html base code already fired PageView)
-  if (window.fbq && !options?.skipMetaPixel) {
+  if (allowMeta && window.fbq && !options?.skipMetaPixel) {
     (window.fbq as (action: string, event: string, params?: unknown, options?: unknown) => void)(
       "track",
       "PageView",
@@ -289,21 +367,23 @@ export function trackPageView(
     }
   }
 
-  // 3. Dispatch Server-Side PageView (CAPI)
-  try {
-    fetch(`${API_BASE_URL}/api/track`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventName: "PageView",
-        eventId,
-        eventSourceUrl: window.location.href,
-        attribution,
-      }),
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // Non-blocking
+  // 3. Dispatch Server-Side PageView (CAPI) only on allowed production public routes
+  if (allowMeta) {
+    try {
+      fetch(`${API_BASE_URL}/api/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName: "PageView",
+          eventId,
+          eventSourceUrl: getSanitizedEventUrl(),
+          attribution,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
   }
 }
 
@@ -353,13 +433,15 @@ export async function trackEvent(
 
   const finalEventId = eventId || generateEventId();
   const attribution = getAttribution();
+  const allowMeta = isMetaAllowedDomain() && !isSensitiveRoute();
+  const cleanParams = sanitizeMetaParams(params);
 
-  // 1. Meta Pixel (Browser)
-  if (window.fbq) {
+  // 1. Meta Pixel (Browser) — strictly on public production pages with sanitized params
+  if (allowMeta && window.fbq) {
     (window.fbq as (action: string, event: string, params?: unknown, options?: unknown) => void)(
       "track",
       eventName,
-      params,
+      cleanParams,
       { eventID: finalEventId }
     );
   }
@@ -368,7 +450,7 @@ export async function trackEvent(
   if (window.gtag) {
     // Standard GA4 event
     window.gtag("event", eventName, {
-      ...params,
+      ...cleanParams,
       event_id: finalEventId,
       ...attribution,
     });
@@ -378,39 +460,41 @@ export async function trackEvent(
       window.gtag("event", "conversion", {
         send_to: `${GOOGLE_ADS_ID}/${GADS_LEAD_LABEL}`,
         event_id: finalEventId,
-        ...params,
+        ...cleanParams,
       });
     }
   }
 
   // 3. Server-Side Tracking (Meta Conversions API via /api/track)
-  try {
-    const payload = {
-      eventName,
-      eventId: finalEventId,
-      eventSourceUrl: window.location.href,
-      userData: {
-        email: userData?.email || "",
-        phone: userData?.phone || "",
-        name: userData?.name || "",
-        fbp: attribution.fbp,
-        fbc: attribution.fbc,
-      },
-      customData: params,
-      attribution,
-    };
+  if (allowMeta) {
+    try {
+      const payload = {
+        eventName,
+        eventId: finalEventId,
+        eventSourceUrl: getSanitizedEventUrl(),
+        userData: {
+          email: userData?.email || "",
+          phone: userData?.phone || "",
+          name: userData?.name || "",
+          fbp: attribution.fbp,
+          fbc: attribution.fbc,
+        },
+        customData: cleanParams,
+        attribution,
+      };
 
-    // Non-blocking server dispatch
-    fetch(`${API_BASE_URL}/api/track`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch((err) => {
-      console.warn("CAPI dispatch failed silently:", err.message);
-    });
-  } catch {
-    // Non-blocking
+      // Non-blocking server dispatch
+      fetch(`${API_BASE_URL}/api/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch((err) => {
+        console.warn("CAPI dispatch failed silently:", err.message);
+      });
+    } catch {
+      // Non-blocking
+    }
   }
 
   // 4. Microsoft Clarity Smart Event
