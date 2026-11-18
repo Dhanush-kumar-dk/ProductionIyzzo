@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     const metaPixelId =
       process.env.META_PIXEL_ID ||
       process.env.VITE_META_PIXEL_ID ||
-      "";
+      "1154456314006792";
 
     const metaAccessToken =
       process.env.META_ACCESS_TOKEN ||
