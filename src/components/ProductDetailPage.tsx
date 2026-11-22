@@ -5,6 +5,7 @@ import LogIn from "./Login";
 import Footer from "./Footer";
 import ProductCard from "./ProductCard";
 import PriceHistoryTracker from "./PriceHistoryTracker";
+import UploadScreenshotModal from "./UploadScreenshotModal";
 import {
   getProductById,
   getProductByIdAsync,
@@ -56,6 +57,7 @@ export default function ProductDetailPage() {
   const [openLogIn, setOpenLogIn] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isOrderProofModalOpen, setIsOrderProofModalOpen] = useState(false);
   const [, setCatalogVersion] = useState(0);
 
   // Resolve the product: cache first, then Supabase (shared links / fresh browsers), then route state
@@ -342,6 +344,26 @@ export default function ProductDetailPage() {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
+  };
+
+  const handleBuyNow = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    if (!product) return;
+
+    metaEvents.initiateCheckout({
+      content_ids: [product.id],
+      content_name: product.name,
+      content_category: product.category || "General",
+      content_type: "product",
+      num_items: 1,
+      value: parsePriceValue(product.price),
+      currency: "INR",
+    });
+
+    window.open(affiliateUrl, "_blank", "noopener,noreferrer");
+    setIsOrderProofModalOpen(true);
   };
 
   return (
@@ -718,17 +740,7 @@ export default function ProductDetailPage() {
                     href={affiliateUrl}
                     target="_blank"
                     rel="sponsored nofollow noopener"
-                    onClick={() => {
-                      metaEvents.initiateCheckout({
-                        content_ids: [product.id],
-                        content_name: product.name,
-                        content_category: product.category || "General",
-                        content_type: "product",
-                        num_items: 1,
-                        value: parsePriceValue(product.price),
-                        currency: "INR",
-                      });
-                    }}
+                    onClick={handleBuyNow}
                     className="w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3 px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs sm:text-sm rounded-full shadow-xs hover:shadow-sm transition transform active:scale-98 no-underline border border-[#FCD200]"
                   >
                     <ShoppingBagIcon className="w-4 h-4 stroke-2" />
@@ -1091,12 +1103,23 @@ export default function ProductDetailPage() {
           href={affiliateUrl}
           target="_blank"
           rel="sponsored nofollow noopener"
+          onClick={handleBuyNow}
           className="flex-1 max-w-[220px] inline-flex items-center justify-center gap-1.5 py-2.5 px-4 bg-[#FFD814] hover:bg-[#F7CA00] active:bg-[#F2BC00] text-gray-950 font-bold text-xs rounded-full shadow-xs no-underline border border-[#FCD200]"
         >
           <ShoppingBagIcon className="w-4 h-4 stroke-2 flex-shrink-0" />
           <span className="truncate">Buy Now on Amazon</span>
         </a>
       </div>
+
+      {/* Automatic Order Proof / Cashback Verification Screenshot Modal */}
+      {product && (
+        <UploadScreenshotModal
+          isOpen={isOrderProofModalOpen}
+          onClose={() => setIsOrderProofModalOpen(false)}
+          defaultCategory="order_proof"
+          productName={product.name}
+        />
+      )}
 
       <Footer />
     </div>

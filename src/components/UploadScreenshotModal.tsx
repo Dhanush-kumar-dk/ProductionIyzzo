@@ -15,6 +15,7 @@ interface UploadScreenshotModalProps {
   onClose: () => void;
   defaultCategory?: "order_proof" | "support" | "feedback";
   orderId?: string;
+  productName?: string;
   onUploadSuccess?: (result: R2UploadResult) => void;
 }
 
@@ -23,6 +24,7 @@ export default function UploadScreenshotModal({
   onClose,
   defaultCategory = "order_proof",
   orderId: initialOrderId = "",
+  productName,
   onUploadSuccess,
 }: UploadScreenshotModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -33,6 +35,34 @@ export default function UploadScreenshotModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { upload, isUploading, error, result, reset } = useScreenshotUpload();
+
+  // Listen for clipboard paste (Ctrl+V) when modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onload = () => {
+              setPreviewSrc(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -120,10 +150,12 @@ export default function UploadScreenshotModal({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Upload Verification Screenshot
+                {productName ? "Verify Your Amazon Order" : "Upload Verification Screenshot"}
               </h3>
               <p className="text-[11px] text-slate-500">
-                Encrypted & stored in Cloudflare R2 bucket: yearnit-storage/Screenshot/
+                {productName
+                  ? "Upload screenshot of 'Order Placed' screen to verify cashback"
+                  : "Encrypted & stored in Cloudflare R2 bucket: yearnit-storage/Screenshot/"}
               </p>
             </div>
           </div>
@@ -178,6 +210,23 @@ export default function UploadScreenshotModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Product order notice banner */}
+              {productName && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-950 flex items-start gap-3 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-bold flex items-center justify-center flex-shrink-0 text-sm shadow-xs">
+                    🛍️
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900 text-[13px]">
+                      Amazon checkout opened in a new tab!
+                    </p>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Complete your purchase on Amazon, then capture your <strong>"Order Placed / Thank You"</strong> screen and upload or paste (<kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-mono">Ctrl+V</kbd>) it below to claim your cashback.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Category Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -266,10 +315,10 @@ export default function UploadScreenshotModal({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-800">
-                        Click to browse or drag & drop screenshot
+                        Click to browse, drag & drop, or paste (Ctrl+V)
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        PNG, JPG, WebP up to 10MB
+                        PNG, JPG, WebP up to 10MB • Clipboard paste supported
                       </p>
                     </div>
                   </div>
