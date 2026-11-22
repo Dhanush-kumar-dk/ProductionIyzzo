@@ -53,43 +53,70 @@ export default function Footer() {
           {/* Column 2: Product Guides */}
           <div className="space-y-3">
             <h4 className="font-bold text-white text-[14px] sm:text-[15px] tracking-tight">
-              Product Guides
+              Buyer Guides
             </h4>
             <ul className="space-y-2.5">
               <li>
                 <a
-                  href="#featured-catalog"
+                  href="/guides"
                   style={{ color: "#DDD", textDecoration: "none" }}
-                  className="hover:underline hover:!text-white transition block"
+                  className="hover:underline hover:!text-white transition block font-semibold text-amber-400"
                 >
-                  Consumer Electronics
+                  All 14 Buyer Guides →
                 </a>
               </li>
               <li>
                 <a
-                  href="#featured-catalog"
+                  href="/guides/best-wireless-earbuds-under-1500"
                   style={{ color: "#DDD", textDecoration: "none" }}
                   className="hover:underline hover:!text-white transition block"
                 >
-                  Audio & Wearables
+                  Earbuds Under ₹1,500
                 </a>
               </li>
               <li>
                 <a
-                  href="#featured-catalog"
+                  href="/guides/best-budget-smartphones-under-20000"
                   style={{ color: "#DDD", textDecoration: "none" }}
                   className="hover:underline hover:!text-white transition block"
                 >
-                  Mobiles & Tech
+                  Smartphones Under ₹20,000
                 </a>
               </li>
               <li>
                 <a
-                  href="#featured-catalog"
+                  href="/guides/best-laptops-under-50000-for-students"
                   style={{ color: "#DDD", textDecoration: "none" }}
                   className="hover:underline hover:!text-white transition block"
                 >
-                  Home & Kitchen Gear
+                  Student Laptops Under ₹50,000
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/best-noise-cancelling-headphones"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
+                  ANC Headphones Guide
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/best-smartwatch-under-2000"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
+                  Smartwatches Under ₹2,000
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/guides/best-tech-gifts-under-5000"
+                  style={{ color: "#DDD", textDecoration: "none" }}
+                  className="hover:underline hover:!text-white transition block"
+                >
+                  Tech Gifts Under ₹5,000
                 </a>
               </li>
             </ul>
@@ -227,6 +254,13 @@ export default function Footer() {
             className="hover:underline hover:!text-white transition"
           >
             Affiliate Disclosure
+          </a>
+          <a
+            href="/guides"
+            style={{ color: "#9E9E9E", textDecoration: "none" }}
+            className="hover:underline hover:!text-white transition"
+          >
+            Buyer Guides Hub
           </a>
           <a
             href="/about"

@@ -146,4 +146,155 @@
       <image:caption>Author Sahil Bloom - Financial, Time, Physical, Social, Mental Wealth</image:caption>
     </image:image>
   </url>
+
+  <!-- ============================================== -->
+  <!-- Buyer Guides & In-Depth Review Guides Hub -->
+  <!-- ============================================== -->
+  <url>
+    <loc>https://yearnit.in/guides</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://yearnit.in/og-image.jpg</image:loc>
+      <image:title>Yearnit Buyer Guides Hub</image:title>
+      <image:caption>Independent product reviews and verified specifications.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Category Buyer Guides -->
+  <url>
+    <loc>https://yearnit.in/guides/best-wireless-earbuds-under-1500</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/51HBom8xz7L._SL1100_.jpg</image:loc>
+      <image:title>Best Wireless Earbuds Under 1500 in India</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-budget-smartphones-under-20000</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61QRgOgBx0L._SL1500_.jpg</image:loc>
+      <image:title>Best Budget Smartphone Under 20000 in India</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-laptops-under-50000-for-students</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61q6x-ll5FL._SL1000_.jpg</image:loc>
+      <image:title>Best Laptop Under 50000 for Students in India</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-noise-cancelling-headphones</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61+btxzpfDL._SL1500_.jpg</image:loc>
+      <image:title>Best Noise Cancelling Headphones in India</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-smartwatch-under-2000</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61epn29QG0L._SL1500_.jpg</image:loc>
+      <image:title>Best Smartwatch Under 2000 in India</image:title>
+    </image:image>
+  </url>
+
+  <!-- Product-Specific Review & Question Guides -->
+  <url>
+    <loc>https://yearnit.in/guides/boat-airdopes-141-worth-buying</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/51HBom8xz7L._SL1100_.jpg</image:loc>
+      <image:title>boAt Airdopes 141 Review: Is It Worth Buying?</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/sony-wh-1000xm5-review-pros-cons</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61+btxzpfDL._SL1500_.jpg</image:loc>
+      <image:title>Sony WH-1000XM5 Review: Pros, Cons and Verdict</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/oneplus-nord-ce3-lite-should-you-buy</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61QRgOgBx0L._SL1500_.jpg</image:loc>
+      <image:title>OnePlus Nord CE 3 Lite 5G: Should You Buy It?</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/lenovo-ideapad-slim-3-review-coding</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/61q6x-ll5FL._SL1000_.jpg</image:loc>
+      <image:title>Lenovo IdeaPad Slim 3 Review: Good for Coding?</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/iphone-15-review-camera-battery-usbc</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/71657TiFeHL._SL1500_.jpg</image:loc>
+      <image:title>iPhone 15 Review India: Camera, Battery and USB-C</image:title>
+    </image:image>
+  </url>
+
+  <!-- Head-to-Head Comparisons & Roundups -->
+  <url>
+    <loc>https://yearnit.in/guides/boat-airdopes-141-vs-boult-z40</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/51HBom8xz7L._SL1100_.jpg</image:loc>
+      <image:title>boAt Airdopes 141 vs Boult Audio Z40 Comparison</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-travel-mug-borosil-coffeemate-review</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Best Travel Mug in India: Borosil Hydra Coffeemate Review</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://yearnit.in/guides/best-tech-gifts-under-5000</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://m.media-amazon.com/images/I/51HBom8xz7L._SL1100_.jpg</image:loc>
+      <image:title>Best Tech Gifts Under 5000 in India</image:title>
+    </image:image>
+  </url>
 </urlset>

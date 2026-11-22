@@ -160,6 +160,9 @@ export default function AboutPage() {
 
             <div className="pt-3 border-t border-[#E7E7E7] text-xs space-y-2">
               <span className="font-bold text-[#0F1111] block">Featured Product Guides:</span>
+              <a href="/guides" className="text-[#007185] hover:underline font-semibold block">
+                • 14 In-Depth Buyer Guides Hub
+              </a>
               <a href="/product/boat-airdopes-141-true-wireless-earbuds-with-42h-playtime-B09N3ZNHTY" className="text-[#007185] hover:underline block">
                 • boAt Airdopes 141 Review
               </a>

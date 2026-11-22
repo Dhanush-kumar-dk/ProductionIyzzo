@@ -55,6 +55,22 @@
       "destination": "/api/screenshot?stream=true"
     },
     {
+      "source": "/guides",
+      "destination": "/guides/index.html"
+    },
+    {
+      "source": "/guides/",
+      "destination": "/guides/index.html"
+    },
+    {
+      "source": "/guides/:slug",
+      "destination": "/guides/:slug/index.html"
+    },
+    {
+      "source": "/guides/:slug/",
+      "destination": "/guides/:slug/index.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
