@@ -1,0 +1,33 @@
+# Dependency & Package Managers
+node_modules
+.pnpm-store
+.npm
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Secrets (NEVER bake into image)
+.env
+.env.*
+!.env.example
+
+# Git & IDE
+.git
+.gitignore
+.gitattributes
+.vscode
+.idea
+.agents
+
+# Build artifacts & temp
+dist
+.tmp
+.vite-temp
+
+# Documentation & Tests
+*.md
+!README.md
+tests
+test
+coverage
