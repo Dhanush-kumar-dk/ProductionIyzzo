@@ -4,6 +4,8 @@
  * Supported Methods: GET (lookup / username uniqueness check), PATCH (update profile)
  */
 
+import { applyRateLimit } from "./_ratelimit.js";
+
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.VITE_SUPABASE_URL ||
@@ -54,6 +56,14 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
+
+  // Rate limit profile endpoints: 30 requests per minute per IP
+  const allowed = await applyRateLimit(req, res, {
+    limit: 30,
+    windowMs: 60 * 1000,
+    keyPrefix: "profile",
+  });
+  if (!allowed) return;
 
   // -------------------------------------------------------------
   // GET: Fetch profile OR Check username availability

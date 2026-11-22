@@ -4,6 +4,8 @@
  * Supported Methods: POST
  */
 
+import { applyRateLimit } from "./_ratelimit.js";
+
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.VITE_SUPABASE_URL ||
@@ -57,6 +59,18 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+
+  // Rate limit account actions: 10 requests per minute per IP
+  const allowed = await applyRateLimit(req, res, {
+    limit: 10,
+    windowMs: 60 * 1000,
+    keyPrefix: "account",
+  });
+  if (!allowed) return;
+
+  // Never cache account/profile data
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
 
   const action = req.query?.action || req.body?.action;
   const { id, email } = req.body || {};

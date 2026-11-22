@@ -2,6 +2,28 @@
 // Supports full Amazon URLs, short links (link.amazon/*, amzn.to/*, amzn.in/*, a.co/*),
 // follows redirects to resolve canonical ASIN, live pricing, 1024px imagery, and affiliate links.
 
+import { applyRateLimit } from "./_ratelimit.js";
+import { getCircuitBreaker } from "./_circuit.js";
+
+// Circuit breakers for external scraper dependencies
+const amazonBreaker = getCircuitBreaker("amazon-direct", {
+  timeoutMs: 5500,
+  maxRetries: 1,
+  failureThreshold: 5,
+  resetTimeoutMs: 60000,
+});
+
+const jinaBreaker = getCircuitBreaker("jina-ai", {
+  timeoutMs: 4500,
+  maxRetries: 1,
+  failureThreshold: 4,
+  resetTimeoutMs: 60000,
+});
+
+// In-memory cache for hot ASIN reads (TTL: 1 hour)
+const asinCache = new Map();
+const ASIN_CACHE_TTL_MS = 60 * 60 * 1000;
+
 export function cleanText(text) {
   if (!text) return "";
   return text
@@ -584,6 +606,16 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Enforce serverless rate limit: 20 requests/minute per client IP
+  const allowed = await applyRateLimit(req, res, {
+    limit: 20,
+    windowMs: 60 * 1000,
+    keyPrefix: "ai-scrape",
+  });
+  if (!allowed) {
+    return;
+  }
+
   let rawUrl = req.method === "POST" ? req.body?.url : req.query?.url;
   if (!rawUrl && req.url) {
     try {
@@ -601,33 +633,48 @@ export default async function handler(req, res) {
 
   const targetUrl = rawUrl.trim();
 
-  // Tier 0: Check if local mcp-url-converter server is running (localhost:8001)
-  for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
-    try {
-      const mcpCtrl = new AbortController();
-      const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 2500);
-      const mcpRes = await fetch(
-        `${host}/extract-product?url=${encodeURIComponent(targetUrl)}`,
-        { signal: mcpCtrl.signal }
-      );
-      clearTimeout(mcpTimeout);
-      if (mcpRes.ok) {
-        const json = await mcpRes.json();
-        if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
-          sendResponse(200, json);
-          return;
+  // Cache Check: Return cached ASIN data immediately to avoid redundant scraping
+  const extractedAsin = extractAsin(targetUrl);
+  const bypassCache = req.query?.refresh === "true" || req.body?.refresh === true;
+  if (!bypassCache && extractedAsin && asinCache.has(extractedAsin)) {
+    const cached = asinCache.get(extractedAsin);
+    if (Date.now() - cached.timestamp < ASIN_CACHE_TTL_MS) {
+      res.setHeader("Cache-Control", "public, max-age=900, s-maxage=3600, stale-while-revalidate=86400");
+      sendResponse(200, {
+        success: true,
+        data: cached.data,
+        source: "cache-hit",
+      });
+      return;
+    }
+  }
+
+  // Tier 0: Check if local mcp-url-converter server is running (localhost:8001) only in local development
+  if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
+    for (const host of ["http://127.0.0.1:8001", "http://localhost:8001"]) {
+      try {
+        const mcpCtrl = new AbortController();
+        const mcpTimeout = setTimeout(() => mcpCtrl.abort(), 1000);
+        const mcpRes = await fetch(
+          `${host}/extract-product?url=${encodeURIComponent(targetUrl)}`,
+          { signal: mcpCtrl.signal }
+        );
+        clearTimeout(mcpTimeout);
+        if (mcpRes.ok) {
+          const json = await mcpRes.json();
+          if (json && json.success && json.data && !isInvalidTitle(json.data.name)) {
+            sendResponse(200, json);
+            return;
+          }
         }
+        break;
+      } catch {
+        // Server not running on this host - continue
       }
-      break;
-    } catch {
-      // Server not running on this host - continue
     }
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7500);
-
     const headers = {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -647,47 +694,56 @@ export default async function handler(req, res) {
     let html = "";
     let effectiveUrl = targetUrl;
 
+    // Resilient Amazon Fetch protected by Circuit Breaker & Timeout
     try {
-      const response = await fetch(targetUrl, {
-        headers,
-        signal: controller.signal,
-        redirect: "follow",
+      await amazonBreaker.execute(async (signal) => {
+        const response = await fetch(targetUrl, {
+          headers,
+          signal,
+          redirect: "follow",
+        });
+        if (response.url) {
+          effectiveUrl = response.url;
+        }
+        if (response.ok && response.status !== 503) {
+          html = await response.text();
+        } else if (response.status === 503) {
+          throw new Error("Amazon 503 Service Unavailable");
+        }
       });
-      clearTimeout(timeout);
-      if (response.url) {
-        effectiveUrl = response.url;
-      }
-      if (response.ok && response.status !== 503) {
-        html = await response.text();
-      }
     } catch {
-      // Direct fetch failed or timed out
+      // Amazon direct fetch failed or tripped breaker
     }
 
-    // If direct fetch blocked or empty, try Jina Reader
+    // If direct fetch blocked or empty, try Jina Reader protected by Circuit Breaker
     if (!html || isBlockedHtml(html)) {
       try {
-        const jinaController = new AbortController();
-        const jinaTimeout = setTimeout(() => jinaController.abort(), 4500);
-        const jinaRes = await fetch(`https://r.jina.ai/${effectiveUrl || targetUrl}`, {
-          headers: { Accept: "application/json" },
-          signal: jinaController.signal,
-        });
-        clearTimeout(jinaTimeout);
-        if (jinaRes.ok) {
-          const jinaData = await jinaRes.json();
-          const jinaContent = jinaData?.data?.content || "";
-          if (!isBlockedHtml(jinaContent) && !isInvalidTitle(jinaData?.data?.title)) {
-            html = jinaContent;
+        await jinaBreaker.execute(async (signal) => {
+          const jinaRes = await fetch(`https://r.jina.ai/${effectiveUrl || targetUrl}`, {
+            headers: { Accept: "application/json" },
+            signal,
+          });
+          if (jinaRes.ok) {
+            const jinaData = await jinaRes.json();
+            const jinaContent = jinaData?.data?.content || "";
+            if (!isBlockedHtml(jinaContent) && !isInvalidTitle(jinaData?.data?.title)) {
+              html = jinaContent;
+            }
+          } else {
+            throw new Error(`Jina returned status ${jinaRes.status}`);
           }
-        }
+        });
       } catch {
-        // Jina failed
+        // Jina failed or tripped breaker
       }
     }
 
     // Always produce clean, valid product data
     const data = parseProductHtml(html, effectiveUrl, targetUrl);
+    if (data?.asin) {
+      asinCache.set(data.asin, { data, timestamp: Date.now() });
+    }
+    res.setHeader("Cache-Control", "public, max-age=900, s-maxage=3600, stale-while-revalidate=86400");
     sendResponse(200, {
       success: true,
       data,

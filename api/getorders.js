@@ -1,6 +1,8 @@
 // Vercel Serverless Function: Retrieve Store Orders
 // Reads from Supabase PostgreSQL orders table, unpacks metadata, and formats for AdminOrders
 
+import { applyRateLimit } from "./_ratelimit.js";
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://zxwfwtagcqwwevnuqber.supabase.co";
 const SUPABASE_KEY =
   process.env.VITE_SUPABASE_SECRET_KEY ||
@@ -24,6 +26,18 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed. Use GET." });
   }
+
+  // Rate limit orders fetch: 30 requests per minute per IP
+  const allowed = await applyRateLimit(req, res, {
+    limit: 30,
+    windowMs: 60 * 1000,
+    keyPrefix: "orders",
+  });
+  if (!allowed) return;
+
+  // Never cache sensitive user transactions in shared/browser caches
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
 
   try {
     // 1. Fetch userjoins to ensure current email mapping

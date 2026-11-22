@@ -7,6 +7,7 @@
  */
 
 import crypto from "crypto";
+import { applyRateLimit } from "./_ratelimit.js";
 import {
   R2_ACCOUNT_ID,
   R2_BUCKET_NAME,
@@ -90,6 +91,14 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+
+  // Rate limit uploads: 15 uploads per minute per IP
+  const allowed = await applyRateLimit(req, res, {
+    limit: 15,
+    windowMs: 60 * 1000,
+    keyPrefix: "upload",
+  });
+  if (!allowed) return;
 
   try {
     const {
