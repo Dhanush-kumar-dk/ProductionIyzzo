@@ -65,7 +65,10 @@ export default function HeroBanner({ onExploreClick }: { onExploreClick: () => v
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current !== null) {
       const diff = touchStartX.current - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > SWIPE_THRESHOLD) diff > 0 ? next() : prev();
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff > 0) next();
+        else prev();
+      }
     }
     touchStartX.current = null;
     setIsPaused(false);

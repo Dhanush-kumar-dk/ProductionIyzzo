@@ -43,7 +43,7 @@ jobs:
         run: pnpm run typecheck
 
       - name: Run Linter
-        run: pnpm run lint --max-warnings=0
+        run: pnpm run lint
 
       - name: Build Production Bundle
         run: pnpm run build

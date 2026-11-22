@@ -41,7 +41,7 @@ const SUPABASE_URL = "https://zxwfwtagcqwwevnuqber.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Cee7KZOIemSQnwoJh6tW4A_jVB7X0PE";
 
 function parseCsvContent(text: string) {
-  let cleaned = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const cleaned = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentCell = "";
