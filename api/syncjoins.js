@@ -1,5 +1,7 @@
 // Vercel Serverless Function: Synchronize User Joins & Partner Tracking Tags
 
+import { withGateway } from "./_gateway.js";
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://zxwfwtagcqwwevnuqber.supabase.co";
 const SUPABASE_KEY =
   process.env.VITE_SUPABASE_SECRET_KEY ||
@@ -13,13 +15,7 @@ function setCors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, apikey");
 }
 
-export default async function handler(req, res) {
-  setCors(res);
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
+async function syncJoinsHandler(req, res) {
   try {
     // 1. Fetch userjoins
     const uRes = await fetch(`${SUPABASE_URL}/rest/v1/userjoins?select=email,trackingid`, {
@@ -78,3 +74,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error during sync", details: err.message });
   }
 }
+
+export default withGateway(syncJoinsHandler, {
+  name: "syncjoins",
+  allowedMethods: ["GET", "POST"],
+  requireAdmin: true,
+  rateLimit: { limit: 10, windowMs: 60000, keyPrefix: "syncjoins" },
+});

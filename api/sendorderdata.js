@@ -1,6 +1,8 @@
 // Vercel Serverless Function: Import and Ingest Amazon Affiliate Orders
 // Supports CSV & JSON orders data, links partner tags to userjoins, and persists to Supabase
 
+import { withGateway } from "./_gateway.js";
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://zxwfwtagcqwwevnuqber.supabase.co";
 const SUPABASE_KEY =
   process.env.VITE_SUPABASE_SECRET_KEY ||
@@ -88,17 +90,7 @@ function normalizeHeaders(headerRow) {
   return map;
 }
 
-export default async function handler(req, res) {
-  setCors(res);
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed. Use POST." });
-  }
-
+async function sendOrderDataHandler(req, res) {
   try {
     let rawData = req.body;
     let ordersToProcess = [];
@@ -230,3 +222,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error processing orders", details: err.message });
   }
 }
+
+export default withGateway(sendOrderDataHandler, {
+  name: "sendorderdata",
+  allowedMethods: ["POST"],
+  requireAdmin: true,
+  rateLimit: { limit: 15, windowMs: 60000, keyPrefix: "sendorder" },
+});
