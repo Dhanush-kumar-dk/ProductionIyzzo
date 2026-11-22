@@ -179,23 +179,8 @@ export default function UploadScreenshotModal({
                   Screenshot Uploaded Successfully!
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  Your verification image has been stored securely in private
-                  Cloudflare R2 storage.
+                  Your order proof has been received and submitted for cashback verification.
                 </p>
-              </div>
-
-              {/* Bucket details badge */}
-              <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-left space-y-1.5 text-xs text-slate-600 font-mono">
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-slate-400 font-sans">Storage Target:</span>
-                  <span className="font-semibold text-slate-800">yearnit-storage/Screenshot/</span>
-                </div>
-                <div className="flex justify-between items-center text-[11px] truncate">
-                  <span className="text-slate-400 font-sans">Object Key:</span>
-                  <span className="truncate max-w-[220px] text-slate-700" title={result.key}>
-                    {result.key}
-                  </span>
-                </div>
               </div>
 
               <div className="pt-2 flex justify-center gap-3">
